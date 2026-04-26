@@ -15,7 +15,8 @@ const AddProduct = () => {
     const [formData, setFormData] = useState({
         title: '',
         price: '',
-        description: ''
+        description: '',
+        category: 'Electronics'
     });
     const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(false);
