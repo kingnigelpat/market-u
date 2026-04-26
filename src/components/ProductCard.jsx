@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import VerifiedBadge from './VerifiedBadge';
 import { MessageCircle } from 'lucide-react';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import '../styles/landing.css';
 import { Camera, Search, UserCheck, Smartphone } from 'lucide-react';
