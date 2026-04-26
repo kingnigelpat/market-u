@@ -5,7 +5,14 @@ import { MessageCircle } from 'lucide-react';
 const ProductCard = ({ product }) => {
     const handleWhatsApp = (e) => {
         e.preventDefault(); // Prevent navigating to product detail
-        const phone = product.sellerPhone ? product.sellerPhone.replace(/\D/g, '') : '';
+        let phone = product.sellerPhone ? product.sellerPhone.replace(/\D/g, '') : '';
+        // Standardize to Nigeria (+234)
+        if (phone.startsWith('0')) {
+            phone = '234' + phone.substring(1);
+        } else if (phone && !phone.startsWith('234')) {
+            phone = '234' + phone;
+        }
+
         const message = encodeURIComponent(`Hi ${product.sellerName}, I'm interested in your product: ${product.title} on Market-U!`);
         const whatsappUrl = `https://wa.me/${phone}?text=${message}`;
         window.open(whatsappUrl, '_blank');
