@@ -97,7 +97,7 @@ const ProductDetail = () => {
                 <ArrowLeft size={20} /> Back
             </button>
 
-            <div className="card" style={{ padding: '1.5rem' }}>
+            <div className="card mobile-card-padding">
                 <div className="grid grid-cols-2" style={{ gap: '2rem' }}>
                     {/* Images Section */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

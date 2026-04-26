@@ -60,10 +60,10 @@ const Home = () => {
     });
 
     return (
-        <div className="container" style={{ paddingBottom: '4rem', paddingTop: '1rem' }}>
+        <div className="container" style={{ paddingBottom: '4rem', paddingTop: '0.75rem' }}>
             {/* Top Navigation Search */}
-            <div style={{ backgroundColor: 'var(--surface-color)', padding: '1.25rem', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', marginBottom: '1.5rem', border: '1px solid var(--border-color)' }}>
-                <div style={{ position: 'relative', marginBottom: '1rem' }}>
+            <div className="mobile-card-padding" style={{ backgroundColor: 'var(--surface-color)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', marginBottom: '1.25rem', border: '1px solid var(--border-color)' }}>
+                <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
                     <div style={{ position: 'absolute', top: '50%', left: '1rem', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>
                         <Search size={20} />
                     </div>

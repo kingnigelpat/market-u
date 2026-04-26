@@ -75,8 +75,8 @@ const SellerDashboard = () => {
     }
 
     return (
-        <div className="container">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div className="container" style={{ paddingTop: '1rem' }}>
+            <div className="responsive-header" style={{ marginBottom: '2rem' }}>
                 <div>
                     <h1 style={{ fontSize: '2rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         Seller Dashboard
