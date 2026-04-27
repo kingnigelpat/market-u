@@ -35,9 +35,9 @@ const Navbar = () => {
                                     Dashboard
                                 </Link>
                             )}
-                            <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                                <User size={16} />
-                                <span style={{ textTransform: 'capitalize' }}>{userRole}</span>
+                            <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', fontWeight: '700', backgroundColor: 'rgba(37, 99, 235, 0.08)', color: 'var(--primary-color)', padding: '0.25rem 0.75rem', borderRadius: '99px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                <User size={12} />
+                                <span>{userRole}</span>
                             </div>
                             <button onClick={handleLogout} className="btn" style={{ padding: '0.375rem', color: 'var(--text-secondary)' }} title="Logout">
                                 <LogOut size={18} />

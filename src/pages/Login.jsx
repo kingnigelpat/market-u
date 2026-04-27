@@ -28,24 +28,39 @@ const Login = () => {
     };
 
     return (
-        <div className="container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '70vh' }}>
-            <div className="card" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}>
-                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '3rem', height: '3rem', borderRadius: '50%', backgroundColor: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary-color)', marginBottom: '1rem' }}>
-                        <LogIn size={24} />
+        <div className="auth-container">
+            <div className="auth-card animate-fade-in-up">
+                <div className="auth-header">
+                    <div className="auth-icon">
+                        <LogIn size={28} />
                     </div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Welcome back</h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Log in to Market-U</p>
+                    <h2>Welcome back</h2>
+                    <p>Log in to your Market-U account</p>
                 </div>
 
-                {error && <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger-color)', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
+                {error && (
+                    <div style={{ 
+                        backgroundColor: 'rgba(239, 68, 68, 0.08)', 
+                        color: 'var(--danger-color)', 
+                        padding: '1rem', 
+                        borderRadius: 'var(--radius-lg)', 
+                        marginBottom: '1.5rem', 
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        border: '1px solid rgba(239, 68, 68, 0.15)',
+                        textAlign: 'center'
+                    }}>
+                        {error}
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label htmlFor="email">Email</label>
+                        <label htmlFor="email">Email Address</label>
                         <input
                             type="email"
                             id="email"
+                            placeholder="name@example.com"
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
@@ -56,18 +71,31 @@ const Login = () => {
                         <input
                             type="password"
                             id="password"
+                            placeholder="••••••••"
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                         />
                     </div>
-                    <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', padding: '0.75rem' }}>
+                    <button 
+                        type="submit" 
+                        disabled={loading} 
+                        className="btn btn-primary" 
+                        style={{ 
+                            width: '100%', 
+                            marginTop: '1rem', 
+                            padding: '1rem', 
+                            fontSize: '1.125rem',
+                            borderRadius: 'var(--radius-lg)',
+                            boxShadow: '0 8px 20px -6px rgba(37, 99, 235, 0.3)'
+                        }}
+                    >
                         {loading ? 'Logging in...' : 'Log in'}
                     </button>
                 </form>
 
-                <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    Don't have an account? <Link to="/register" style={{ color: 'var(--primary-color)', fontWeight: '500' }}>Sign up</Link>
+                <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.9375rem', color: 'var(--text-secondary)' }}>
+                    Don't have an account? <Link to="/register" style={{ color: 'var(--primary-color)', fontWeight: '700' }}>Create an account</Link>
                 </div>
             </div>
         </div>
