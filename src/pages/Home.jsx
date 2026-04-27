@@ -60,50 +60,49 @@ const Home = () => {
     });
 
     return (
-        <div className="container" style={{ paddingBottom: '4rem', paddingTop: '0.75rem' }}>
-            {/* Top Navigation Search */}
-            <div className="mobile-card-padding" style={{ backgroundColor: 'var(--surface-color)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', marginBottom: '1.25rem', border: '1px solid var(--border-color)' }}>
-                <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
-                    <div style={{ position: 'absolute', top: '50%', left: '1rem', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>
-                        <Search size={20} />
+        <div className="container" style={{ paddingBottom: '6rem', paddingTop: '1.5rem' }}>
+            {/* Search Header */}
+            <div style={{ marginBottom: '2.5rem' }}>
+                <div style={{ position: 'relative', maxWidth: '600px', margin: '0 auto' }}>
+                    <div style={{ position: 'absolute', top: '50%', left: '1.25rem', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>
+                        <Search size={22} />
                     </div>
                     <input
                         type="text"
-                        placeholder="What are you looking for?"
+                        placeholder="Search for sneakers, food, gadgets..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', fontSize: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', outline: 'none' }}
+                        style={{ 
+                            width: '100%', 
+                            padding: '1.125rem 1.25rem 1.125rem 3.5rem', 
+                            fontSize: '1.125rem', 
+                            borderRadius: '1.25rem', 
+                            border: '1px solid var(--border-color)', 
+                            backgroundColor: 'var(--surface-color)', 
+                            outline: 'none',
+                            boxShadow: 'var(--shadow-sm)',
+                            transition: 'all 0.2s'
+                        }}
+                        className="search-input-focus"
                     />
-                </div>
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '150px' }}>
-                        <SlidersHorizontal size={18} color="var(--text-secondary)" />
-                        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ padding: '0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', outline: 'none', flex: 1 }}>
-                            <option value="all">All Categories</option>
-                            <option value="Electronics">Electronics</option>
-                            <option value="Clothing">Clothing</option>
-                            <option value="Services">Services</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500' }}>
-                        <input type="checkbox" checked={verifiedOnly} onChange={(e) => setVerifiedOnly(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: 'var(--primary-color)' }} />
-                        Verified Sellers Only
-                    </label>
                 </div>
             </div>
 
-            {/* Quick Action Row */}
-            <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', marginBottom: '1.5rem', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-                <button onClick={() => { setCategoryFilter('all'); setVerifiedOnly(false) }} className={`btn ${categoryFilter === 'all' && !verifiedOnly ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', fontSize: '0.875rem' }}>Browse All</button>
-                <button onClick={() => { setCategoryFilter('all'); setVerifiedOnly(true) }} className={`btn ${verifiedOnly ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', fontSize: '0.875rem' }}>⭐ Verified Only</button>
-                <button onClick={() => setCategoryFilter('Electronics')} className={`btn ${categoryFilter === 'Electronics' ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', fontSize: '0.875rem' }}>💻 Electronics</button>
-                <button onClick={() => setCategoryFilter('Clothing')} className={`btn ${categoryFilter === 'Clothing' ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', fontSize: '0.875rem' }}>👕 Clothing</button>
+            {/* Quick Filters */}
+            <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '1rem', marginBottom: '2rem', msOverflowStyle: 'none', scrollbarWidth: 'none', justifyContent: 'center' }}>
+                <button onClick={() => { setCategoryFilter('all'); setVerifiedOnly(false) }} className={`btn ${categoryFilter === 'all' && !verifiedOnly ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', padding: '0.625rem 1.25rem' }}>All Items</button>
+                <button onClick={() => { setCategoryFilter('all'); setVerifiedOnly(true) }} className={`btn ${verifiedOnly ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', padding: '0.625rem 1.25rem' }}>⭐ Verified Only</button>
+                <button onClick={() => setCategoryFilter('Electronics')} className={`btn ${categoryFilter === 'Electronics' ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', padding: '0.625rem 1.25rem' }}>Electronics</button>
+                <button onClick={() => setCategoryFilter('Clothing')} className={`btn ${categoryFilter === 'Clothing' ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', padding: '0.625rem 1.25rem' }}>Clothing</button>
+                <button onClick={() => setCategoryFilter('Food')} className={`btn ${categoryFilter === 'Food' ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', padding: '0.625rem 1.25rem' }}>Food</button>
             </div>
 
             {/* Product Feed */}
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--text-secondary)' }}>Loading feed...</div>
+                <div style={{ textAlign: 'center', padding: '6rem 0' }}>
+                    <div className="spinner" style={{ margin: '0 auto 1.5rem auto' }}></div>
+                    <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Loading Market-U...</p>
+                </div>
             ) : filteredProducts.length > 0 ? (
                 <div className="grid grid-cols-4">
                     {filteredProducts.map(product => (
@@ -111,28 +110,24 @@ const Home = () => {
                     ))}
                 </div>
             ) : (
-                <div className="card" style={{ padding: '4rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <PackagePlus size={48} color="var(--border-color)" style={{ marginBottom: '1rem' }} />
-
-                    {verifiedOnly ? (
-                        <>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>No verified products match</h3>
-                            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>There are currently no products available from verified sellers matching your search.</p>
-                            <button onClick={() => setVerifiedOnly(false)} className="btn btn-secondary">
-                                View all sellers instead
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.5rem' }}>No products found</h3>
-                            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>We couldn't find any listings matching your specific search criteria.</p>
-                            <Link to="/add-product" className="btn btn-primary">
-                                Be the first to list a product
-                            </Link>
-                        </>
-                    )}
+                <div className="card" style={{ padding: '5rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', borderStyle: 'dashed' }}>
+                    <PackagePlus size={64} color="var(--border-color)" style={{ marginBottom: '1.5rem' }} />
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.75rem' }}>No results found</h3>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', maxWidth: '400px' }}>We couldn't find anything matching your search. Try different keywords or browse all categories.</p>
+                    <button onClick={() => { setSearchTerm(''); setCategoryFilter('all'); setVerifiedOnly(false) }} className="btn btn-primary" style={{ padding: '0.75rem 2rem' }}>
+                        Clear all filters
+                    </button>
                 </div>
             )}
+
+            {/* Footer */}
+            <footer style={{ marginTop: '6rem', textAlign: 'center' }}>
+                <div style={{ marginBottom: '2rem' }}>
+                    <a href="https://www.raehub.live" target="_blank" rel="noopener noreferrer" className="rae-link">
+                        Created by <span>Rae Company</span>
+                    </a>
+                </div>
+            </footer>
         </div>
     );
 };
