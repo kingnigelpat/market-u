@@ -63,7 +63,7 @@ const Footer = () => {
           <div>
             <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '1.5rem' }}>Support</h3>
             <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <li style={{ color: '#94a3b8', fontSize: '0.9375rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mail size={16} /> championsmail!18@gmail.com</li>
+              <li style={{ color: '#94a3b8', fontSize: '0.9375rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mail size={16} /> championsmail18@gmail.com</li>
               <li style={{ color: '#94a3b8', fontSize: '0.9375rem' }}>Terms of Service</li>
               <li style={{ color: '#94a3b8', fontSize: '0.9375rem' }}>Privacy Policy</li>
               <li style={{ color: '#94a3b8', fontSize: '0.9375rem' }}>Safety Guidelines</li>
