@@ -37,8 +37,12 @@ const SellerDashboard = () => {
                     ...doc.data()
                 }));
 
-                // Client side sort
-                productsData.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
+                // Client side sort with safety check
+                productsData.sort((a, b) => {
+                    const timeA = a.createdAt?.seconds || 0;
+                    const timeB = b.createdAt?.seconds || 0;
+                    return timeB - timeA;
+                });
 
                 setProducts(productsData);
             } catch (error) {
