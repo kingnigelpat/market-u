@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, getDocs, where } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, where, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
 import { Search, SlidersHorizontal, PackagePlus, ArrowRight } from 'lucide-react';
@@ -23,8 +23,12 @@ const Home = () => {
                 const verifiedUsersSnap = await getDocs(usersQuery);
                 const verifiedSellerIds = new Set(verifiedUsersSnap.docs.map(doc => doc.id));
 
-                // Fetch Products
-                const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'));
+                // Fetch Products - Limit to top 50 for speed
+                const q = query(
+                    collection(db, 'products'), 
+                    orderBy('createdAt', 'desc'),
+                    limit(50)
+                );
                 const querySnapshot = await getDocs(q);
 
                 let productsData = querySnapshot.docs.map(doc => {

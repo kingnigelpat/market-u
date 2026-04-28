@@ -4,6 +4,7 @@ import VerifiedBadge from './VerifiedBadge';
 import { MessageCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AuthPromptModal from './AuthPromptModal';
+import { optimizeImage } from '../utils/cloudinary';
 
 const ProductCard = ({ product }) => {
     const { isAuthenticated } = useAuth();
@@ -35,7 +36,7 @@ const ProductCard = ({ product }) => {
             <Link to={`/product/${product.id}`} className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
                 <div style={{ position: 'relative', paddingTop: '100%', backgroundColor: 'var(--bg-color)' }}>
                     <img
-                        src={product.images && product.images.length > 0 ? product.images[0] : 'https://via.placeholder.com/400'}
+                        src={product.images && product.images.length > 0 ? optimizeImage(product.images[0], 400) : 'https://via.placeholder.com/400'}
                         alt={product.title}
                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                     />

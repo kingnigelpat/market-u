@@ -7,6 +7,7 @@ import VerifiedBadge from '../components/VerifiedBadge';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import AuthPromptModal from '../components/AuthPromptModal';
+import { optimizeImage } from '../utils/cloudinary';
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -115,7 +116,7 @@ const ProductDetail = () => {
                     onClick={() => setSelectedImage(null)}
                 >
                     <img 
-                        src={selectedImage} 
+                        src={optimizeImage(selectedImage, 1200)} 
                         alt="Enlarged product" 
                         style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
                     />
@@ -160,7 +161,7 @@ const ProductDetail = () => {
                                     onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                 >
                                     <img
-                                        src={img}
+                                        src={optimizeImage(img, 800)}
                                         alt={`${product.title} - view ${index + 1}`}
                                         style={{ width: '100%', height: 'auto', display: 'block', minHeight: '300px', maxHeight: '800px', objectFit: 'contain' }}
                                     />

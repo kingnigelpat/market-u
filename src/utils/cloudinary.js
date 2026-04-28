@@ -23,3 +23,13 @@ export const uploadImageToCloudinary = async (file) => {
         throw error;
     }
 };
+
+export const optimizeImage = (url, width = 600) => {
+    if (!url || !url.includes('cloudinary.com')) return url;
+    
+    // Insert transformation parameters after /upload/
+    const parts = url.split('/upload/');
+    if (parts.length !== 2) return url;
+    
+    return `${parts[0]}/upload/c_fill,w_${width},q_auto,f_auto/${parts[1]}`;
+};
