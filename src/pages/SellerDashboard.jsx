@@ -54,7 +54,7 @@ const SellerDashboard = () => {
     }, [currentUser]);
 
     const handleVerificationRequest = () => {
-        const supportPhone = '2349013011233'; // Consistent support number
+        const supportPhone = '2347073544811'; // Updated support number
         const message = encodeURIComponent(`Hi, I'm ${currentUser.displayName || 'a seller'} and I'd like to request verification for my Market-U account (ID: ${currentUser.uid}).`);
         const whatsappUrl = `https://wa.me/${supportPhone}?text=${message}`;
         window.open(whatsappUrl, '_blank');
@@ -99,7 +99,7 @@ const SellerDashboard = () => {
                             <div className="btn btn-secondary" style={{ opacity: 0.7, cursor: 'default' }}>
                                 Verification Pending
                             </div>
-                            <a href="https://wa.me/2349013011233" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary-color)', fontWeight: '600' }}>
+                            <a href="https://wa.me/2347073544811" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary-color)', fontWeight: '600' }}>
                                 Verify on WhatsApp
                             </a>
                         </div>

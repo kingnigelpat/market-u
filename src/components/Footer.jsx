@@ -42,7 +42,7 @@ const Footer = () => {
               The ultimate campus marketplace for students to buy, sell, and connect safely within their community.
             </p>
             <div style={{ display: 'flex', gap: '1rem' }}>
-              <a href="https://wa.me/2349013011233" target="_blank" rel="noopener noreferrer" style={{ color: '#94a3b8', transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }} onMouseOver={e => e.currentTarget.style.color = '#25D366'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}>
+              <a href="https://wa.me/2347073544811" target="_blank" rel="noopener noreferrer" style={{ color: '#94a3b8', transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }} onMouseOver={e => e.currentTarget.style.color = '#25D366'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}>
                 <FaWhatsapp size={20} /> <span>Contact Creator</span>
               </a>
             </div>
