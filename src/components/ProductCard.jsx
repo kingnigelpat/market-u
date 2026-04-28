@@ -27,7 +27,7 @@ const ProductCard = ({ product }) => {
 
         const message = encodeURIComponent(`Hi ${product.sellerName}, I'm interested in your product: ${product.title} on Market-U!`);
         const whatsappUrl = `https://wa.me/${phone}?text=${message}`;
-        window.open(whatsappUrl, '_blank');
+        window.location.href = whatsappUrl;
     };
 
     return (
