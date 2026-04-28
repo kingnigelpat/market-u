@@ -90,22 +90,6 @@ const Landing = () => {
                     </div>
                 </div>
 
-                {/* Footer */}
-                <footer className="animate-fade-in-up delay-500" style={{ marginTop: '6rem', width: '100%', textAlign: 'center', padding: '4rem 0 2rem 0', borderTop: '1px solid var(--border-color)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                        <img src="/icon.png" alt="Market-U" style={{ height: '32px' }} />
-                        <span style={{ fontWeight: '900', fontSize: '1.25rem', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>MARKET-U</span>
-                    </div>
-                    
-                    <div style={{ marginBottom: '2.5rem' }}>
-                        <a href="https://www.raehub.live" target="_blank" rel="noopener noreferrer" className="rae-link">
-                            Created by <span>Rae Company</span>
-                        </a>
-                    </div>
-
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>© {new Date().getFullYear()} Market-U. All rights reserved.</p>
-                </footer>
-
             </div>
         </div>
     );

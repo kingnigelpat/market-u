@@ -5,10 +5,10 @@
   --primary-hover: #1D4ED8;
   --accent-color: #F59E0B;
   --bg-color: #FFFFFF;
-  --surface-color: #F8FAFC;
+  --surface-color: #F1F5F9;
   --text-primary: #0F172A;
-  --text-secondary: #64748B;
-  --border-color: #E2E8F0;
+  --text-secondary: #475569;
+  --border-color: #CBD5E1;
   --success-color: #10B981;
   --danger-color: #EF4444;
   --warning-color: #F59E0B;
@@ -94,11 +94,13 @@ select:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius-md);
-  font-weight: 500;
-  transition: all 0.2s;
-  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 1rem;
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 0.625rem;
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
 }
 
 .btn-primary {
@@ -139,16 +141,22 @@ select:focus {
 }
 
 .card {
-  background-color: var(--surface-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  background-color: white;
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border: 1px solid var(--border-color);
   overflow: hidden;
-  transition: box-shadow 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-4px);
+  border-color: var(--primary-color);
+}
+
+.card:hover .product-card-image {
+  transform: scale(1.1);
 }
 
 /* Layout */

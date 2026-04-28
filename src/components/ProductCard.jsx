@@ -38,7 +38,9 @@ const ProductCard = ({ product }) => {
                     <img
                         src={product.images && product.images.length > 0 ? optimizeImage(product.images[0], 400) : 'https://via.placeholder.com/400'}
                         alt={product.title}
-                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                        loading="lazy"
+                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
+                        className="product-card-image"
                     />
                     {product.category && (
                         <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '0.75rem', padding: '0.25rem 0.5rem', borderRadius: '4px', fontWeight: '500' }}>
