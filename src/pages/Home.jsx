@@ -91,12 +91,13 @@ const Home = () => {
             </div>
 
             {/* Quick Filters */}
-            <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '1rem', marginBottom: '2rem', msOverflowStyle: 'none', scrollbarWidth: 'none', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '1rem', marginBottom: '2rem', msOverflowStyle: 'none', scrollbarWidth: 'none', justifyContent: 'center', WebkitOverflowScrolling: 'touch' }}>
                 <button onClick={() => { setCategoryFilter('all'); setVerifiedOnly(false) }} className={`btn ${categoryFilter === 'all' && !verifiedOnly ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', padding: '0.625rem 1.25rem' }}>All Items</button>
                 <button onClick={() => { setCategoryFilter('all'); setVerifiedOnly(true) }} className={`btn ${verifiedOnly ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', padding: '0.625rem 1.25rem' }}>⭐ Verified Only</button>
+                <button onClick={() => setCategoryFilter('Services')} className={`btn ${categoryFilter === 'Services' ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', padding: '0.625rem 1.25rem' }}>🛠️ Services</button>
                 <button onClick={() => setCategoryFilter('Electronics')} className={`btn ${categoryFilter === 'Electronics' ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', padding: '0.625rem 1.25rem' }}>Electronics</button>
-                <button onClick={() => setCategoryFilter('Clothing')} className={`btn ${categoryFilter === 'Clothing' ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', padding: '0.625rem 1.25rem' }}>Clothing</button>
-                <button onClick={() => setCategoryFilter('Food')} className={`btn ${categoryFilter === 'Food' ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', padding: '0.625rem 1.25rem' }}>Food</button>
+                <button onClick={() => setCategoryFilter('Fashion')} className={`btn ${categoryFilter === 'Fashion' ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', padding: '0.625rem 1.25rem' }}>Fashion</button>
+                <button onClick={() => setCategoryFilter('Food & Groceries')} className={`btn ${categoryFilter === 'Food & Groceries' ? 'btn-primary' : 'btn-secondary'}`} style={{ borderRadius: '99px', whiteSpace: 'nowrap', padding: '0.625rem 1.25rem' }}>Food</button>
             </div>
 
             {/* Product Feed */}
