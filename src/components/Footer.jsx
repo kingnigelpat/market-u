@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Mail, Globe, ArrowRight } from 'lucide-react';
-import { FaFacebook, FaTwitter, FaInstagram } from 'react-icons/fa';
+import { Mail, Globe, ArrowRight, MessageCircle } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 
 const Footer = () => {
   return (
@@ -42,9 +42,9 @@ const Footer = () => {
               The ultimate campus marketplace for students to buy, sell, and connect safely within their community.
             </p>
             <div style={{ display: 'flex', gap: '1rem' }}>
-              <a href="#" style={{ color: '#94a3b8', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#3b82f6'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}><FaFacebook size={20} /></a>
-              <a href="#" style={{ color: '#94a3b8', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#3b82f6'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}><FaTwitter size={20} /></a>
-              <a href="#" style={{ color: '#94a3b8', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#3b82f6'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}><FaInstagram size={20} /></a>
+              <a href="https://wa.me/2349013011233" target="_blank" rel="noopener noreferrer" style={{ color: '#94a3b8', transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }} onMouseOver={e => e.currentTarget.style.color = '#25D366'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}>
+                <FaWhatsapp size={20} /> <span>Contact Creator</span>
+              </a>
             </div>
           </div>
 
@@ -63,16 +63,15 @@ const Footer = () => {
           <div>
             <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '1.5rem' }}>Support</h3>
             <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <li style={{ color: '#94a3b8', fontSize: '0.9375rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mail size={16} /> support@raehub.live</li>
+              <li style={{ color: '#94a3b8', fontSize: '0.9375rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Mail size={16} /> championsmail!18@gmail.com</li>
               <li style={{ color: '#94a3b8', fontSize: '0.9375rem' }}>Terms of Service</li>
               <li style={{ color: '#94a3b8', fontSize: '0.9375rem' }}>Privacy Policy</li>
               <li style={{ color: '#94a3b8', fontSize: '0.9375rem' }}>Safety Guidelines</li>
             </ul>
           </div>
 
-          {/* Partner */}
           <div>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '1.5rem' }}>Our Partner</h3>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '1.5rem' }}>Developed By</h3>
             <a href="https://raehub.live" target="_blank" rel="noopener noreferrer" style={{ 
               display: 'block',
               padding: '1.25rem',
