@@ -408,7 +408,14 @@ select:focus {
   .main-content {
     padding: 0.5rem 0;
   }
- 
+  .container {
+    padding: 0 1rem;
+  }
+  .hide-on-mobile {
+    display: none !important;
+  }
+}
+
 /* Product Detail Layout */
 .product-detail-layout {
   display: grid;
@@ -452,7 +459,3 @@ select:focus {
   background-color: white !important;
   transform: translateY(-2px);
 }
-  .container {
-    padding: 0 1rem;
-  }
-}

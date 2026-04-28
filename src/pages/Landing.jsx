@@ -17,27 +17,27 @@ const Landing = () => {
             <div className="landing-content" style={{ padding: '0 1rem 3rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
                 {/* Hero Logo */}
-                <div className="animate-fade-in-up" style={{ marginTop: '3rem', marginBottom: '1.5rem' }}>
-                    <img src="/logo.png" alt="Market-U Logo" style={{ width: '100%', maxWidth: '240px', objectFit: 'contain' }} />
+                <div className="animate-fade-in-up" style={{ marginTop: '2rem', marginBottom: '1rem' }}>
+                    <img src="/logo.png" alt="Market-U Logo" style={{ width: '100%', maxWidth: '180px', objectFit: 'contain' }} />
                 </div>
 
                 {/* Main Headline */}
                 <div className="animate-fade-in-up delay-100" style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                    <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 3.5rem)', fontWeight: '900', lineHeight: '1.05', marginBottom: '1.5rem', letterSpacing: '-0.04em', color: 'var(--text-primary)' }}>
+                    <h1 style={{ fontSize: 'clamp(1.75rem, 10vw, 3rem)', fontWeight: '900', lineHeight: '1.05', marginBottom: '1rem', letterSpacing: '-0.04em', color: 'var(--text-primary)' }}>
                         Find anything on<br />
                         <span style={{ color: 'var(--primary-color)' }}>campus in seconds.</span>
                     </h1>
-                    <p style={{ fontSize: 'clamp(1.125rem, 3vw, 1.25rem)', color: 'var(--text-secondary)', lineHeight: '1.6', maxWidth: '500px', margin: '0 auto' }}>
-                        Stop wasting time in group chats. Just search and get what you need instantly.
+                    <p style={{ fontSize: 'clamp(1rem, 4vw, 1.125rem)', color: 'var(--text-secondary)', lineHeight: '1.5', maxWidth: '400px', margin: '0 auto' }}>
+                        Stop wasting time in group chats. Search and get what you need instantly.
                     </p>
                 </div>
 
                 {/* CTA Buttons */}
-                <div className="animate-fade-in-up delay-300" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', maxWidth: '360px', marginTop: '1rem' }}>
-                    <Link to="/market" className="btn-premium" style={{ fontSize: '1.125rem', padding: '1.125rem', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--primary-color)', color: 'white', fontWeight: '700', textAlign: 'center', boxShadow: '0 10px 20px -5px rgba(37, 99, 235, 0.3)' }}>
+                <div className="animate-fade-in-up delay-300" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', maxWidth: '320px', marginTop: '0.5rem' }}>
+                    <Link to="/market" className="btn-premium" style={{ fontSize: '1rem', padding: '1rem', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--primary-color)', color: 'white', fontWeight: '700', textAlign: 'center', boxShadow: '0 8px 16px -4px rgba(37, 99, 235, 0.3)' }}>
                         Start Searching
                     </Link>
-                    <Link to="/register" className="btn-premium-alt" style={{ fontSize: '1rem', padding: '1rem', borderRadius: 'var(--radius-lg)', border: '2px solid var(--text-primary)', color: 'var(--text-primary)', fontWeight: '700', textAlign: 'center' }}>
+                    <Link to="/register" className="btn-premium-alt" style={{ fontSize: '0.9375rem', padding: '0.875rem', borderRadius: 'var(--radius-lg)', border: '2px solid var(--text-primary)', color: 'var(--text-primary)', fontWeight: '700', textAlign: 'center' }}>
                         I Want to Sell
                     </Link>
                 </div>

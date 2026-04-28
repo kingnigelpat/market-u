@@ -177,13 +177,13 @@ const ProductDetail = () => {
                 {/* Details Section */}
                 <div className="product-info-container">
                     <div style={{ position: 'sticky', top: '2rem' }}>
-                        <div style={{ marginBottom: '2rem' }}>
+                        <div style={{ marginBottom: '1.5rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.5rem' }}>
-                                <h1 style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', fontWeight: '900', margin: 0, letterSpacing: '-0.03em', lineHeight: '1.1' }}>
+                                <h1 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.25rem)', fontWeight: '900', margin: 0, letterSpacing: '-0.03em', lineHeight: '1.1' }}>
                                     {product.title}
                                 </h1>
                             </div>
-                            <div style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--primary-color)', letterSpacing: '-0.02em' }}>
+                            <div style={{ fontSize: '1.75rem', fontWeight: '800', color: 'var(--primary-color)', letterSpacing: '-0.02em' }}>
                                 ₦{parseFloat(product.price).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                         </div>
