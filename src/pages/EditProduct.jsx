@@ -145,8 +145,15 @@ const EditProduct = () => {
                             <label htmlFor="category">Category</label>
                             <select id="category" name="category" value={formData.category} onChange={handleChange}>
                                 <option value="Electronics">Electronics</option>
-                                <option value="Clothing">Clothing</option>
-                                <option value="Services">Services</option>
+                                <option value="Phones & Tablets">Phones & Tablets</option>
+                                <option value="Computing">Computing (Laptops)</option>
+                                <option value="Fashion">Fashion (Clothing, Shoes)</option>
+                                <option value="Health & Beauty">Health & Beauty</option>
+                                <option value="Home & Kitchen">Home & Kitchen</option>
+                                <option value="Books & Stationery">Books & Stationery</option>
+                                <option value="Food & Groceries">Food & Groceries</option>
+                                <option value="Services">Services (Tutoring, Haircuts)</option>
+                                <option value="Hostels & Rooms">Hostels & Rooms</option>
                                 <option value="Other">Other</option>
                             </select>
                         </div>

@@ -60,14 +60,10 @@ const AddProduct = () => {
         setError('');
 
         try {
-            // 1. Upload images sequentially
-            const imageUrls = [];
-            for (const img of images) {
-                const url = await uploadImageToCloudinary(img);
-                if (url) {
-                    imageUrls.push(url);
-                }
-            }
+            // 1. Upload images in parallel for speed
+            const uploadPromises = images.map(img => uploadImageToCloudinary(img));
+            const uploadedUrls = await Promise.all(uploadPromises);
+            const imageUrls = uploadedUrls.filter(url => url !== null);
 
             // 2. Save product to Firestore
             const productData = {
@@ -89,7 +85,7 @@ const AddProduct = () => {
             navigate('/dashboard');
         } catch (err) {
             console.error(err);
-            setError("Error adding product. Check console. Notice: Make sure to configure VITE_CLOUDINARY_CLOUD_NAME and VITE_FIREBASE config in .env file.");
+            setError("Error adding product. Please check your connection and try again.");
         } finally {
             setLoading(false);
         }
@@ -140,8 +136,15 @@ const AddProduct = () => {
                             <label htmlFor="category">Category</label>
                             <select id="category" name="category" value={formData.category || 'Electronics'} onChange={handleChange}>
                                 <option value="Electronics">Electronics</option>
-                                <option value="Clothing">Clothing</option>
-                                <option value="Services">Services</option>
+                                <option value="Phones & Tablets">Phones & Tablets</option>
+                                <option value="Computing">Computing (Laptops)</option>
+                                <option value="Fashion">Fashion (Clothing, Shoes)</option>
+                                <option value="Health & Beauty">Health & Beauty</option>
+                                <option value="Home & Kitchen">Home & Kitchen</option>
+                                <option value="Books & Stationery">Books & Stationery</option>
+                                <option value="Food & Groceries">Food & Groceries</option>
+                                <option value="Services">Services (Tutoring, Haircuts)</option>
+                                <option value="Hostels & Rooms">Hostels & Rooms</option>
                                 <option value="Other">Other</option>
                             </select>
                         </div>
