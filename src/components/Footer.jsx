@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Facebook, Twitter, Instagram, Mail, Globe, ArrowRight } from 'lucide-react';
+import { Mail, Globe, ArrowRight } from 'lucide-react';
+import { FaFacebook, FaTwitter, FaInstagram } from 'react-icons/fa';
 
 const Footer = () => {
   return (
@@ -41,9 +42,9 @@ const Footer = () => {
               The ultimate campus marketplace for students to buy, sell, and connect safely within their community.
             </p>
             <div style={{ display: 'flex', gap: '1rem' }}>
-              <a href="#" style={{ color: '#94a3b8', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#3b82f6'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}><Facebook size={20} /></a>
-              <a href="#" style={{ color: '#94a3b8', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#3b82f6'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}><Twitter size={20} /></a>
-              <a href="#" style={{ color: '#94a3b8', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#3b82f6'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}><Instagram size={20} /></a>
+              <a href="#" style={{ color: '#94a3b8', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#3b82f6'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}><FaFacebook size={20} /></a>
+              <a href="#" style={{ color: '#94a3b8', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#3b82f6'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}><FaTwitter size={20} /></a>
+              <a href="#" style={{ color: '#94a3b8', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#3b82f6'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}><FaInstagram size={20} /></a>
             </div>
           </div>
 
