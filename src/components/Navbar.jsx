@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Store } from 'lucide-react';
 
 const Navbar = () => {
     const { isAuthenticated, isSeller, userRole } = useAuth();
