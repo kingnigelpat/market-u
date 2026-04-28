@@ -53,21 +53,16 @@ const SellerDashboard = () => {
         }
     }, [currentUser]);
 
-    const handleVerificationRequest = async () => {
-        setRequestingVerif(true);
-        try {
-            const sellerRef = doc(db, 'users', currentUser.uid);
-            await updateDoc(sellerRef, {
-                verificationStatus: 'pending'
-            });
-            setSellerData({ ...sellerData, verificationStatus: 'pending' });
-            alert("Verification request sent! Please click the 'Verify on WhatsApp' link on your dashboard to provide your ID for review.");
-        } catch (err) {
-            console.error(err);
-            alert("Error requesting verification.");
-        } finally {
-            setRequestingVerif(false);
-        }
+    const handleVerificationRequest = () => {
+        const supportPhone = '2349013011233'; // Consistent support number
+        const message = encodeURIComponent(`Hi, I'm ${currentUser.displayName || 'a seller'} and I'd like to request verification for my Market-U account (ID: ${currentUser.uid}).`);
+        const whatsappUrl = `https://wa.me/${supportPhone}?text=${message}`;
+        window.open(whatsappUrl, '_blank');
+        
+        // Still update the status in Firestore for tracking
+        const sellerRef = doc(db, 'users', currentUser.uid);
+        updateDoc(sellerRef, { verificationStatus: 'pending' });
+        setSellerData({ ...sellerData, verificationStatus: 'pending' });
     };
 
     if (loading) {
@@ -104,14 +99,21 @@ const SellerDashboard = () => {
                             <div className="btn btn-secondary" style={{ opacity: 0.7, cursor: 'default' }}>
                                 Verification Pending
                             </div>
-                            <a href="https://wa.me/2347073544811" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary-color)', fontWeight: '600' }}>
+                            <a href="https://wa.me/2349013011233" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary-color)', fontWeight: '600' }}>
                                 Verify on WhatsApp
                             </a>
                         </div>
                     )}
 
-                    <Link to="/add-product" className="btn btn-primary">
-                        <PlusCircle size={18} /> Add Product
+                    <Link to="/add-product" className="btn btn-primary" style={{ 
+                        padding: '1rem 2rem', 
+                        fontSize: '1rem', 
+                        borderRadius: '1.25rem',
+                        boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.4)',
+                        transform: 'scale(1.05)',
+                        transition: 'all 0.2s'
+                    }}>
+                        <PlusCircle size={22} /> Add Product
                     </Link>
                 </div>
             </div>

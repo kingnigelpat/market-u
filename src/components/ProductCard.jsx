@@ -55,9 +55,9 @@ const ProductCard = ({ product }) => {
                         </h3>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: 'auto' }}>
-                        <span>{product.sellerName || 'Seller'}</span>
-                        {product.sellerVerified && <VerifiedBadge size={12} />}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 'auto' }}>
+                        <span style={{ fontWeight: product.sellerVerified ? '700' : '500', color: product.sellerVerified ? 'var(--text-primary)' : 'inherit' }}>{product.sellerName || 'Seller'}</span>
+                        {product.sellerVerified && <VerifiedBadge size={14} />}
                     </div>
 
                     <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>

@@ -40,8 +40,8 @@ const Navbar = () => {
                     {isAuthenticated ? (
                         <>
                             {isSeller && (
-                                <Link to="/dashboard" className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.375rem 0.625rem' }}>
-                                    Sell
+                                <Link to="/dashboard" className="btn btn-primary" style={{ fontSize: '0.8125rem', padding: '0.5rem 1rem', borderRadius: '99px' }}>
+                                    <Store size={16} /> <span className="hide-on-mobile">Sell Items</span>
                                 </Link>
                             )}
                             <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', fontWeight: '700', backgroundColor: 'rgba(37, 99, 235, 0.08)', color: 'var(--primary-color)', padding: '0.25rem 0.75rem', borderRadius: '99px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
