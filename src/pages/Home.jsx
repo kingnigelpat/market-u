@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { collection, query, orderBy, getDocs, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
-import { Search, SlidersHorizontal, PackagePlus } from 'lucide-react';
+import { Search, SlidersHorizontal, PackagePlus, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
+    const { isAuthenticated } = useAuth();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -60,7 +62,7 @@ const Home = () => {
     });
 
     return (
-        <div className="container" style={{ paddingBottom: '6rem', paddingTop: '1.5rem' }}>
+        <div className="container" style={{ paddingBottom: '8rem', paddingTop: '1.5rem' }}>
             {/* Search Header */}
             <div style={{ marginBottom: '2.5rem' }}>
                 <div style={{ position: 'relative', maxWidth: '600px', margin: '0 auto' }}>
@@ -69,9 +71,10 @@ const Home = () => {
                     </div>
                     <input
                         type="text"
-                        placeholder="Search for sneakers, food, gadgets..."
+                        placeholder="Search sneakers, electronics, services..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        className="search-input-focus"
                         style={{ 
                             width: '100%', 
                             padding: '1.125rem 1.25rem 1.125rem 3.5rem', 
@@ -83,7 +86,6 @@ const Home = () => {
                             boxShadow: 'var(--shadow-sm)',
                             transition: 'all 0.2s'
                         }}
-                        className="search-input-focus"
                     />
                 </div>
             </div>
@@ -101,7 +103,7 @@ const Home = () => {
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '6rem 0' }}>
                     <div className="spinner" style={{ margin: '0 auto 1.5rem auto' }}></div>
-                    <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Loading Market-U...</p>
+                    <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Loading items...</p>
                 </div>
             ) : filteredProducts.length > 0 ? (
                 <div className="grid grid-cols-4">
@@ -112,21 +114,53 @@ const Home = () => {
             ) : (
                 <div className="card" style={{ padding: '5rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', borderStyle: 'dashed' }}>
                     <PackagePlus size={64} color="var(--border-color)" style={{ marginBottom: '1.5rem' }} />
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.75rem' }}>No results found</h3>
-                    <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', maxWidth: '400px' }}>We couldn't find anything matching your search. Try different keywords or browse all categories.</p>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.75rem' }}>No items found</h3>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', maxWidth: '400px' }}>Try different keywords or check all categories.</p>
                     <button onClick={() => { setSearchTerm(''); setCategoryFilter('all'); setVerifiedOnly(false) }} className="btn btn-primary" style={{ padding: '0.75rem 2rem' }}>
-                        Clear all filters
+                        Clear filters
                     </button>
                 </div>
             )}
 
-            {/* Footer */}
-            <footer style={{ marginTop: '6rem', textAlign: 'center' }}>
-                <div style={{ marginBottom: '2rem' }}>
-                    <a href="https://www.raehub.live" target="_blank" rel="noopener noreferrer" className="rae-link">
-                        Created by <span>Rae Company</span>
-                    </a>
+            {/* Guest CTA Sticky Bar */}
+            {!isAuthenticated && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '2rem',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 100,
+                    width: 'calc(100% - 2rem)',
+                    maxWidth: '500px'
+                }}>
+                    <Link to="/register" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: 'var(--text-primary)',
+                        color: 'white',
+                        padding: '1.25rem 1.75rem',
+                        borderRadius: '1.5rem',
+                        textDecoration: 'none',
+                        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                        <div>
+                            <p style={{ margin: 0, fontWeight: '800', fontSize: '1rem' }}>Ready to buy or sell?</p>
+                            <p style={{ margin: 0, fontSize: '0.8125rem', opacity: 0.8 }}>Sign up to contact sellers and post items</p>
+                        </div>
+                        <div style={{ backgroundColor: 'var(--primary-color)', padding: '0.5rem', borderRadius: '50%' }}>
+                            <ArrowRight size={20} />
+                        </div>
+                    </Link>
                 </div>
+            )}
+
+            {/* Footer */}
+            <footer style={{ marginTop: '6rem', textAlign: 'center', paddingBottom: '2rem' }}>
+                <a href="https://www.raehub.live" target="_blank" rel="noopener noreferrer" className="rae-link">
+                    Created by <span>Rae Company</span>
+                </a>
             </footer>
         </div>
     );

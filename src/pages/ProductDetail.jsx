@@ -6,14 +6,17 @@ import { MessageCircle, ArrowLeft, Trash2, Edit } from 'lucide-react';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import AuthPromptModal from '../components/AuthPromptModal';
 
 const ProductDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
+    const { currentUser, isAuthenticated } = useAuth();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
+    const [showPrompt, setShowPrompt] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -57,9 +60,12 @@ const ProductDetail = () => {
     }
 
     const handleWhatsApp = () => {
-        // Format phone number (remove non-digits, ensure standard format)
+        if (!isAuthenticated) {
+            setShowPrompt(true);
+            return;
+        }
+
         let phone = product.sellerPhone ? product.sellerPhone.replace(/\D/g, '') : '';
-        // Standardize to Nigeria (+234)
         if (phone.startsWith('0')) {
             phone = '234' + phone.substring(1);
         } else if (phone && !phone.startsWith('234')) {
@@ -88,79 +94,133 @@ const ProductDetail = () => {
     };
 
     return (
-        <div className="container">
+        <div className="container" style={{ paddingBottom: '4rem' }}>
+            {/* Lightbox Modal */}
+            {selectedImage && (
+                <div 
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.95)',
+                        zIndex: 2000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '1rem',
+                        cursor: 'zoom-out'
+                    }}
+                    onClick={() => setSelectedImage(null)}
+                >
+                    <img 
+                        src={selectedImage} 
+                        alt="Enlarged product" 
+                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+                    />
+                    <button 
+                        style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', color: 'white', fontSize: '2rem' }}
+                        onClick={() => setSelectedImage(null)}
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
+
             <button
                 onClick={() => navigate(-1)}
                 className="btn"
-                style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}
+                style={{ margin: '1.5rem 0', color: 'var(--text-secondary)', paddingLeft: 0 }}
             >
-                <ArrowLeft size={20} /> Back
+                <ArrowLeft size={20} /> Back to market
             </button>
 
-            <div className="card mobile-card-padding">
-                <div className="grid grid-cols-2" style={{ gap: '2rem' }}>
-                    {/* Images Section */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {product.images && product.images.length > 0 ? (
-                            <>
-                                <div style={{ position: 'relative', width: '100%', paddingTop: '75%', borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: 'var(--bg-color)' }}>
+            <div className="product-detail-layout">
+                {/* Images Section */}
+                <div className="product-images-container">
+                    {product.images && product.images.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            {product.images.map((img, index) => (
+                                <div 
+                                    key={index} 
+                                    onClick={() => setSelectedImage(img)}
+                                    style={{ 
+                                        position: 'relative', 
+                                        width: '100%', 
+                                        borderRadius: 'var(--radius-xl)', 
+                                        overflow: 'hidden', 
+                                        backgroundColor: 'var(--surface-color)',
+                                        cursor: 'zoom-in',
+                                        border: '1px solid var(--border-color)',
+                                        boxShadow: 'var(--shadow-sm)',
+                                        transition: 'transform 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.01)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                >
                                     <img
-                                        src={product.images[0]}
-                                        alt={product.title}
-                                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }}
+                                        src={img}
+                                        alt={`${product.title} - view ${index + 1}`}
+                                        style={{ width: '100%', height: 'auto', display: 'block', minHeight: '300px', maxHeight: '800px', objectFit: 'contain' }}
                                     />
                                 </div>
-                                {product.images.length > 1 && (
-                                    <div style={{ position: 'relative', width: '100%', paddingTop: '75%', borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: 'var(--bg-color)' }}>
-                                        <img
-                                            src={product.images[1]}
-                                            alt={`${product.title} - view 2`}
-                                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }}
-                                        />
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <div style={{ padding: '4rem', textAlign: 'center', backgroundColor: 'var(--bg-color)', borderRadius: 'var(--radius-md)' }}>
-                                No images available
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Details Section */}
-                    <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                            <h1 style={{ fontSize: '2rem', fontWeight: '700', margin: 0 }}>{product.title}</h1>
-                            <span style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary-color)' }}>
-                                ₦{parseFloat(product.price).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
+                            ))}
                         </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: 'var(--radius-md)' }}>
-                            <span style={{ fontWeight: '500' }}>Seller: {product.sellerName}</span>
-                            {product.sellerVerified && <VerifiedBadge />}
+                    ) : (
+                        <div style={{ padding: '4rem', textAlign: 'center', backgroundColor: 'var(--surface-color)', borderRadius: 'var(--radius-xl)', border: '2px dashed var(--border-color)' }}>
+                            No images available
                         </div>
+                    )}
+                </div>
 
+                {/* Details Section */}
+                <div className="product-info-container">
+                    <div style={{ position: 'sticky', top: '2rem' }}>
                         <div style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>Description</h3>
-                            <p style={{ color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>{product.description}</p>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.5rem' }}>
+                                <h1 style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', fontWeight: '900', margin: 0, letterSpacing: '-0.03em', lineHeight: '1.1' }}>
+                                    {product.title}
+                                </h1>
+                            </div>
+                            <div style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--primary-color)', letterSpacing: '-0.02em' }}>
+                                ₦{parseFloat(product.price).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', padding: '1rem', backgroundColor: 'var(--surface-color)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+                            <div style={{ width: '40px', height: '40px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--primary-color)', border: '1px solid var(--border-color)' }}>
+                                {product.sellerName ? product.sellerName.charAt(0).toUpperCase() : 'S'}
+                            </div>
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ fontWeight: '700', fontSize: '1rem' }}>{product.sellerName}</span>
+                                    {product.sellerVerified && <VerifiedBadge size={16} />}
+                                </div>
+                                <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>Verified Campus Seller</span>
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: '2.5rem' }}>
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Description</h3>
+                            <p style={{ color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: '1.7', fontSize: '1.0625rem' }}>{product.description}</p>
                         </div>
 
                         <button
                             onClick={handleWhatsApp}
                             className="btn btn-whatsapp"
-                            style={{ width: '100%', padding: '1rem', fontSize: '1.125rem', justifyContent: 'center' }}
+                            style={{ width: '100%', padding: '1.25rem', fontSize: '1.125rem', fontWeight: '700', borderRadius: 'var(--radius-lg)', justifyContent: 'center', boxShadow: '0 10px 20px -5px rgba(37, 211, 102, 0.3)' }}
                         >
-                            <MessageCircle />
+                            <MessageCircle size={24} />
                             Contact on WhatsApp
                         </button>
 
                         {isOwner && (
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '1rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem' }}>
                                 <Link
                                     to={`/edit-product/${id}`}
                                     className="btn btn-secondary"
-                                    style={{ padding: '0.875rem', fontSize: '1rem', justifyContent: 'center', borderColor: '#E5E7EB' }}
+                                    style={{ padding: '1rem', fontSize: '1rem', fontWeight: '600', justifyContent: 'center' }}
                                 >
                                     <Edit size={18} />
                                     Edit Post
@@ -169,7 +229,7 @@ const ProductDetail = () => {
                                     onClick={handleDelete}
                                     disabled={deleting}
                                     className="btn"
-                                    style={{ padding: '0.875rem', fontSize: '1rem', justifyContent: 'center', backgroundColor: '#FEF2F2', color: '#EF4444', border: '1px solid #FCA5A5' }}
+                                    style={{ padding: '1rem', fontSize: '1rem', fontWeight: '600', justifyContent: 'center', backgroundColor: 'rgba(239, 68, 68, 0.05)', color: 'var(--danger-color)', border: '1px solid rgba(239, 68, 68, 0.1)' }}
                                 >
                                     <Trash2 size={18} />
                                     {deleting ? 'Deleting...' : 'Delete'}
@@ -179,6 +239,12 @@ const ProductDetail = () => {
                     </div>
                 </div>
             </div>
+
+            <AuthPromptModal 
+                isOpen={showPrompt} 
+                onClose={() => setShowPrompt(false)} 
+                message="Sign up to contact sellers and start using Market-U"
+            />
         </div>
     );
 };

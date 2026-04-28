@@ -107,7 +107,7 @@ const EditProduct = () => {
                 </button>
                 <h1 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '1.5rem' }}>Edit Product</h1>
 
-                <div className="card" style={{ padding: '2rem' }}>
+                <div className="card mobile-card-padding">
                     {error && (
                         <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger-color)', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
                             {error}
