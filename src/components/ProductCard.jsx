@@ -46,18 +46,21 @@ const ProductCard = ({ product }) => {
                     )}
                 </div>
                 <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: '600', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    <div style={{ marginBottom: '0.25rem' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: '600', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.3' }}>
                             {product.title}
                         </h3>
-                        <span style={{ fontWeight: '700', color: 'var(--primary-color)', marginLeft: '0.5rem' }}>
-                            ₦{parseFloat(product.price).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: 'auto' }}>
                         <span>{product.sellerName || 'Seller'}</span>
-                        {product.sellerVerified && <VerifiedBadge size={14} />}
+                        {product.sellerVerified && <VerifiedBadge size={12} />}
+                    </div>
+
+                    <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
+                        <span style={{ fontWeight: '800', color: 'var(--primary-color)', fontSize: '1.125rem' }}>
+                            ₦{parseFloat(product.price).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
                     </div>
 
                     <button onClick={handleWhatsApp} className="btn btn-whatsapp" style={{ width: '100%', marginTop: 'auto', padding: '0.625rem', fontSize: '0.875rem', justifyContent: 'center', zIndex: 10 }}>
