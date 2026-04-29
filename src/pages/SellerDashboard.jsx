@@ -8,14 +8,20 @@ import { Link } from 'react-router-dom';
 import { PlusCircle, UserCheck, Store } from 'lucide-react';
 
 const SellerDashboard = () => {
-    const { currentUser } = useAuth();
+    const { currentUser, userRole } = useAuth();
     const [products, setProducts] = useState([]);
     const [sellerData, setSellerData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [requestingVerif, setRequestingVerif] = useState(false);
+    const [isUpgrading, setIsUpgrading] = useState(false);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
+            if (userRole === 'buyer') {
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             try {
                 // Fetch seller details
@@ -29,7 +35,6 @@ const SellerDashboard = () => {
                 const q = query(
                     collection(db, 'products'),
                     where('sellerId', '==', currentUser.uid),
-                    // Note: Needs composite index in Firestore for where + orderBy. We omit orderBy here to simplify local setup, or do it client side.
                 );
                 const querySnapshot = await getDocs(q);
                 let productsData = querySnapshot.docs.map(doc => ({
@@ -37,7 +42,6 @@ const SellerDashboard = () => {
                     ...doc.data()
                 }));
 
-                // Client side sort with safety check
                 productsData.sort((a, b) => {
                     const timeA = a.createdAt?.seconds || 0;
                     const timeB = b.createdAt?.seconds || 0;
@@ -55,15 +59,28 @@ const SellerDashboard = () => {
         if (currentUser) {
             fetchDashboardData();
         }
-    }, [currentUser]);
+    }, [currentUser, userRole]);
+
+    const handleBecomeSeller = async () => {
+        setIsUpgrading(true);
+        try {
+            const userRef = doc(db, 'users', currentUser.uid);
+            await updateDoc(userRef, { role: 'seller' });
+            window.location.reload(); // Hard refresh to update auth context
+        } catch (error) {
+            console.error("Error upgrading to seller:", error);
+            alert("Failed to upgrade. Please try again.");
+        } finally {
+            setIsUpgrading(false);
+        }
+    };
 
     const handleVerificationRequest = () => {
-        const supportPhone = '2347073544811'; // Updated support number
+        const supportPhone = '2347073544811';
         const message = encodeURIComponent(`Hi, I'm ${currentUser.displayName || 'a seller'} and I'd like to request verification for my Market-U account (ID: ${currentUser.uid}).`);
         const whatsappUrl = `https://wa.me/${supportPhone}?text=${message}`;
         window.open(whatsappUrl, '_blank');
         
-        // Still update the status in Firestore for tracking
         const sellerRef = doc(db, 'users', currentUser.uid);
         updateDoc(sellerRef, { verificationStatus: 'pending' });
         setSellerData({ ...sellerData, verificationStatus: 'pending' });
@@ -71,6 +88,33 @@ const SellerDashboard = () => {
 
     if (loading) {
         return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}>Loading dashboard...</div>;
+    }
+
+    if (userRole === 'buyer') {
+        return (
+            <div className="container" style={{ paddingTop: '3rem', maxWidth: '600px' }}>
+                <div className="card animate-fade-in-up" style={{ padding: '4rem 2.5rem', textAlign: 'center' }}>
+                    <div style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem auto' }}>
+                        <Store size={40} color="var(--primary-color)" />
+                    </div>
+                    <h1 style={{ fontSize: '2.25rem', fontWeight: '900', marginBottom: '1rem', letterSpacing: '-0.03em' }}>Ready to start selling?</h1>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '1.125rem', lineHeight: '1.6' }}>
+                        Join the Market-U seller community and reach hundreds of students on campus today.
+                    </p>
+                    <button 
+                        onClick={handleBecomeSeller} 
+                        disabled={isUpgrading}
+                        className="btn btn-primary" 
+                        style={{ width: '100%', padding: '1rem', borderRadius: 'var(--radius-lg)', fontSize: '1.125rem' }}
+                    >
+                        {isUpgrading ? 'Setting up your shop...' : 'Become a Seller Today'}
+                    </button>
+                    <p style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                        By continuing, you agree to our seller terms and conditions.
+                    </p>
+                </div>
+            </div>
+        );
     }
 
     return (
