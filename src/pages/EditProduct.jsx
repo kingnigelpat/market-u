@@ -19,6 +19,7 @@ const EditProduct = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+    const [sellerVerified, setSellerVerified] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -37,6 +38,12 @@ const EditProduct = () => {
                             description: data.description || '',
                             category: data.category || 'Electronics'
                         });
+                        // Fetch LIVE seller verified status to keep product in sync
+                        const sellerRef = doc(db, 'users', currentUser.uid);
+                        const sellerSnap = await getDoc(sellerRef);
+                        if (sellerSnap.exists()) {
+                            setSellerVerified(!!sellerSnap.data().verified);
+                        }
                     }
                 } else {
                     setError("Product not found.");
@@ -74,7 +81,8 @@ const EditProduct = () => {
                 title: formData.title,
                 description: formData.description,
                 price: parseFloat(formData.price),
-                category: formData.category
+                category: formData.category,
+                sellerVerified: sellerVerified, // Always sync with live seller status
             });
 
             // Redirect back to product detail

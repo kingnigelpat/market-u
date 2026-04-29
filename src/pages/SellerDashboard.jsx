@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
@@ -27,8 +27,10 @@ const SellerDashboard = () => {
                 // Fetch seller details
                 const sellerRef = doc(db, 'users', currentUser.uid);
                 const sellerSnap = await getDoc(sellerRef);
+                let currentSellerData = null;
                 if (sellerSnap.exists()) {
-                    setSellerData({ id: sellerSnap.id, ...sellerSnap.data() });
+                    currentSellerData = { id: sellerSnap.id, ...sellerSnap.data() };
+                    setSellerData(currentSellerData);
                 }
 
                 // Fetch seller's products
@@ -37,9 +39,9 @@ const SellerDashboard = () => {
                     where('sellerId', '==', currentUser.uid),
                 );
                 const querySnapshot = await getDocs(q);
-                let productsData = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
+                let productsData = querySnapshot.docs.map(snap => ({
+                    id: snap.id,
+                    ...snap.data()
                 }));
 
                 productsData.sort((a, b) => {
@@ -47,6 +49,22 @@ const SellerDashboard = () => {
                     const timeB = b.createdAt?.seconds || 0;
                     return timeB - timeA;
                 });
+
+                // ✅ AUTO-SYNC: If seller's verified status has changed,
+                // batch-update ALL their products so badges stay in sync.
+                if (currentSellerData) {
+                    const liveVerified = !!currentSellerData.verified;
+                    const outOfSync = productsData.filter(p => !!p.sellerVerified !== liveVerified);
+                    if (outOfSync.length > 0) {
+                        const batch = writeBatch(db);
+                        outOfSync.forEach(p => {
+                            batch.update(doc(db, 'products', p.id), { sellerVerified: liveVerified });
+                        });
+                        await batch.commit();
+                        // Update local state too
+                        productsData = productsData.map(p => ({ ...p, sellerVerified: liveVerified }));
+                    }
+                }
 
                 setProducts(productsData);
             } catch (error) {

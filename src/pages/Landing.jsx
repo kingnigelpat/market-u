@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import '../styles/landing.css';
-import { Camera, Search, UserCheck, Smartphone } from 'lucide-react';
+import { Search, UserCheck, Smartphone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import AuthPromptModal from '../components/AuthPromptModal';
 
 const Landing = () => {
     const { currentUser, loading } = useAuth();
+    const [showAuthModal, setShowAuthModal] = useState(false);
 
     if (loading) return null; // Avoid flashing landing page while checking auth state 
 
@@ -34,9 +37,13 @@ const Landing = () => {
 
                 {/* CTA Buttons */}
                 <div className="animate-fade-in-up delay-300" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', maxWidth: '320px', marginTop: '0.5rem' }}>
-                    <Link to="/market" className="btn-premium" style={{ fontSize: '1rem', padding: '1rem', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--primary-color)', color: 'white', fontWeight: '700', textAlign: 'center', boxShadow: '0 8px 16px -4px rgba(37, 99, 235, 0.3)' }}>
-                        Start Searching
-                    </Link>
+                    <button 
+                        onClick={() => setShowAuthModal(true)} 
+                        className="btn-premium" 
+                        style={{ fontSize: '1rem', padding: '1rem', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--primary-color)', color: 'white', fontWeight: '700', textAlign: 'center', boxShadow: '0 8px 16px -4px rgba(37, 99, 235, 0.3)', border: 'none', cursor: 'pointer' }}
+                    >
+                        Start Browsing
+                    </button>
                     <Link to="/register" className="btn-premium-alt" style={{ fontSize: '0.9375rem', padding: '0.875rem', borderRadius: 'var(--radius-lg)', border: '2px solid var(--text-primary)', color: 'var(--text-primary)', fontWeight: '700', textAlign: 'center' }}>
                         I Want to Sell
                     </Link>
@@ -137,7 +144,12 @@ const Landing = () => {
                     </div>
                 </div>
 
-
+                {/* Auth Modal */}
+                <AuthPromptModal 
+                    isOpen={showAuthModal} 
+                    onClose={() => setShowAuthModal(false)} 
+                    message="Sign up as a buyer to start exploring the campus marketplace and connecting with sellers!"
+                />
             </div>
         </div>
     );
