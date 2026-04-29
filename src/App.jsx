@@ -21,7 +21,7 @@ const AppContent = () => {
         return (
             <div className="loading-overlay">
                 <div className="spinner"></div>
-                <div className="loading-text">Loading Market-U...</div>
+                <div className="loading-text">Loading Market U...</div>
             </div>
         );
     }

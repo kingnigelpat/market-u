@@ -73,7 +73,7 @@ const ProductDetail = () => {
             phone = '234' + phone;
         }
 
-        const message = encodeURIComponent(`Hi ${product.sellerName}, I'm interested in your product: ${product.title} on Market-U!`);
+        const message = encodeURIComponent(`Hi ${product.sellerName}, I'm interested in your product: ${product.title} on Market U!`);
         const whatsappUrl = `https://wa.me/${phone}?text=${message}`;
         window.location.href = whatsappUrl;
     };
@@ -246,7 +246,7 @@ const ProductDetail = () => {
             <AuthPromptModal 
                 isOpen={showPrompt} 
                 onClose={() => setShowPrompt(false)} 
-                message="Sign up to contact sellers and start using Market-U"
+                message="Sign up to contact sellers and start using Market U"
             />
         </div>
     );

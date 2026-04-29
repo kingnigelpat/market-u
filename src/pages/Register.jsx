@@ -56,7 +56,7 @@ const Register = () => {
                     <div className="auth-icon">
                         <UserPlus size={28} />
                     </div>
-                    <h2>Join Market-U</h2>
+                    <h2>Join Market U</h2>
                     <p>Start buying and selling on campus</p>
                 </div>
 

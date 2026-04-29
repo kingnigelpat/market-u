@@ -35,7 +35,7 @@ const Login = () => {
                         <LogIn size={28} />
                     </div>
                     <h2>Welcome back</h2>
-                    <p>Log in to your Market-U account</p>
+                    <p>Log in to your Market U account</p>
                 </div>
 
                 {error && (

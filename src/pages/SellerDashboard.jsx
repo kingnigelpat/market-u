@@ -59,7 +59,7 @@ const SellerDashboard = () => {
 
     const handleVerificationRequest = () => {
         const supportPhone = '2347073544811'; // Updated support number
-        const message = encodeURIComponent(`Hi, I'm ${currentUser.displayName || 'a seller'} and I'd like to request verification for my Market-U account (ID: ${currentUser.uid}).`);
+        const message = encodeURIComponent(`Hi, I'm ${currentUser.displayName || 'a seller'} and I'd like to request verification for my Market U account (ID: ${currentUser.uid}).`);
         const whatsappUrl = `https://wa.me/${supportPhone}?text=${message}`;
         window.open(whatsappUrl, '_blank');
         

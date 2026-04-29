@@ -12,6 +12,8 @@
   --success-color: #10B981;
   --danger-color: #EF4444;
   --warning-color: #F59E0B;
+  --brand-teal: #14B8A6;
+  --brand-dark: #1E293B;
 
   --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -409,6 +411,13 @@ select:focus {
 
 .rae-link span {
   color: var(--primary-color);
+}
+
+.brand-u {
+  color: var(--brand-teal);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 900;
+  margin-left: 0.1em;
 }
 
 /* Mobile Polish */

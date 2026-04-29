@@ -30,7 +30,7 @@ const Footer = () => {
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
             }}>
-              Market-U
+              Market <span style={{ color: 'var(--brand-teal)' }}>U</span>
             </h2>
             <p style={{ 
               color: '#94a3b8', 
@@ -113,7 +113,7 @@ const Footer = () => {
           gap: '1rem'
         }}>
           <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
-            © {new Date().getFullYear()} Market-U. All rights reserved.
+            © {new Date().getFullYear()} Market U. All rights reserved.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ color: '#64748b', fontSize: '0.875rem' }}>Powered by</span>
