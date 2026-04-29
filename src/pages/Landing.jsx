@@ -90,6 +90,51 @@ const Landing = () => {
                     </div>
                 </div>
 
+                {/* Install Guide Section */}
+                <div style={{ marginTop: '5rem', width: '100%', maxWidth: '500px', textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', backgroundColor: 'rgba(37, 99, 235, 0.08)', color: 'var(--primary-color)', borderRadius: '99px', fontSize: '0.875rem', fontWeight: '700', marginBottom: '1.5rem' }}>
+                        <Smartphone size={16} />
+                        Web App Available
+                    </div>
+                    <h2 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '1rem', letterSpacing: '-0.03em' }}>Install Market-U</h2>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem' }}>Get the full experience without downloading from the App Store.</p>
+
+                    <div style={{ display: 'grid', gap: '2rem', textAlign: 'left' }}>
+                        {/* iOS */}
+                        <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                                <div style={{ width: '40px', height: '40px', backgroundColor: '#f3f4f6', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <span style={{ fontSize: '1.25rem' }}></span>
+                                </div>
+                                <h3 style={{ fontSize: '1.125rem', fontWeight: '800' }}>iPhone & iPad</h3>
+                            </div>
+                            <ol style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
+                                <li>Open <strong>marketu.store</strong> in Safari</li>
+                                <li>Tap the <strong>Share</strong> button <span style={{ color: '#3b82f6', fontSize: '1.1rem' }}>⎙</span></li>
+                                <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+                                <li>Tap <strong>Add</strong> to finish</li>
+                            </ol>
+                        </div>
+
+                        {/* Android / Chrome */}
+                        <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                                <div style={{ width: '40px', height: '40px', backgroundColor: '#f3f4f6', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <div style={{ width: '20px', height: '20px', backgroundColor: '#34a853', borderRadius: '50%' }}></div>
+                                </div>
+                                <h3 style={{ fontSize: '1.125rem', fontWeight: '800' }}>Android & Chrome</h3>
+                            </div>
+                            <ol style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
+                                <li>Open <strong>marketu.store</strong> in Chrome</li>
+                                <li>Tap the <strong>three dots</strong> ⋮ in the corner</li>
+                                <li>Tap <strong>"Install App"</strong> or <strong>"Add to Home Screen"</strong></li>
+                                <li>Follow the prompts to install</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+
             </div>
         </div>
     );
