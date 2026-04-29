@@ -18,11 +18,6 @@ const Home = () => {
         const fetchProducts = async () => {
             setLoading(true);
             try {
-                // Fetch dynamically verified sellers directly from User database
-                const usersQuery = query(collection(db, 'users'), where('verified', '==', true));
-                const verifiedUsersSnap = await getDocs(usersQuery);
-                const verifiedSellerIds = new Set(verifiedUsersSnap.docs.map(doc => doc.id));
-
                 // Fetch Products - Limit to top 50 for speed
                 const q = query(
                     collection(db, 'products'), 
@@ -31,17 +26,10 @@ const Home = () => {
                 );
                 const querySnapshot = await getDocs(q);
 
-                let productsData = querySnapshot.docs.map(doc => {
-                    const data = doc.data();
-                    // Override local product verified state if the seller's root account is verified
-                    const isActuallyVerified = verifiedSellerIds.has(data.sellerId) || data.sellerVerified;
-
-                    return {
-                        id: doc.id,
-                        ...data,
-                        sellerVerified: isActuallyVerified
-                    };
-                });
+                let productsData = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
 
                 setProducts(productsData);
             } catch (error) {
@@ -119,6 +107,30 @@ const Home = () => {
             </div>
 
             <div className="container">
+                {/* Buyer to Seller Prompt Banner */}
+                {isAuthenticated && !isSeller && (
+                    <div className="animate-fade-in-up" style={{ 
+                        marginBottom: '2.5rem', 
+                        padding: '1.5rem', 
+                        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.02) 100%)',
+                        borderRadius: 'var(--radius-xl)',
+                        border: '1px solid rgba(37, 99, 235, 0.15)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        textAlign: 'center',
+                        gap: '1rem'
+                    }}>
+                        <div>
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: '800', marginBottom: '0.25rem' }}>Want to earn extra money?</h3>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>List your products or services on Market-U and reach hundreds of students.</p>
+                        </div>
+                        <Link to="/dashboard" className="btn btn-primary" style={{ padding: '0.625rem 1.5rem', borderRadius: 'var(--radius-lg)', fontSize: '0.875rem' }}>
+                            Start Selling Today
+                        </Link>
+                    </div>
+                )}
+
                 {/* Filters Section */}
                 <div style={{ marginBottom: '3rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>

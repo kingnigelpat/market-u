@@ -66,7 +66,18 @@ const Navbar = () => {
                     {isAuthenticated ? (
                         <>
                             {!isSeller && (
-                                <Link to="/dashboard" style={{ fontSize: '0.8125rem', fontWeight: '700', color: 'var(--primary-color)', marginRight: '0.5rem' }} className="hide-on-mobile">Sell on Market-U</Link>
+                                <Link to="/dashboard" className="btn" style={{ 
+                                    fontSize: '0.75rem', 
+                                    padding: '0.4rem 0.75rem', 
+                                    borderRadius: '99px',
+                                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                                    color: 'var(--primary-color)',
+                                    fontWeight: '800',
+                                    border: '1px solid rgba(37, 99, 235, 0.2)',
+                                    marginRight: '0.25rem'
+                                }}>
+                                    Sell
+                                </Link>
                             )}
                             {isSeller && (
                                 <Link to="/dashboard" className="btn btn-primary" style={{ fontSize: '0.8125rem', padding: '0.5rem 1rem', borderRadius: '99px' }}>
