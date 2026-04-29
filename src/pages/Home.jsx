@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, isSeller, userRole } = useAuth();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
