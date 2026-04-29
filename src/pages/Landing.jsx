@@ -56,8 +56,9 @@ const Landing = () => {
                             <span style={{ color: 'var(--danger-color)', fontWeight: 'bold' }}>✕</span> Hard to find what you need
                         </li>
                     </ul>
-                    <div style={{ padding: '1.25rem', backgroundColor: 'white', borderRadius: 'var(--radius-lg)', borderLeft: '4px solid var(--primary-color)', boxShadow: 'var(--shadow-sm)' }}>
-                        <p style={{ fontSize: '1rem', color: 'var(--text-primary)', fontWeight: '600', lineHeight: '1.5', margin: 0 }}>
+                    <div style={{ padding: '1.25rem', backgroundColor: 'var(--surface-color)', borderRadius: 'var(--radius-lg)', borderLeft: '4px solid var(--primary-color)', boxShadow: 'var(--shadow-md)', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(90deg, var(--primary-color) 0%, transparent 100%)', opacity: 0.03 }}></div>
+                        <p style={{ fontSize: '1rem', color: 'var(--text-primary)', fontWeight: '600', lineHeight: '1.5', margin: 0, position: 'relative', zIndex: 1 }}>
                             Market-U connects you to instant search + verified listings.
                         </p>
                     </div>
@@ -68,8 +69,8 @@ const Landing = () => {
                     <h2 className="animate-fade-in-up delay-500" style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '2.5rem', textAlign: 'center', letterSpacing: '-0.03em' }}>⚡ WHY MARKET-U?</h2>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div className="glass-card animate-fade-in-up delay-500" style={{ padding: '1.75rem', backgroundColor: 'var(--surface-color)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)' }}>
-                            <div className="icon-box" style={{ width: '48px', height: '48px', backgroundColor: 'white', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', boxShadow: 'var(--shadow-sm)' }}>
+                        <div className="glass-card animate-fade-in-up delay-500" style={{ padding: '1.75rem', backgroundColor: 'var(--surface-color)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)', position: 'relative' }}>
+                            <div className="icon-box" style={{ width: '48px', height: '48px', backgroundColor: 'var(--bg-color)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)' }}>
                                 <Search size={24} color="var(--primary-color)" />
                             </div>
                             <h3 style={{ fontSize: '1.25rem', marginBottom: '0.75rem', fontWeight: '800' }}>Search, Don't Scroll</h3>
@@ -78,8 +79,8 @@ const Landing = () => {
                             </p>
                         </div>
 
-                        <div className="glass-card animate-fade-in-up delay-500" style={{ padding: '1.75rem', backgroundColor: 'var(--surface-color)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)' }}>
-                            <div className="icon-box" style={{ width: '48px', height: '48px', backgroundColor: 'white', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', boxShadow: 'var(--shadow-sm)' }}>
+                        <div className="glass-card animate-fade-in-up delay-500" style={{ padding: '1.75rem', backgroundColor: 'var(--surface-color)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)', position: 'relative' }}>
+                            <div className="icon-box" style={{ width: '48px', height: '48px', backgroundColor: 'var(--bg-color)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)' }}>
                                 <UserCheck size={24} color="var(--success-color)" />
                             </div>
                             <h3 style={{ fontSize: '1.25rem', marginBottom: '0.75rem', fontWeight: '800' }}>Verified Sellers</h3>
@@ -101,9 +102,10 @@ const Landing = () => {
 
                     <div style={{ display: 'grid', gap: '2rem', textAlign: 'left' }}>
                         {/* iOS */}
-                        <div style={{ backgroundColor: 'var(--surface-color)', padding: '2rem', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <div style={{ width: '40px', height: '40px', backgroundColor: '#f3f4f6', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ backgroundColor: 'var(--surface-color)', padding: '2rem', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', position: 'relative', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', top: 0, right: 0, width: '100px', height: '100px', background: 'radial-gradient(circle at top right, var(--primary-color) 0%, transparent 70%)', opacity: 0.05 }}></div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', position: 'relative', zIndex: 1 }}>
+                                <div style={{ width: '40px', height: '40px', backgroundColor: 'var(--bg-color)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-color)' }}>
                                     <span style={{ fontSize: '1.25rem' }}></span>
                                 </div>
                                 <h3 style={{ fontSize: '1.125rem', fontWeight: '800' }}>iPhone & iPad</h3>
@@ -117,9 +119,10 @@ const Landing = () => {
                         </div>
 
                         {/* Android / Chrome */}
-                        <div style={{ backgroundColor: 'var(--surface-color)', padding: '2rem', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <div style={{ width: '40px', height: '40px', backgroundColor: '#f3f4f6', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ backgroundColor: 'var(--surface-color)', padding: '2rem', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', position: 'relative', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', top: 0, right: 0, width: '100px', height: '100px', background: 'radial-gradient(circle at top right, var(--primary-color) 0%, transparent 70%)', opacity: 0.05 }}></div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', position: 'relative', zIndex: 1 }}>
+                                <div style={{ width: '40px', height: '40px', backgroundColor: 'var(--bg-color)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-color)' }}>
                                     <div style={{ width: '20px', height: '20px', backgroundColor: '#34a853', borderRadius: '50%' }}></div>
                                 </div>
                                 <h3 style={{ fontSize: '1.125rem', fontWeight: '800' }}>Android & Chrome</h3>
