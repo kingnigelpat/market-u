@@ -65,7 +65,7 @@ const AuthPromptModal = ({ isOpen, onClose, message }) => {
                     Authentication Required
                 </h3>
                 <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: '1.6' }}>
-                    {message || "Sign up to connect with sellers and start using Market U"}
+                    {message || "Sign up to connect with sellers and start using Market-U"}
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

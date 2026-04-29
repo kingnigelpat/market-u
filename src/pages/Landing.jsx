@@ -18,7 +18,7 @@ const Landing = () => {
 
                 {/* Hero Logo */}
                 <div className="animate-fade-in-up" style={{ marginTop: '2rem', marginBottom: '1rem' }}>
-                    <img src="/logo.png" alt="Market U Logo" style={{ width: '100%', maxWidth: '200px', objectFit: 'contain' }} />
+                    <img src="/logo.png" alt="Market-U Logo" style={{ width: '100%', maxWidth: '180px', objectFit: 'contain' }} />
                 </div>
 
                 {/* Main Headline */}
@@ -58,14 +58,14 @@ const Landing = () => {
                     </ul>
                     <div style={{ padding: '1.25rem', backgroundColor: 'white', borderRadius: 'var(--radius-lg)', borderLeft: '4px solid var(--primary-color)', boxShadow: 'var(--shadow-sm)' }}>
                         <p style={{ fontSize: '1rem', color: 'var(--text-primary)', fontWeight: '600', lineHeight: '1.5', margin: 0 }}>
-                            Market <span className="brand-u">U</span> connects you to instant search + verified listings.
+                            Market-U connects you to instant search + verified listings.
                         </p>
                     </div>
                 </div>
 
                 {/* Features Section */}
                 <div style={{ marginTop: '5rem', width: '100%', maxWidth: '500px' }}>
-                    <h2 className="animate-fade-in-up delay-500" style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '2.5rem', textAlign: 'center', letterSpacing: '-0.03em' }}>⚡ WHY MARKET <span className="brand-u">U</span>?</h2>
+                    <h2 className="animate-fade-in-up delay-500" style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '2.5rem', textAlign: 'center', letterSpacing: '-0.03em' }}>⚡ WHY MARKET-U?</h2>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         <div className="glass-card animate-fade-in-up delay-500" style={{ padding: '1.75rem', backgroundColor: 'var(--surface-color)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)' }}>

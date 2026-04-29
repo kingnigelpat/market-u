@@ -30,8 +30,8 @@ const Navbar = () => {
         }}>
             <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '900', fontFamily: '"Outfit", sans-serif', fontSize: '1.25rem', color: 'var(--primary-color)' }}>
-                    <img src="/icon.png" alt="Market U Icon" style={{ height: '32px', width: 'auto' }} />
-                    <span className="hide-on-mobile">MARKET <span className="brand-u">U</span></span>
+                    <img src="/icon.png" alt="Market-U Icon" style={{ height: '28px', width: 'auto' }} />
+                    <span className="hide-on-mobile">MARKET-U</span>
                 </Link>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
