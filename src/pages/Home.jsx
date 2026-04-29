@@ -107,7 +107,7 @@ const Home = () => {
                                 fontSize: '1.125rem', 
                                 borderRadius: '1.5rem', 
                                 border: 'none', 
-                                backgroundColor: 'white', 
+                                backgroundColor: 'var(--surface-color)', 
                                 color: 'var(--text-primary)',
                                 outline: 'none',
                                 boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
@@ -217,7 +217,7 @@ const Home = () => {
                     padding: 0.625rem 1.25rem;
                     border-radius: 99px;
                     border: 1px solid var(--border-color);
-                    background-color: white;
+                    background-color: var(--surface-color);
                     color: var(--text-primary);
                     font-weight: 600;
                     font-size: 0.875rem;

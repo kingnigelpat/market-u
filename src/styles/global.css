@@ -12,6 +12,7 @@
   --success-color: #10B981;
   --danger-color: #EF4444;
   --warning-color: #F59E0B;
+  --nav-bg: rgba(248, 250, 252, 0.8);
 
   --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -22,6 +23,21 @@
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
 }
+
+[data-theme="dark"] {
+  --primary-color: #3B82F6;
+  --primary-hover: #2563EB;
+  --bg-color: #0F172A;
+  --surface-color: #1E293B;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --border-color: #334155;
+  --nav-bg: rgba(15, 23, 42, 0.8);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+}
+
 
 * {
   margin: 0;
@@ -113,7 +129,7 @@ select:focus {
 }
 
 .btn-secondary {
-  background-color: white;
+  background-color: var(--bg-color);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
 }
@@ -141,7 +157,7 @@ select:focus {
 }
 
 .card {
-  background-color: white;
+  background-color: var(--surface-color);
   border-radius: 1.25rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border: 1px solid var(--border-color);
@@ -265,7 +281,7 @@ select:focus {
 .auth-card {
   width: 100%;
   max-width: 460px;
-  background-color: white;
+  background-color: var(--bg-color);
   padding: 3.5rem 2.5rem;
   border-radius: var(--radius-xl);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
@@ -311,7 +327,7 @@ select:focus {
 }
 
 .form-group input:focus {
-  background-color: white;
+  background-color: var(--bg-color);
   border-color: var(--primary-color);
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
 }

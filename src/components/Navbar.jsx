@@ -1,12 +1,23 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { LogOut, User, Store } from 'lucide-react';
+import { LogOut, User, Store, Sun, Moon } from 'lucide-react';
 
 const Navbar = () => {
     const { isAuthenticated, isSeller, userRole } = useAuth();
     const navigate = useNavigate();
+    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    };
 
     const handleLogout = async () => {
         try {
@@ -26,7 +37,7 @@ const Navbar = () => {
             top: 0,
             zIndex: 1000,
             backdropFilter: 'blur(10px)',
-            background: 'rgba(248, 250, 252, 0.8)'
+            background: 'var(--nav-bg)'
         }}>
             <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '900', fontFamily: '"Outfit", sans-serif', fontSize: '1.25rem', color: 'var(--primary-color)' }}>
@@ -37,6 +48,21 @@ const Navbar = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Link to="/market" style={{ fontSize: '0.8125rem', fontWeight: '700', color: 'var(--text-primary)', marginRight: '0.25rem' }}>Market</Link>
                     
+                    <button 
+                        onClick={toggleTheme} 
+                        className="btn" 
+                        style={{ 
+                            padding: '0.375rem', 
+                            color: 'var(--text-secondary)', 
+                            backgroundColor: 'rgba(148, 163, 184, 0.1)', 
+                            borderRadius: 'var(--radius-md)',
+                            marginRight: '0.25rem'
+                        }} 
+                        title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+                    >
+                        {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+                    </button>
+
                     {isAuthenticated ? (
                         <>
                             {isSeller && (
