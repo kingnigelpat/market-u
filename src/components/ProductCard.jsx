@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import AuthPromptModal from './AuthPromptModal';
 import { optimizeImage } from '../utils/cloudinary';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, index = 0 }) => {
     const { isAuthenticated } = useAuth();
     const [showPrompt, setShowPrompt] = useState(false);
 
@@ -33,8 +33,18 @@ const ProductCard = ({ product }) => {
 
     return (
         <>
-            <Link to={`/product/${product.id}`} className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-                <div style={{ position: 'relative', paddingTop: '100%', backgroundColor: 'var(--bg-color)' }}>
+            <Link 
+                to={`/product/${product.id}`} 
+                className="card animate-fade-in-up" 
+                style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    height: '100%', 
+                    position: 'relative',
+                    animationDelay: `${index * 0.05}s`
+                }}
+            >
+                <div style={{ position: 'relative', paddingTop: '100%', backgroundColor: 'var(--bg-color)', overflow: 'hidden' }}>
                     <img
                         src={product.images && product.images.length > 0 ? optimizeImage(product.images[0], 400) : 'https://via.placeholder.com/400'}
                         alt={product.title}
@@ -43,8 +53,13 @@ const ProductCard = ({ product }) => {
                         className="product-card-image"
                     />
                     {product.category && (
-                        <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '0.75rem', padding: '0.25rem 0.5rem', borderRadius: '4px', fontWeight: '500' }}>
+                        <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '0.75rem', padding: '0.25rem 0.5rem', borderRadius: '4px', fontWeight: '500', zIndex: 5 }}>
                             {product.category}
+                        </span>
+                    )}
+                    {index < 3 && (
+                        <span style={{ position: 'absolute', top: '0.5rem', left: '0.5rem', background: 'var(--danger-color)', color: 'white', fontSize: '0.75rem', padding: '0.25rem 0.5rem', borderRadius: '4px', fontWeight: '800', zIndex: 5, boxShadow: '0 2px 4px rgba(0,0,0,0.2)', letterSpacing: '0.05em' }}>
+                            NEW
                         </span>
                     )}
                 </div>

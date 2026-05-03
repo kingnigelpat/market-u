@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { LogIn } from 'lucide-react';
 
 const Login = () => {
@@ -12,19 +12,13 @@ const Login = () => {
     const [resetSent, setResetSent] = useState(false);
     const navigate = useNavigate();
 
-    const handleForgotPassword = async () => {
-        if (!email) {
-            setError('Please enter your email address to reset password.');
-            return;
-        }
-        try {
-            await sendPasswordResetEmail(auth, email);
-            setResetSent(true);
-            setError('');
-        } catch (err) {
-            setError('Failed to send reset email. Make sure your email is correct.');
-            console.error(err);
-        }
+    const handleForgotPassword = () => {
+        const message = email 
+            ? `Hello Admin, I forgot my Market-U password. My email is: ${email}`
+            : `Hello Admin, I forgot my Market-U password.`;
+        window.open(`https://wa.me/2347073544811?text=${encodeURIComponent(message)}`, '_blank');
+        setResetSent(true);
+        setError('');
     };
 
     const handleSubmit = async (e) => {
@@ -56,17 +50,17 @@ const Login = () => {
 
                 {resetSent && (
                     <div style={{ 
-                        backgroundColor: 'rgba(34, 197, 94, 0.08)', 
-                        color: '#16a34a', 
+                        backgroundColor: 'rgba(37, 99, 235, 0.08)', 
+                        color: 'var(--primary-color)', 
                         padding: '1rem', 
                         borderRadius: 'var(--radius-lg)', 
                         marginBottom: '1.5rem', 
                         fontSize: '0.875rem',
                         fontWeight: '500',
-                        border: '1px solid rgba(34, 197, 94, 0.15)',
+                        border: '1px solid rgba(37, 99, 235, 0.15)',
                         textAlign: 'center'
                     }}>
-                        Password reset link sent! Check your email to create a new password.
+                        Redirecting to WhatsApp support. Please message the Admin to reset your password.
                     </div>
                 )}
 

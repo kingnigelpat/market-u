@@ -398,6 +398,33 @@ select:focus {
   letter-spacing: -0.01em;
 }
 
+/* Animations & Micro-interactions */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-color) 8%, var(--border-color) 18%, var(--surface-color) 33%);
+  background-size: 2000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: var(--radius-md);
+}
+
+.btn:active, .card:active {
+  transform: scale(0.96) !important;
+  transition: transform 0.1s ease !important;
+}
+
 /* Footer & Branding */
 .rae-footer {
   padding: 3rem 1.5rem;

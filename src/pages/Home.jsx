@@ -146,8 +146,8 @@ const Home = () => {
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.02em' }}>
-                            {categoryFilter === 'all' ? 'Latest Listings' : categoryFilter}
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {categoryFilter === 'all' && !searchTerm ? '🔥 Trending & Just Added' : categoryFilter === 'all' ? 'Search Results' : categoryFilter}
                             <span style={{ marginLeft: '0.75rem', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-secondary)', backgroundColor: 'var(--surface-color)', padding: '0.25rem 0.75rem', borderRadius: '99px' }}>
                                 {filteredProducts.length} items
                             </span>
@@ -157,14 +157,23 @@ const Home = () => {
 
                 {/* Product Feed */}
                 {loading ? (
-                    <div style={{ textAlign: 'center', padding: '6rem 0' }}>
-                        <div className="spinner" style={{ margin: '0 auto 1.5rem auto' }}></div>
-                        <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Discovering great deals...</p>
+                    <div className="grid grid-cols-4">
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                            <div key={n} className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0' }}>
+                                <div className="skeleton" style={{ paddingTop: '100%', width: '100%', borderRadius: '0' }}></div>
+                                <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    <div className="skeleton" style={{ height: '1.25rem', width: '80%' }}></div>
+                                    <div className="skeleton" style={{ height: '1rem', width: '50%' }}></div>
+                                    <div className="skeleton" style={{ height: '1.5rem', width: '40%', marginTop: 'auto' }}></div>
+                                    <div className="skeleton" style={{ height: '2.5rem', width: '100%', borderRadius: '1rem', marginTop: '0.5rem' }}></div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : filteredProducts.length > 0 ? (
                     <div className="grid grid-cols-4">
-                        {filteredProducts.map(product => (
-                            <ProductCard key={product.id} product={product} />
+                        {filteredProducts.map((product, index) => (
+                            <ProductCard key={product.id} product={product} index={index} />
                         ))}
                     </div>
                 ) : (
