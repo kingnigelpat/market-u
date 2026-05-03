@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { LogIn } from 'lucide-react';
 
 const Login = () => {
@@ -9,7 +9,23 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [resetSent, setResetSent] = useState(false);
     const navigate = useNavigate();
+
+    const handleForgotPassword = async () => {
+        if (!email) {
+            setError('Please enter your email address to reset password.');
+            return;
+        }
+        try {
+            await sendPasswordResetEmail(auth, email);
+            setResetSent(true);
+            setError('');
+        } catch (err) {
+            setError('Failed to send reset email. Make sure your email is correct.');
+            console.error(err);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -37,6 +53,22 @@ const Login = () => {
                     <h2>Welcome back</h2>
                     <p>Log in to your Market-U account</p>
                 </div>
+
+                {resetSent && (
+                    <div style={{ 
+                        backgroundColor: 'rgba(34, 197, 94, 0.08)', 
+                        color: '#16a34a', 
+                        padding: '1rem', 
+                        borderRadius: 'var(--radius-lg)', 
+                        marginBottom: '1.5rem', 
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        border: '1px solid rgba(34, 197, 94, 0.15)',
+                        textAlign: 'center'
+                    }}>
+                        Password reset link sent! Check your email to create a new password.
+                    </div>
+                )}
 
                 {error && (
                     <div style={{ 
@@ -67,7 +99,24 @@ const Login = () => {
                         />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="password">Password</label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <label htmlFor="password" style={{ marginBottom: 0 }}>Password</label>
+                            <button 
+                                type="button" 
+                                onClick={handleForgotPassword}
+                                style={{ 
+                                    background: 'none', 
+                                    border: 'none', 
+                                    color: 'var(--primary-color)', 
+                                    fontSize: '0.875rem', 
+                                    cursor: 'pointer',
+                                    padding: 0,
+                                    fontWeight: '500'
+                                }}
+                            >
+                                Forgot password?
+                            </button>
+                        </div>
                         <input
                             type="password"
                             id="password"

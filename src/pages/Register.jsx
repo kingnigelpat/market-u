@@ -42,7 +42,11 @@ const Register = () => {
 
             navigate('/');
         } catch (err) {
-            setError(err.message || 'Failed to register.');
+            if (err.code === 'auth/email-already-in-use') {
+                setError('An account with this email already exists. Please log in instead.');
+            } else {
+                setError(err.message || 'Failed to register.');
+            }
             console.error(err);
         } finally {
             setLoading(false);
@@ -104,13 +108,13 @@ const Register = () => {
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="phone">Phone Number (WhatsApp)</label>
+                        <label htmlFor="phone">WhatsApp Number</label>
                         <input 
                             type="tel" 
                             id="phone" 
                             name="phone" 
                             required 
-                            placeholder="+234..." 
+                            placeholder="e.g., +234... (Active WhatsApp number required)" 
                             value={formData.phone} 
                             onChange={handleChange} 
                         />
