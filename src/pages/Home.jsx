@@ -57,7 +57,7 @@ const Home = () => {
         <div className="market-container" style={{ paddingBottom: '8rem' }}>
             {/* Market Hero Section */}
             <div className="market-hero" style={{ 
-                background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
+                backgroundColor: '#1e40af',
                 padding: '4rem 1.5rem',
                 borderRadius: '0 0 3rem 3rem',
                 marginBottom: '3rem',
@@ -66,11 +66,21 @@ const Home = () => {
                 position: 'relative',
                 overflow: 'hidden'
             }}>
-                {/* Decorative circles */}
-                <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: '300px', height: '300px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', zIndex: 0 }}></div>
-                <div style={{ position: 'absolute', bottom: '-20%', left: '-5%', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', zIndex: 0 }}></div>
+                {/* Slideshow Background */}
+                <div className="hero-slideshow">
+                    <div className="hero-slide" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80)' }}></div>
+                    <div className="hero-slide" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80)' }}></div>
+                    <div className="hero-slide" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80)' }}></div>
+                </div>
 
-                <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+                {/* Gradient Overlay for Readability */}
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(30, 64, 175, 0.95) 100%)', zIndex: 1 }}></div>
+
+                {/* Animated Decorative circles */}
+                <div className="floating-circle-1" style={{ position: 'absolute', top: '-10%', right: '-5%', width: '300px', height: '300px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', zIndex: 2 }}></div>
+                <div className="floating-circle-2" style={{ position: 'absolute', bottom: '-20%', left: '-5%', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', zIndex: 2 }}></div>
+
+                <div className="container" style={{ position: 'relative', zIndex: 3 }}>
                     <h1 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', letterSpacing: '-0.03em' }}>
                         Explore the Campus Marketplace
                     </h1>
@@ -234,6 +244,52 @@ const Home = () => {
             </div>
 
             <style>{`
+                .hero-slideshow {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    z-index: 0;
+                }
+                .hero-slide {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-size: cover;
+                    background-position: center;
+                    opacity: 0;
+                    animation: slideFade 18s infinite;
+                }
+                .hero-slide:nth-child(1) { animation-delay: 0s; }
+                .hero-slide:nth-child(2) { animation-delay: 6s; }
+                .hero-slide:nth-child(3) { animation-delay: 12s; }
+                
+                @keyframes slideFade {
+                    0% { opacity: 0; transform: scale(1.05); }
+                    10% { opacity: 1; transform: scale(1); }
+                    33% { opacity: 1; transform: scale(1); }
+                    43% { opacity: 0; transform: scale(1.05); }
+                    100% { opacity: 0; transform: scale(1.05); }
+                }
+
+                .floating-circle-1 {
+                    animation: float1 10s ease-in-out infinite;
+                }
+                .floating-circle-2 {
+                    animation: float2 12s ease-in-out infinite reverse;
+                }
+                @keyframes float1 {
+                    0%, 100% { transform: translate(0, 0) scale(1); }
+                    50% { transform: translate(-30px, 20px) scale(1.1); }
+                }
+                @keyframes float2 {
+                    0%, 100% { transform: translate(0, 0) scale(1); }
+                    50% { transform: translate(30px, -20px) scale(1.1); }
+                }
+
                 .filter-pill {
                     padding: 0.625rem 1.25rem;
                     border-radius: 99px;
