@@ -40,7 +40,11 @@ const Register = () => {
                 verified: false // Sellers start unverified
             });
 
-            navigate('/');
+            if (formData.role === 'seller') {
+                navigate('/dashboard');
+            } else {
+                navigate('/');
+            }
         } catch (err) {
             if (err.code === 'auth/email-already-in-use') {
                 setError('An account with this email already exists. Please log in instead.');
