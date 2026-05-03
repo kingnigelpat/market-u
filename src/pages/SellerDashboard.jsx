@@ -185,7 +185,7 @@ const SellerDashboard = () => {
             </div>
 
             {/* Gamification / Stats Section */}
-            <div className="grid grid-cols-3" style={{ marginBottom: '2.5rem', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
                 <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                     <div style={{ padding: '1rem', backgroundColor: 'rgba(37, 99, 235, 0.1)', borderRadius: '1rem', color: 'var(--primary-color)' }}>
                         <Store size={28} />
