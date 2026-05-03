@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 import { MessageCircle, ArrowLeft, Trash2, Edit } from 'lucide-react';
 import VerifiedBadge from '../components/VerifiedBadge';
@@ -27,6 +27,14 @@ const ProductDetail = () => {
 
                 if (docSnap.exists()) {
                     const productData = { id: docSnap.id, ...docSnap.data() };
+
+                    // Increment real views (only if not the owner viewing their own product)
+                    if (!currentUser || currentUser.uid !== productData.sellerId) {
+                        try {
+                            updateDoc(docRef, { views: increment(1) });
+                            productData.views = (productData.views || 0) + 1;
+                        } catch(e) { console.error("Error incrementing views", e); }
+                    }
 
                     try {
                         const sellerRef = doc(db, 'users', productData.sellerId);

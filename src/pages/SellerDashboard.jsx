@@ -124,6 +124,9 @@ const SellerDashboard = () => {
             
             if (views > 120) views = 120 + pseudoRandom; // Cap it so it doesn't inflate endlessly
             
+            // Add real user views
+            views += (product.views || 0);
+
             totalViews += views;
         });
         

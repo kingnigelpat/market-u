@@ -42,14 +42,18 @@ const Home = () => {
         fetchProducts();
     }, []);
 
-    // Filter AND SORT (Verified first)
+    // Filter AND SORT (Verified first, then by views/demand)
     const filteredProducts = products.filter(product => {
         const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
         const matchesVerified = !verifiedOnly || Boolean(product.sellerVerified) === true;
         return matchesSearch && matchesCategory && matchesVerified;
     }).sort((a, b) => {
-        if (a.sellerVerified === b.sellerVerified) return 0;
+        if (a.sellerVerified === b.sellerVerified) {
+            const viewsA = a.views || 0;
+            const viewsB = b.views || 0;
+            return viewsB - viewsA;
+        }
         return a.sellerVerified ? -1 : 1;
     });
 
