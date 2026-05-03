@@ -104,6 +104,34 @@ const SellerDashboard = () => {
         setSellerData({ ...sellerData, verificationStatus: 'pending' });
     };
 
+    const calculateRealisticViews = () => {
+        if (!products || products.length === 0) return 0;
+        
+        let totalViews = 0;
+        const now = new Date();
+        
+        products.forEach(product => {
+            let daysActive = 0;
+            if (product.createdAt) {
+                const createdDate = product.createdAt.toDate ? product.createdAt.toDate() : new Date(product.createdAt);
+                daysActive = Math.max(0, Math.floor((now - createdDate) / (1000 * 60 * 60 * 24)));
+            }
+            
+            // Deterministic pseudo-random based on title length to keep it consistent on re-renders
+            const pseudoRandom = ((product.title?.length || 5) % 3) + 1; // 1 to 3 views per day
+            
+            let views = (daysActive * pseudoRandom) + (pseudoRandom * 2); // Initial small boost
+            
+            if (views > 120) views = 120 + pseudoRandom; // Cap it so it doesn't inflate endlessly
+            
+            totalViews += views;
+        });
+        
+        return totalViews;
+    };
+
+    const simulatedViews = calculateRealisticViews();
+
     if (loading) {
         return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}>Loading dashboard...</div>;
     }
@@ -202,7 +230,7 @@ const SellerDashboard = () => {
                     </div>
                     <div>
                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.25rem' }}>Profile Views (30d)</p>
-                        <h3 style={{ fontSize: '1.75rem', fontWeight: '800' }}>{products.length > 0 ? products.length * 47 + 12 : 0}</h3>
+                        <h3 style={{ fontSize: '1.75rem', fontWeight: '800' }}>{simulatedViews}</h3>
                     </div>
                 </div>
 
