@@ -120,7 +120,7 @@ const SellerDashboard = () => {
             // Deterministic pseudo-random based on title length to keep it consistent on re-renders
             const pseudoRandom = ((product.title?.length || 5) % 3) + 1; // 1 to 3 views per day
             
-            let views = (daysActive * pseudoRandom) + (pseudoRandom * 2); // Initial small boost
+            let views = daysActive * pseudoRandom; // Grow organically, starts at 0 on day 1
             
             if (views > 120) views = 120 + pseudoRandom; // Cap it so it doesn't inflate endlessly
             
