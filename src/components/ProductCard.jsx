@@ -46,9 +46,10 @@ const ProductCard = ({ product, index = 0 }) => {
             >
                 <div style={{ position: 'relative', paddingTop: '100%', backgroundColor: 'var(--bg-color)', overflow: 'hidden' }}>
                     <img
-                        src={product.images && product.images.length > 0 ? optimizeImage(product.images[0], 400) : 'https://via.placeholder.com/400'}
+                        src={product.images && product.images.length > 0 ? optimizeImage(product.images[0], 300) : 'https://via.placeholder.com/300'}
                         alt={product.title}
-                        loading="lazy"
+                        loading={index > 5 ? "lazy" : "eager"}
+                        fetchPriority={index <= 2 ? "high" : "auto"}
                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
                         className="product-card-image"
                     />

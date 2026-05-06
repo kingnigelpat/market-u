@@ -31,5 +31,5 @@ export const optimizeImage = (url, width = 600) => {
     const parts = url.split('/upload/');
     if (parts.length !== 2) return url;
     
-    return `${parts[0]}/upload/c_fill,w_${width},q_auto,f_auto/${parts[1]}`;
+    return `${parts[0]}/upload/c_fill,w_${width},q_auto:eco,f_auto/${parts[1]}`;
 };
