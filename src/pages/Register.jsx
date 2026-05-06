@@ -1,11 +1,13 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { UserPlus } from 'lucide-react';
 
 const Register = () => {
+    const location = useLocation();
+    
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -13,6 +15,13 @@ const Register = () => {
         password: '',
         role: 'buyer'
     });
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('role') === 'seller') {
+            setFormData(prev => ({ ...prev, role: 'seller' }));
+        }
+    }, [location]);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();

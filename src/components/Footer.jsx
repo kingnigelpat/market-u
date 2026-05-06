@@ -53,7 +53,7 @@ const Footer = () => {
             <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '1.5rem' }}>Quick Links</h3>
             <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <li><Link to="/market" style={{ color: '#94a3b8', fontSize: '0.9375rem', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = 'white'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}>Browse Market</Link></li>
-              <li><Link to="/register" style={{ color: '#94a3b8', fontSize: '0.9375rem', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = 'white'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}>Sell an Item</Link></li>
+              <li><Link to="/register?role=seller" style={{ color: '#94a3b8', fontSize: '0.9375rem', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = 'white'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}>Sell an Item</Link></li>
               <li><Link to="/login" style={{ color: '#94a3b8', fontSize: '0.9375rem', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = 'white'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}>Seller Login</Link></li>
               <li><Link to="/" style={{ color: '#94a3b8', fontSize: '0.9375rem', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = 'white'} onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}>About Us</Link></li>
             </ul>

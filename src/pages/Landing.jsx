@@ -44,7 +44,7 @@ const Landing = () => {
                     >
                         Start Browsing
                     </button>
-                    <Link to="/register" className="btn-premium-alt" style={{ fontSize: '0.9375rem', padding: '0.875rem', borderRadius: 'var(--radius-lg)', border: '2px solid var(--text-primary)', color: 'var(--text-primary)', fontWeight: '700', textAlign: 'center' }}>
+                    <Link to="/register?role=seller" className="btn-premium-alt" style={{ fontSize: '0.9375rem', padding: '0.875rem', borderRadius: 'var(--radius-lg)', border: '2px solid var(--text-primary)', color: 'var(--text-primary)', fontWeight: '700', textAlign: 'center' }}>
                         I Want to Sell
                     </Link>
                 </div>

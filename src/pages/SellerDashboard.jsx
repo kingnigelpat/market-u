@@ -277,14 +277,33 @@ const SellerDashboard = () => {
                     ))}
                 </div>
             ) : (
-                <div className="card animate-fade-in-up" style={{ padding: '4rem 2rem', textAlign: 'center', background: 'linear-gradient(to bottom, var(--surface-color), transparent)' }}>
-                    <div style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)', width: '100px', height: '100px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem auto' }}>
-                        <Zap size={48} color="var(--primary-color)" />
+                <div className="card animate-fade-in-up" style={{ padding: '3rem 2rem', textAlign: 'center', background: 'linear-gradient(to bottom, var(--surface-color), transparent)' }}>
+                    <div style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
+                        <Zap size={40} color="var(--primary-color)" />
                     </div>
                     <h3 style={{ fontSize: '1.875rem', fontWeight: '900', marginBottom: '1rem', letterSpacing: '-0.03em' }}>Zero to Hero: Start Selling!</h3>
-                    <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '1.125rem', maxWidth: '500px', margin: '0 auto 2.5rem auto', lineHeight: '1.6' }}>
-                        Right now, hundreds of students are looking for items to buy. <strong style={{ color: 'var(--text-primary)' }}>Don't miss out on easy cash.</strong> Post your first item in under 60 seconds!
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '1.125rem', maxWidth: '500px', margin: '0 auto', lineHeight: '1.6' }}>
+                        Right now, hundreds of students are looking for items to buy. <strong style={{ color: 'var(--text-primary)' }}>Don't miss out on easy cash.</strong>
                     </p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', maxWidth: '800px', margin: '0 auto 3rem auto', textAlign: 'left' }}>
+                        <div style={{ padding: '1.25rem', backgroundColor: 'var(--bg-color)', borderRadius: '1rem', border: '1px solid var(--border-color)' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(37, 99, 235, 0.1)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', marginBottom: '0.75rem' }}>1</div>
+                            <h4 style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '0.25rem' }}>Snap a photo</h4>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: '1.4' }}>Take a clear picture of your item with good lighting.</p>
+                        </div>
+                        <div style={{ padding: '1.25rem', backgroundColor: 'var(--bg-color)', borderRadius: '1rem', border: '1px solid var(--border-color)' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(37, 99, 235, 0.1)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', marginBottom: '0.75rem' }}>2</div>
+                            <h4 style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '0.25rem' }}>Add details</h4>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: '1.4' }}>Set a fair price, category, and write a quick description.</p>
+                        </div>
+                        <div style={{ padding: '1.25rem', backgroundColor: 'var(--bg-color)', borderRadius: '1rem', border: '1px solid var(--border-color)' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(37, 99, 235, 0.1)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', marginBottom: '0.75rem' }}>3</div>
+                            <h4 style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '0.25rem' }}>Get messages</h4>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: '1.4' }}>Buyers will contact you directly on WhatsApp to buy!</p>
+                        </div>
+                    </div>
+
                     <Link to="/add-product" className="btn btn-primary" style={{ padding: '1rem 2.5rem', fontSize: '1.125rem', borderRadius: '1.5rem', boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.4)' }}>
                         <PlusCircle size={24} /> Post Your First Item Now
                     </Link>
