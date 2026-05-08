@@ -85,11 +85,53 @@ const Home = () => {
                 <div className="floating-circle-2" style={{ position: 'absolute', bottom: '-20%', left: '-5%', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', zIndex: 2 }}></div>
 
                 <div className="container" style={{ position: 'relative', zIndex: 3 }}>
-                    <h1 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '1rem', letterSpacing: '-0.03em' }}>
-                        Explore the Campus Marketplace
+                    <div className="hero-badge animate-fade-in-up" style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '0.5rem',
+                        backgroundColor: 'rgba(255,255,255,0.15)', 
+                        backdropFilter: 'blur(12px)', 
+                        padding: '0.5rem 1.25rem', 
+                        borderRadius: '2rem', 
+                        marginBottom: '1.5rem', 
+                        fontSize: '0.875rem', 
+                        fontWeight: '700', 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '0.05em',
+                        border: '1px solid rgba(255,255,255,0.3)',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+                    }}>
+                        <span style={{ fontSize: '1.2rem' }}>✨</span> The #1 Student Marketplace
+                    </div>
+                    
+                    <h1 className="hero-title animate-fade-in-up" style={{ 
+                        fontSize: '3.5rem', 
+                        fontWeight: '900', 
+                        marginBottom: '1.25rem', 
+                        letterSpacing: '-0.03em', 
+                        lineHeight: '1.1',
+                        textShadow: '0 4px 20px rgba(0,0,0,0.15)'
+                    }}>
+                        Buy, Sell & Discover <br className="hide-mobile" />
+                        <span style={{ 
+                            color: '#fbbf24', 
+                            background: 'linear-gradient(to right, #fbbf24, #f59e0b)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            display: 'inline-block'
+                        }}>On Campus.</span>
                     </h1>
-                    <p style={{ fontSize: '1.125rem', opacity: 0.9, maxWidth: '600px', margin: '0 auto 2.5rem auto', lineHeight: '1.6' }}>
-                        Find the best deals on electronics, services, fashion, and more from verified student sellers.
+                    
+                    <p className="animate-fade-in-up" style={{ 
+                        fontSize: '1.15rem', 
+                        opacity: 0.95, 
+                        maxWidth: '600px', 
+                        margin: '0 auto 2.5rem auto', 
+                        lineHeight: '1.6',
+                        fontWeight: '500',
+                        textShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                    }}>
+                        Turn your unused items into cash or find incredible deals on electronics, fashion, and everyday essentials.
                     </p>
 
                     {/* Search Bar */}
@@ -330,8 +372,11 @@ const Home = () => {
                         padding: 3rem 1rem;
                         border-radius: 0 0 2rem 2rem;
                     }
-                    .market-hero h1 {
-                        font-size: 1.75rem;
+                    .hero-title {
+                        font-size: 2.25rem !important;
+                    }
+                    .hide-mobile {
+                        display: none;
                     }
                 }
             `}</style>
