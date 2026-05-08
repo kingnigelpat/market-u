@@ -51,6 +51,13 @@ const AddProduct = () => {
             return;
         }
 
+        // Handle commas in price
+        const numericPrice = parseFloat(formData.price.toString().replace(/,/g, ''));
+        if (isNaN(numericPrice) || numericPrice < 0) {
+            setError("Please enter a valid price.");
+            return;
+        }
+
         if (!sellerData) {
             setError("Unable to load seller data. Please try again.");
             return;
@@ -73,7 +80,7 @@ const AddProduct = () => {
                 sellerVerified: !!sellerData.verified,
                 title: formData.title,
                 description: formData.description,
-                price: parseFloat(formData.price),
+                price: numericPrice,
                 category: formData.category || 'Electronics',
                 images: imageUrls,
                 createdAt: serverTimestamp()
@@ -120,15 +127,17 @@ const AddProduct = () => {
                         <div className="form-group">
                             <label htmlFor="price">Price (₦)</label>
                             <input
-                                type="number"
+                                type="text"
+                                inputMode="decimal"
                                 id="price"
                                 name="price"
                                 value={formData.price}
-                                onChange={handleChange}
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/[^0-9.,]/g, '');
+                                    setFormData({ ...formData, price: val });
+                                }}
                                 required
-                                min="0"
-                                step="0.01"
-                                placeholder="0.00"
+                                placeholder="e.g., 10000 or 10,000"
                             />
                         </div>
 
@@ -172,12 +181,15 @@ const AddProduct = () => {
                                 className="btn btn-primary"
                                 style={{ width: '100%', padding: '0.75rem', justifyContent: 'center' }}
                             >
-                                {loading ? 'Adding Product...' : (
+                                {loading ? 'Uploading...' : (
                                     <>
-                                        <Save size={20} /> List Product
+                                        <Save size={20} /> Upload or Post
                                     </>
                                 )}
                             </button>
+                            <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                Click to post when you are done filling out the details.
+                            </p>
                         </div>
                     </form>
                 </div>
