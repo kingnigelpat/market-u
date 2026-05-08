@@ -125,34 +125,17 @@ const Home = () => {
 
                     {/* Search Bar - Glassmorphic */}
                     <div className="animate-fade-in-up" style={{ position: 'relative', width: '100%', maxWidth: '650px', animationDelay: '0.3s' }}>
-                        <div style={{ position: 'absolute', top: '50%', left: '1.5rem', transform: 'translateY(-50%)', color: '#94a3b8', zIndex: 2 }}>
-                            <Search size={22} />
+                        <div className="hero-search-icon" style={{ position: 'absolute', top: '50%', left: '1.25rem', transform: 'translateY(-50%)', color: '#94a3b8', zIndex: 2 }}>
+                            <Search size={20} />
                         </div>
                         <input
                             type="text"
-                            placeholder="What are you looking for?"
+                            placeholder="Search campus items..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="hero-search-input"
-                            style={{ 
-                                width: '100%', padding: '1.25rem 8rem 1.25rem 4rem', fontSize: '1.125rem', 
-                                borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.15)', 
-                                backgroundColor: 'rgba(255,255,255,0.05)', color: 'white',
-                                outline: 'none', backdropFilter: 'blur(16px)',
-                                transition: 'all 0.3s ease',
-                                boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)'
-                            }}
                         />
-                        <button style={{
-                            position: 'absolute', top: '0.4rem', right: '0.4rem', bottom: '0.4rem',
-                            background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)', color: 'white', border: 'none',
-                            borderRadius: '0.75rem', padding: '0 1.5rem', fontWeight: '600', fontSize: '0.95rem',
-                            cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s',
-                            boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)'
-                        }} 
-                        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                        >
+                        <button className="hero-search-btn" onClick={() => document.querySelector('.hero-search-input').focus()}>
                             Search
                         </button>
                     </div>
@@ -160,9 +143,9 @@ const Home = () => {
                     {/* Popular Tags */}
                     <div className="animate-fade-in-up" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '1.5rem', animationDelay: '0.4s' }}>
                         <span style={{ fontSize: '0.875rem', color: '#64748b', display: 'flex', alignItems: 'center' }}>Popular:</span>
-                        <span className="hero-tag" onClick={() => { setSearchTerm('iPhone'); }}>iPhone</span>
+                        <span className="hero-tag" onClick={() => { setSearchTerm('iPhone'); }}>Phones</span>
                         <span className="hero-tag" onClick={() => { setCategoryFilter('Fashion'); }}>Sneakers</span>
-                        <span className="hero-tag" onClick={() => { setCategoryFilter('Hostels & Rooms'); }}>Hostels</span>
+                        <span className="hero-tag" onClick={() => { setCategoryFilter('Electronics'); }}>Laptops</span>
                         <span className="hero-tag" onClick={() => { setCategoryFilter('Services'); }}>Services</span>
                     </div>
                 </div>
@@ -311,13 +294,45 @@ const Home = () => {
                     100% { transform: translate(30px, 50px) scale(1.1); }
                 }
 
+                .hero-search-input {
+                    width: 100%;
+                    padding: 1.25rem 8rem 1.25rem 3.5rem;
+                    font-size: 1.125rem;
+                    border-radius: 1rem;
+                    border: 1px solid rgba(255,255,255,0.15);
+                    background-color: rgba(255,255,255,0.05);
+                    color: white;
+                    outline: none;
+                    backdrop-filter: blur(16px);
+                    transition: all 0.3s ease;
+                    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+                }
                 .hero-search-input::placeholder {
                     color: #64748b;
                 }
                 .hero-search-input:focus {
-                    background-color: rgba(255,255,255,0.08) !important;
-                    border-color: rgba(56, 189, 248, 0.6) !important;
-                    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15) !important;
+                    background-color: rgba(255,255,255,0.08);
+                    border-color: rgba(56, 189, 248, 0.6);
+                    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
+                }
+                .hero-search-btn {
+                    position: absolute;
+                    top: 0.4rem;
+                    right: 0.4rem;
+                    bottom: 0.4rem;
+                    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+                    color: white;
+                    border: none;
+                    border-radius: 0.75rem;
+                    padding: 0 1.5rem;
+                    font-weight: 600;
+                    font-size: 0.95rem;
+                    cursor: pointer;
+                    transition: transform 0.2s, box-shadow 0.2s;
+                    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+                }
+                .hero-search-btn:hover {
+                    transform: scale(1.02);
                 }
 
                 .hero-tag {
@@ -367,16 +382,28 @@ const Home = () => {
                     transform: translateY(-2px);
                     background-color: #0f172a !important;
                 }
+                
                 @media (max-width: 640px) {
                     .market-hero {
-                        padding: 3rem 1rem;
+                        padding: 5rem 1rem 3rem 1rem;
                         border-radius: 0 0 2rem 2rem;
                     }
                     .hero-title {
-                        font-size: 2.25rem !important;
+                        font-size: 2.5rem !important;
                     }
                     .hide-mobile {
                         display: none;
+                    }
+                    .hero-search-input {
+                        padding: 1rem 5.5rem 1rem 2.5rem;
+                        font-size: 1rem;
+                    }
+                    .hero-search-btn {
+                        padding: 0 1rem;
+                        font-size: 0.875rem;
+                    }
+                    .hero-search-icon {
+                        left: 0.75rem !important;
                     }
                 }
             `}</style>
