@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, getDocs, where, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
@@ -13,6 +13,19 @@ const Home = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('all');
     const [verifiedOnly, setVerifiedOnly] = useState(false);
+    const productsRef = useRef(null);
+
+    const handleSearch = (term, category = null) => {
+        if (term !== null) setSearchTerm(term);
+        if (category !== null) setCategoryFilter(category);
+        
+        // Scroll down to products
+        setTimeout(() => {
+            if (productsRef.current) {
+                productsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 100);
+    };
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -64,7 +77,8 @@ const Home = () => {
                 position: 'relative',
                 backgroundColor: '#020617', // Deep slate/black
                 padding: '6rem 1.5rem 5rem 1.5rem',
-                borderRadius: '0 0 2.5rem 2.5rem',
+                borderRadius: '2rem',
+                margin: '0.5rem',
                 marginBottom: '3rem',
                 color: 'white',
                 textAlign: 'center',
@@ -134,9 +148,10 @@ const Home = () => {
                             placeholder="Search campus items..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchTerm)}
                             className="hero-search-input"
                         />
-                        <button className="hero-search-btn" onClick={() => document.querySelector('.hero-search-input').focus()}>
+                        <button className="hero-search-btn" onClick={() => handleSearch(searchTerm)}>
                             Search
                         </button>
                     </div>
@@ -144,10 +159,10 @@ const Home = () => {
                     {/* Popular Tags */}
                     <div className="animate-fade-in-up" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '1.5rem', animationDelay: '0.4s' }}>
                         <span style={{ fontSize: '0.875rem', color: '#64748b', display: 'flex', alignItems: 'center' }}>Popular:</span>
-                        <span className="hero-tag" onClick={() => { setSearchTerm('iPhone'); }}>Phones</span>
-                        <span className="hero-tag" onClick={() => { setCategoryFilter('Fashion'); }}>Sneakers</span>
-                        <span className="hero-tag" onClick={() => { setCategoryFilter('Electronics'); }}>Laptops</span>
-                        <span className="hero-tag" onClick={() => { setCategoryFilter('Services'); }}>Services</span>
+                        <span className="hero-tag" onClick={() => handleSearch('iPhone', null)}>Phones</span>
+                        <span className="hero-tag" onClick={() => handleSearch(null, 'Fashion')}>Sneakers</span>
+                        <span className="hero-tag" onClick={() => handleSearch(null, 'Electronics')}>Laptops</span>
+                        <span className="hero-tag" onClick={() => handleSearch(null, 'Services')}>Services</span>
                     </div>
                 </div>
             </div>
@@ -178,7 +193,7 @@ const Home = () => {
                 )}
 
                 {/* Filters Section */}
-                <div style={{ marginBottom: '3rem' }}>
+                <div style={{ marginBottom: '3rem', scrollMarginTop: '2rem' }} ref={productsRef}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '0.875rem', whiteSpace: 'nowrap', marginRight: '0.5rem' }}>
                             <SlidersHorizontal size={18} /> Filters:
@@ -387,8 +402,9 @@ const Home = () => {
                 
                 @media (max-width: 640px) {
                     .market-hero {
-                        padding: 5rem 1rem 3rem 1rem;
-                        border-radius: 0 0 2rem 2rem;
+                        padding: 4rem 1rem 3rem 1rem;
+                        border-radius: 1.5rem;
+                        margin: 0.5rem;
                     }
                     .hero-title {
                         font-size: 2.5rem !important;
