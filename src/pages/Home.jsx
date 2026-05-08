@@ -72,11 +72,12 @@ const Home = () => {
                 boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
             }}>
                 {/* Modern Animated Gradient Orbs Background */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', zIndex: 0 }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', zIndex: 0, backgroundColor: '#020617' }}>
                     <div className="hero-orb orb-1"></div>
                     <div className="hero-orb orb-2"></div>
                     <div className="hero-orb orb-3"></div>
-                    <div style={{ position: 'absolute', inset: 0, backdropFilter: 'blur(80px)', backgroundColor: 'rgba(2, 6, 23, 0.6)' }}></div>
+                    {/* Replaced expensive backdrop-filter with a simple semi-transparent overlay */}
+                    <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(2, 6, 23, 0.75)' }}></div>
                     {/* Grid Pattern Overlay */}
                     <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)', backgroundSize: '40px 40px', zIndex: 1, maskImage: 'radial-gradient(circle at center, black, transparent 80%)', WebkitMaskImage: 'radial-gradient(circle at center, black, transparent 80%)' }}></div>
                 </div>
@@ -282,12 +283,13 @@ const Home = () => {
                 .hero-orb {
                     position: absolute;
                     border-radius: 50%;
-                    filter: blur(50px);
-                    animation: float-orb 15s infinite alternate ease-in-out;
+                    filter: blur(80px);
+                    animation: float-orb 20s infinite alternate ease-in-out;
+                    will-change: transform;
                 }
-                .orb-1 { width: 450px; height: 450px; background: rgba(56, 189, 248, 0.4); top: -150px; left: -100px; }
-                .orb-2 { width: 350px; height: 350px; background: rgba(139, 92, 246, 0.4); bottom: -50px; right: -50px; animation-delay: -5s; }
-                .orb-3 { width: 300px; height: 300px; background: rgba(236, 72, 153, 0.3); top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -10s; }
+                .orb-1 { width: 450px; height: 450px; background: rgba(56, 189, 248, 0.5); top: -150px; left: -100px; }
+                .orb-2 { width: 350px; height: 350px; background: rgba(139, 92, 246, 0.5); bottom: -50px; right: -50px; animation-delay: -5s; }
+                .orb-3 { width: 300px; height: 300px; background: rgba(236, 72, 153, 0.4); top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -10s; }
 
                 @keyframes float-orb {
                     0% { transform: translate(0, 0) scale(1); }
