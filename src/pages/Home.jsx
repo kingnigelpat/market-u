@@ -61,103 +61,109 @@ const Home = () => {
         <div className="market-container" style={{ paddingBottom: '8rem' }}>
             {/* Market Hero Section */}
             <div className="market-hero" style={{ 
-                backgroundColor: '#1e40af',
-                padding: '4rem 1.5rem',
-                borderRadius: '0 0 3rem 3rem',
+                position: 'relative',
+                backgroundColor: '#020617', // Deep slate/black
+                padding: '6rem 1.5rem 5rem 1.5rem',
+                borderRadius: '0 0 2.5rem 2.5rem',
                 marginBottom: '3rem',
                 color: 'white',
                 textAlign: 'center',
-                position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
             }}>
-                {/* Slideshow Background */}
-                <div className="hero-slideshow">
-                    <div className="hero-slide" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80)' }}></div>
-                    <div className="hero-slide" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80)' }}></div>
-                    <div className="hero-slide" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80)' }}></div>
+                {/* Modern Animated Gradient Orbs Background */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', zIndex: 0 }}>
+                    <div className="hero-orb orb-1"></div>
+                    <div className="hero-orb orb-2"></div>
+                    <div className="hero-orb orb-3"></div>
+                    <div style={{ position: 'absolute', inset: 0, backdropFilter: 'blur(80px)', backgroundColor: 'rgba(2, 6, 23, 0.6)' }}></div>
+                    {/* Grid Pattern Overlay */}
+                    <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)', backgroundSize: '40px 40px', zIndex: 1, maskImage: 'radial-gradient(circle at center, black, transparent 80%)', WebkitMaskImage: 'radial-gradient(circle at center, black, transparent 80%)' }}></div>
                 </div>
-
-                {/* Gradient Overlay for Readability */}
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.85) 0%, rgba(30, 64, 175, 0.95) 100%)', zIndex: 1 }}></div>
-
-                {/* Animated Decorative circles */}
-                <div className="floating-circle-1" style={{ position: 'absolute', top: '-10%', right: '-5%', width: '300px', height: '300px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', zIndex: 2 }}></div>
-                <div className="floating-circle-2" style={{ position: 'absolute', bottom: '-20%', left: '-5%', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', zIndex: 2 }}></div>
-
-                <div className="container" style={{ position: 'relative', zIndex: 3 }}>
-                    <div className="hero-badge animate-fade-in-up" style={{ 
-                        display: 'inline-flex', 
-                        alignItems: 'center', 
-                        gap: '0.5rem',
-                        backgroundColor: 'rgba(255,255,255,0.15)', 
-                        backdropFilter: 'blur(12px)', 
-                        padding: '0.5rem 1.25rem', 
+                
+                {/* Content */}
+                <div className="container" style={{ position: 'relative', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    {/* Live Badge */}
+                    <div className="animate-fade-in-up" style={{ 
+                        display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                        backgroundColor: 'rgba(255,255,255,0.03)', 
+                        backdropFilter: 'blur(10px)', 
+                        padding: '0.4rem 1rem', 
                         borderRadius: '2rem', 
                         marginBottom: '1.5rem', 
-                        fontSize: '0.875rem', 
-                        fontWeight: '700', 
-                        textTransform: 'uppercase', 
-                        letterSpacing: '0.05em',
-                        border: '1px solid rgba(255,255,255,0.3)',
-                        boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+                        fontSize: '0.875rem', fontWeight: '600', 
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: '#cbd5e1'
                     }}>
-                        <span style={{ fontSize: '1.2rem' }}>✨</span> The #1 Student Marketplace
+                        <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 10px #10b981' }}></span>
+                        Live Campus Marketplace
                     </div>
                     
+                    {/* Title */}
                     <h1 className="hero-title animate-fade-in-up" style={{ 
-                        fontSize: '3.5rem', 
-                        fontWeight: '900', 
-                        marginBottom: '1.25rem', 
-                        letterSpacing: '-0.03em', 
-                        lineHeight: '1.1',
-                        textShadow: '0 4px 20px rgba(0,0,0,0.15)'
+                        fontSize: '4.5rem', fontWeight: '900', marginBottom: '1.25rem', 
+                        letterSpacing: '-0.04em', lineHeight: '1.1',
+                        animationDelay: '0.1s'
                     }}>
-                        Buy, Sell & Discover <br className="hide-mobile" />
+                        The smarter way to <br className="hide-mobile" />
                         <span style={{ 
-                            color: '#fbbf24', 
-                            background: 'linear-gradient(to right, #fbbf24, #f59e0b)',
+                            background: 'linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             display: 'inline-block'
-                        }}>On Campus.</span>
+                        }}>buy & sell</span> on campus.
                     </h1>
                     
+                    {/* Subtitle */}
                     <p className="animate-fade-in-up" style={{ 
-                        fontSize: '1.15rem', 
-                        opacity: 0.95, 
-                        maxWidth: '600px', 
-                        margin: '0 auto 2.5rem auto', 
-                        lineHeight: '1.6',
-                        fontWeight: '500',
-                        textShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                        fontSize: '1.2rem', color: '#94a3b8', maxWidth: '600px', 
+                        margin: '0 auto 2.5rem auto', lineHeight: '1.6', animationDelay: '0.2s',
+                        fontWeight: '400'
                     }}>
-                        Turn your unused items into cash or find incredible deals on electronics, fashion, and everyday essentials.
+                        Ditch the messy group chats. Find what you need, sell what you don't, and connect with verified students instantly.
                     </p>
 
-                    {/* Search Bar */}
-                    <div style={{ position: 'relative', maxWidth: '700px', margin: '0 auto' }}>
-                        <div style={{ position: 'absolute', top: '50%', left: '1.5rem', transform: 'translateY(-50%)', color: '#94a3b8' }}>
+                    {/* Search Bar - Glassmorphic */}
+                    <div className="animate-fade-in-up" style={{ position: 'relative', width: '100%', maxWidth: '650px', animationDelay: '0.3s' }}>
+                        <div style={{ position: 'absolute', top: '50%', left: '1.5rem', transform: 'translateY(-50%)', color: '#94a3b8', zIndex: 2 }}>
                             <Search size={22} />
                         </div>
                         <input
                             type="text"
-                            placeholder="Search for items, brands, or services..."
+                            placeholder="What are you looking for?"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="market-search-input"
+                            className="hero-search-input"
                             style={{ 
-                                width: '100%', 
-                                padding: '1.25rem 1.5rem 1.25rem 4rem', 
-                                fontSize: '1.125rem', 
-                                borderRadius: '1.5rem', 
-                                border: 'none', 
-                                backgroundColor: 'var(--surface-color)', 
-                                color: 'var(--text-primary)',
-                                outline: 'none',
-                                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                                transition: 'all 0.3s ease'
+                                width: '100%', padding: '1.25rem 8rem 1.25rem 4rem', fontSize: '1.125rem', 
+                                borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.15)', 
+                                backgroundColor: 'rgba(255,255,255,0.05)', color: 'white',
+                                outline: 'none', backdropFilter: 'blur(16px)',
+                                transition: 'all 0.3s ease',
+                                boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)'
                             }}
                         />
+                        <button style={{
+                            position: 'absolute', top: '0.4rem', right: '0.4rem', bottom: '0.4rem',
+                            background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)', color: 'white', border: 'none',
+                            borderRadius: '0.75rem', padding: '0 1.5rem', fontWeight: '600', fontSize: '0.95rem',
+                            cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s',
+                            boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)'
+                        }} 
+                        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        >
+                            Search
+                        </button>
+                    </div>
+
+                    {/* Popular Tags */}
+                    <div className="animate-fade-in-up" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '1.5rem', animationDelay: '0.4s' }}>
+                        <span style={{ fontSize: '0.875rem', color: '#64748b', display: 'flex', alignItems: 'center' }}>Popular:</span>
+                        <span className="hero-tag" onClick={() => { setSearchTerm('iPhone'); }}>iPhone</span>
+                        <span className="hero-tag" onClick={() => { setCategoryFilter('Fashion'); }}>Sneakers</span>
+                        <span className="hero-tag" onClick={() => { setCategoryFilter('Hostels & Rooms'); }}>Hostels</span>
+                        <span className="hero-tag" onClick={() => { setCategoryFilter('Services'); }}>Services</span>
                     </div>
                 </div>
             </div>
@@ -290,50 +296,44 @@ const Home = () => {
             </div>
 
             <style>{`
-                .hero-slideshow {
+                .hero-orb {
                     position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    z-index: 0;
+                    border-radius: 50%;
+                    filter: blur(50px);
+                    animation: float-orb 15s infinite alternate ease-in-out;
                 }
-                .hero-slide {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background-size: cover;
-                    background-position: center;
-                    opacity: 0;
-                    animation: slideFade 18s infinite;
-                }
-                .hero-slide:nth-child(1) { animation-delay: 0s; }
-                .hero-slide:nth-child(2) { animation-delay: 6s; }
-                .hero-slide:nth-child(3) { animation-delay: 12s; }
-                
-                @keyframes slideFade {
-                    0% { opacity: 0; transform: scale(1.05); }
-                    10% { opacity: 1; transform: scale(1); }
-                    33% { opacity: 1; transform: scale(1); }
-                    43% { opacity: 0; transform: scale(1.05); }
-                    100% { opacity: 0; transform: scale(1.05); }
+                .orb-1 { width: 450px; height: 450px; background: rgba(56, 189, 248, 0.4); top: -150px; left: -100px; }
+                .orb-2 { width: 350px; height: 350px; background: rgba(139, 92, 246, 0.4); bottom: -50px; right: -50px; animation-delay: -5s; }
+                .orb-3 { width: 300px; height: 300px; background: rgba(236, 72, 153, 0.3); top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -10s; }
+
+                @keyframes float-orb {
+                    0% { transform: translate(0, 0) scale(1); }
+                    100% { transform: translate(30px, 50px) scale(1.1); }
                 }
 
-                .floating-circle-1 {
-                    animation: float1 10s ease-in-out infinite;
+                .hero-search-input::placeholder {
+                    color: #64748b;
                 }
-                .floating-circle-2 {
-                    animation: float2 12s ease-in-out infinite reverse;
+                .hero-search-input:focus {
+                    background-color: rgba(255,255,255,0.08) !important;
+                    border-color: rgba(56, 189, 248, 0.6) !important;
+                    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15) !important;
                 }
-                @keyframes float1 {
-                    0%, 100% { transform: translate(0, 0) scale(1); }
-                    50% { transform: translate(-30px, 20px) scale(1.1); }
+
+                .hero-tag {
+                    color: #cbd5e1;
+                    background: rgba(255,255,255,0.05);
+                    border: 1px solid rgba(255,255,255,0.1);
+                    padding: 0.3rem 0.8rem;
+                    border-radius: 1rem;
+                    font-size: 0.875rem;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
                 }
-                @keyframes float2 {
-                    0%, 100% { transform: translate(0, 0) scale(1); }
-                    50% { transform: translate(30px, -20px) scale(1.1); }
+                .hero-tag:hover {
+                    background: rgba(255,255,255,0.15);
+                    color: white;
+                    border-color: rgba(255,255,255,0.3);
                 }
 
                 .filter-pill {
