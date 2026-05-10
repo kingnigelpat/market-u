@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
-    const { isAuthenticated, isSeller, userRole } = useAuth();
+    const { isAuthenticated, isSeller, userRole, currentUser } = useAuth();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -71,76 +71,39 @@ const Home = () => {
     });
 
     return (
-        <div className="market-container" style={{ paddingBottom: '8rem' }}>
-            {/* Market Hero Section */}
-            <div className="market-hero" style={{ 
-                position: 'relative',
-                backgroundColor: '#020617', // Deep slate/black
-                padding: '6rem 1.5rem 5rem 1.5rem',
-                borderRadius: '2rem',
-                margin: '0.5rem',
-                marginBottom: '3rem',
-                color: 'white',
-                textAlign: 'center',
-                overflow: 'hidden',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+        <div className="market-container" style={{ paddingBottom: '8rem', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+            {/* Minimal Active Dashboard Hero - Mobile First */}
+            <div className="dashboard-hero" style={{ 
+                backgroundColor: '#ffffff',
+                padding: '1.5rem 1rem',
+                borderBottom: '1px solid #e2e8f0',
+                marginBottom: '1.5rem',
+                position: 'sticky',
+                top: 0,
+                zIndex: 40,
+                boxShadow: '0 4px 20px -10px rgba(0,0,0,0.05)'
             }}>
-                {/* Modern Animated Gradient Orbs Background */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', zIndex: 0, backgroundColor: '#020617' }}>
-                    <div className="hero-orb orb-1"></div>
-                    <div className="hero-orb orb-2"></div>
-                    <div className="hero-orb orb-3"></div>
-                    {/* Replaced expensive backdrop-filter with a simple semi-transparent overlay */}
-                    <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(2, 6, 23, 0.75)' }}></div>
-                    {/* Grid Pattern Overlay */}
-                    <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)', backgroundSize: '40px 40px', zIndex: 1, maskImage: 'radial-gradient(circle at center, black, transparent 80%)', WebkitMaskImage: 'radial-gradient(circle at center, black, transparent 80%)' }}></div>
-                </div>
-                
-                {/* Content */}
-                <div className="container" style={{ position: 'relative', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    {/* Live Badge */}
-                    <div className="animate-fade-in-up" style={{ 
-                        display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                        backgroundColor: 'rgba(255,255,255,0.03)', 
-                        backdropFilter: 'blur(10px)', 
-                        padding: '0.4rem 1rem', 
-                        borderRadius: '2rem', 
-                        marginBottom: '1.5rem', 
-                        fontSize: '0.875rem', fontWeight: '600', 
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: '#cbd5e1'
-                    }}>
-                        <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 10px #10b981' }}></span>
-                        Live Campus Marketplace
+                <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: 0 }}>
+                    {/* Header / Greeting */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                        <div>
+                            <h1 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em', margin: 0 }}>
+                                {isAuthenticated ? `Hi, ${currentUser?.displayName?.split(' ')[0] || 'there'} 👋` : 'Campus Market 🚀'}
+                            </h1>
+                            <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '0.25rem', margin: 0 }}>
+                                Find what you need instantly
+                            </p>
+                        </div>
+                        {/* Active Indicator */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', backgroundColor: '#f0fdf4', padding: '0.375rem 0.75rem', borderRadius: '99px', border: '1px solid #bbf7d0' }}>
+                            <span style={{ width: '6px', height: '6px', backgroundColor: '#16a34a', borderRadius: '50%', boxShadow: '0 0 8px #16a34a', animation: 'pulse 2s infinite' }}></span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#15803d' }}>Live</span>
+                        </div>
                     </div>
-                    
-                    {/* Title */}
-                    <h1 className="hero-title animate-fade-in-up" style={{ 
-                        fontSize: '4.5rem', fontWeight: '900', marginBottom: '1.25rem', 
-                        letterSpacing: '-0.04em', lineHeight: '1.1',
-                        animationDelay: '0.1s'
-                    }}>
-                        The smarter way to <br className="hide-mobile" />
-                        <span style={{ 
-                            background: 'linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            display: 'inline-block'
-                        }}>buy & sell</span> on campus.
-                    </h1>
-                    
-                    {/* Subtitle */}
-                    <p className="animate-fade-in-up" style={{ 
-                        fontSize: '1.2rem', color: '#94a3b8', maxWidth: '600px', 
-                        margin: '0 auto 2.5rem auto', lineHeight: '1.6', animationDelay: '0.2s',
-                        fontWeight: '400'
-                    }}>
-                        Ditch the messy group chats. Find what you need, sell what you don't, and connect with verified students instantly.
-                    </p>
 
-                    {/* Search Bar - Glassmorphic */}
-                    <div className="animate-fade-in-up" style={{ position: 'relative', width: '100%', maxWidth: '650px', animationDelay: '0.3s' }}>
-                        <div className="hero-search-icon" style={{ position: 'absolute', top: '50%', left: '1.25rem', transform: 'translateY(-50%)', color: '#94a3b8', zIndex: 2 }}>
+                    {/* Main Search Bar */}
+                    <div style={{ position: 'relative', marginBottom: '1.25rem', width: '100%' }}>
+                        <div style={{ position: 'absolute', top: '50%', left: '1.25rem', transform: 'translateY(-50%)', color: '#94a3b8' }}>
                             <Search size={20} />
                         </div>
                         <input
@@ -149,25 +112,36 @@ const Home = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchTerm)}
-                            className="hero-search-input"
+                            className="search-input-focus"
+                            style={{
+                                width: '100%',
+                                padding: '1rem 1rem 1rem 3.5rem',
+                                fontSize: '1rem',
+                                fontWeight: '500',
+                                backgroundColor: '#f1f5f9',
+                                border: '1px solid transparent',
+                                borderRadius: '1rem',
+                                color: '#0f172a',
+                                outline: 'none',
+                                transition: 'all 0.2s ease',
+                                boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
+                            }}
                         />
-                        <button className="hero-search-btn" onClick={() => handleSearch(searchTerm)}>
-                            Search
-                        </button>
                     </div>
 
-                    {/* Popular Tags */}
-                    <div className="animate-fade-in-up" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '1.5rem', animationDelay: '0.4s' }}>
-                        <span style={{ fontSize: '0.875rem', color: '#64748b', display: 'flex', alignItems: 'center' }}>Popular:</span>
-                        <span className="hero-tag" onClick={() => handleSearch('iPhone', null)}>Phones</span>
-                        <span className="hero-tag" onClick={() => handleSearch(null, 'Fashion')}>Sneakers</span>
-                        <span className="hero-tag" onClick={() => handleSearch(null, 'Electronics')}>Laptops</span>
-                        <span className="hero-tag" onClick={() => handleSearch(null, 'Services')}>Services</span>
+                    {/* Quick Category Chips */}
+                    <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', msOverflowStyle: 'none', scrollbarWidth: 'none' }} className="hide-scrollbar">
+                        <button onClick={() => { setCategoryFilter('all'); setVerifiedOnly(false) }} className={`filter-pill ${categoryFilter === 'all' && !verifiedOnly ? 'active' : ''}`}>🔥 All</button>
+                        <button onClick={() => { setCategoryFilter('all'); setVerifiedOnly(true) }} className={`filter-pill ${verifiedOnly ? 'active' : ''}`}>⭐ Verified</button>
+                        <button onClick={() => setCategoryFilter('Electronics')} className={`filter-pill ${categoryFilter === 'Electronics' ? 'active' : ''}`}>💻 Tech</button>
+                        <button onClick={() => setCategoryFilter('Fashion')} className={`filter-pill ${categoryFilter === 'Fashion' ? 'active' : ''}`}>👕 Fashion</button>
+                        <button onClick={() => setCategoryFilter('Services')} className={`filter-pill ${categoryFilter === 'Services' ? 'active' : ''}`}>🛠️ Services</button>
+                        <button onClick={() => setCategoryFilter('Food & Groceries')} className={`filter-pill ${categoryFilter === 'Food & Groceries' ? 'active' : ''}`}>🍕 Food</button>
                     </div>
                 </div>
             </div>
 
-            <div className="container">
+            <div className="container" ref={productsRef}>
                 {/* Buyer to Seller Prompt Banner */}
                 {isAuthenticated && !isSeller && (
                     <div className="animate-fade-in-up" style={{ 
@@ -192,20 +166,7 @@ const Home = () => {
                     </div>
                 )}
 
-                {/* Filters Section */}
-                <div style={{ marginBottom: '3rem', scrollMarginTop: '2rem' }} ref={productsRef}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '0.875rem', whiteSpace: 'nowrap', marginRight: '0.5rem' }}>
-                            <SlidersHorizontal size={18} /> Filters:
-                        </div>
-                        <button onClick={() => { setCategoryFilter('all'); setVerifiedOnly(false) }} className={`filter-pill ${categoryFilter === 'all' && !verifiedOnly ? 'active' : ''}`}>All Items</button>
-                        <button onClick={() => { setCategoryFilter('all'); setVerifiedOnly(true) }} className={`filter-pill ${verifiedOnly ? 'active' : ''}`}>⭐ Verified Only</button>
-                        <button onClick={() => setCategoryFilter('Services')} className={`filter-pill ${categoryFilter === 'Services' ? 'active' : ''}`}>🛠️ Services</button>
-                        <button onClick={() => setCategoryFilter('Electronics')} className={`filter-pill ${categoryFilter === 'Electronics' ? 'active' : ''}`}>💻 Electronics</button>
-                        <button onClick={() => setCategoryFilter('Fashion')} className={`filter-pill ${categoryFilter === 'Fashion' ? 'active' : ''}`}>👕 Fashion</button>
-                        <button onClick={() => setCategoryFilter('Food & Groceries')} className={`filter-pill ${categoryFilter === 'Food & Groceries' ? 'active' : ''}`}>🍕 Food</button>
-                    </div>
-
+                <div style={{ marginBottom: '1.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h2 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             {categoryFilter === 'all' && !searchTerm ? '🔥 Trending & Just Added' : categoryFilter === 'all' ? 'Search Results' : categoryFilter}
