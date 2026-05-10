@@ -225,7 +225,7 @@
     top: 0; left: 50%;
     transform: translateX(-50%);
     width: 120px; height: 25px;
-    background-color: var(--text-primary);
+    background-color: #0f172a;
     border-bottom-left-radius: 1rem;
     border-bottom-right-radius: 1rem;
     z-index: 10;
@@ -630,4 +630,9 @@
         flex: 1;
         height: 300px;
     }
+}
+
+/* Dark Mode Overrides for Phone Mockup */
+[data-theme="dark"] .phone-mockup {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 12px #0f172a, 0 0 0 13px #334155, 0 0 30px rgba(37, 99, 235, 0.15);
 }
