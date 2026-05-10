@@ -72,7 +72,7 @@ const Landing = () => {
                             <div className="fc-image bg-blue-100">📱</div>
                             <div className="fc-info">
                                 <div className="fc-title">iPhone 13 Pro</div>
-                                <div className="fc-price">$450</div>
+                                <div className="fc-price">₦850,000</div>
                             </div>
                         </div>
 
@@ -81,7 +81,7 @@ const Landing = () => {
                             <div className="fc-image bg-orange-100">👟</div>
                             <div className="fc-info">
                                 <div className="fc-title">Nike Dunks</div>
-                                <div className="fc-price">$80</div>
+                                <div className="fc-price">₦80,000</div>
                             </div>
                         </div>
                         
@@ -120,21 +120,21 @@ const Landing = () => {
                                         <div className="m-card-img" style={{background: 'linear-gradient(135deg, #f1f5f9, #e2e8f0)'}}>💻</div>
                                         <div className="m-card-details">
                                             <div className="m-card-title">MacBook Air M1</div>
-                                            <div className="m-card-price">$600</div>
+                                            <div className="m-card-price">₦900,000</div>
                                         </div>
                                     </div>
                                     <div className="m-card">
                                         <div className="m-card-img" style={{background: 'linear-gradient(135deg, #fef3c7, #fde68a)'}}>📚</div>
                                         <div className="m-card-details">
                                             <div className="m-card-title">Intro to Psych</div>
-                                            <div className="m-card-price">$25</div>
+                                            <div className="m-card-price">₦5,000</div>
                                         </div>
                                     </div>
                                     <div className="m-card">
                                         <div className="m-card-img" style={{background: 'linear-gradient(135deg, #e0e7ff, #c7d2fe)'}}>🎧</div>
                                         <div className="m-card-details">
                                             <div className="m-card-title">AirPods Pro</div>
-                                            <div className="m-card-price">$120</div>
+                                            <div className="m-card-price">₦120,000</div>
                                         </div>
                                     </div>
                                 </div>
