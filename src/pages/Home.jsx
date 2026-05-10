@@ -71,12 +71,12 @@ const Home = () => {
     });
 
     return (
-        <div className="market-container" style={{ paddingBottom: '8rem', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+        <div className="market-container" style={{ paddingBottom: '8rem', backgroundColor: 'var(--bg-color)', minHeight: '100vh' }}>
             {/* Minimal Active Dashboard Hero - Mobile First */}
             <div className="dashboard-hero" style={{ 
-                backgroundColor: '#ffffff',
+                backgroundColor: 'var(--surface-color)',
                 padding: '1.5rem 1rem',
-                borderBottom: '1px solid #e2e8f0',
+                borderBottom: '1px solid var(--border-color)',
                 marginBottom: '1.5rem',
                 position: 'sticky',
                 top: 0,
@@ -87,10 +87,10 @@ const Home = () => {
                     {/* Header / Greeting */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                         <div>
-                            <h1 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em', margin: 0 }}>
+                            <h1 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>
                                 {isAuthenticated ? `Hi, ${currentUser?.displayName?.split(' ')[0] || 'there'} 👋` : 'Campus Market 🚀'}
                             </h1>
-                            <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '0.25rem', margin: 0 }}>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '0.25rem', margin: 0 }}>
                                 Find what you need instantly
                             </p>
                         </div>
@@ -103,7 +103,7 @@ const Home = () => {
 
                     {/* Main Search Bar */}
                     <div style={{ position: 'relative', marginBottom: '1.25rem', width: '100%' }}>
-                        <div style={{ position: 'absolute', top: '50%', left: '1.25rem', transform: 'translateY(-50%)', color: '#94a3b8' }}>
+                        <div style={{ position: 'absolute', top: '50%', left: '1.25rem', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>
                             <Search size={20} />
                         </div>
                         <input
@@ -118,10 +118,10 @@ const Home = () => {
                                 padding: '1rem 1rem 1rem 3.5rem',
                                 fontSize: '1rem',
                                 fontWeight: '500',
-                                backgroundColor: '#f1f5f9',
-                                border: '1px solid transparent',
+                                backgroundColor: 'var(--bg-color)',
+                                border: '1px solid var(--border-color)',
                                 borderRadius: '1rem',
-                                color: '#0f172a',
+                                color: 'var(--text-primary)',
                                 outline: 'none',
                                 transition: 'all 0.2s ease',
                                 boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.02)'

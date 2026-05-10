@@ -3,7 +3,7 @@
 .landing-wrapper {
     position: relative;
     overflow-x: hidden;
-    background-color: #ffffff;
+    background-color: var(--bg-color);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -31,7 +31,7 @@
 }
 
 .landing-nav.scrolled {
-    background: rgba(255, 255, 255, 0.85);
+    background: var(--nav-bg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -130,7 +130,7 @@
     font-weight: 900;
     line-height: 1.1;
     letter-spacing: -0.04em;
-    color: #0f172a;
+    color: var(--text-primary);
     margin-bottom: 1rem;
 }
 
@@ -142,7 +142,7 @@
 
 .hero-subtitle {
     font-size: 1.125rem;
-    color: #64748b;
+    color: var(--text-secondary);
     line-height: 1.6;
     max-width: 500px;
     margin: 0 auto 2.5rem auto;
@@ -180,12 +180,12 @@
     gap: 0.75rem;
     width: 100%;
     padding: 1.125rem;
-    background-color: white;
-    color: #0f172a;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
     font-size: 1.0625rem;
     font-weight: 700;
     border-radius: 1rem;
-    border: 2px solid #e2e8f0;
+    border: 2px solid var(--border-color);
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     transition: transform 0.2s, border-color 0.2s;
 }
@@ -209,7 +209,7 @@
 .phone-mockup {
     width: 300px;
     height: 600px;
-    background-color: white;
+    background-color: var(--bg-color);
     border-radius: 2.5rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 12px #0f172a;
     position: relative;
@@ -225,7 +225,7 @@
     top: 0; left: 50%;
     transform: translateX(-50%);
     width: 120px; height: 25px;
-    background-color: #0f172a;
+    background-color: var(--text-primary);
     border-bottom-left-radius: 1rem;
     border-bottom-right-radius: 1rem;
     z-index: 10;
@@ -233,7 +233,7 @@
 
 .phone-screen {
     width: 100%; height: 100%;
-    background-color: #f8fafc;
+    background-color: var(--bg-color);
     display: flex;
     flex-direction: column;
     padding-top: 3rem;
@@ -242,8 +242,8 @@
 /* Inside Mockup */
 .mockup-header {
     padding: 1rem;
-    background-color: white;
-    border-bottom: 1px solid #f1f5f9;
+    background-color: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
 }
 .mockup-greeting {
     font-size: 1.25rem;
@@ -254,10 +254,10 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background-color: #f1f5f9;
+    background-color: var(--surface-color);
     padding: 0.75rem 1rem;
     border-radius: 99px;
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 0.875rem;
 }
 
@@ -270,15 +270,15 @@
 .m-cat {
     padding: 0.25rem 0.75rem;
     border-radius: 99px;
-    background-color: white;
+    background-color: var(--bg-color);
     font-size: 0.75rem;
     font-weight: 600;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
 }
 .m-cat.active {
-    background-color: #0f172a;
-    color: white;
-    border-color: #0f172a;
+    background-color: var(--text-primary);
+    color: var(--bg-color);
+    border-color: var(--text-primary);
 }
 
 .mockup-feed {
@@ -290,13 +290,13 @@
     overflow: hidden;
 }
 .m-card {
-    background-color: white;
+    background-color: var(--bg-color);
     border-radius: 1rem;
     display: flex;
     gap: 1rem;
     padding: 0.75rem;
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
-    border: 1px solid #f1f5f9;
+    border: 1px solid var(--border-color);
 }
 .m-card-img {
     width: 60px; height: 60px;
@@ -312,7 +312,7 @@
 .m-card-title {
     font-weight: 700;
     font-size: 0.875rem;
-    color: #0f172a;
+    color: var(--text-primary);
 }
 .m-card-price {
     font-weight: 600;
@@ -325,11 +325,11 @@
     display: flex;
     justify-content: space-around;
     padding: 1rem;
-    background-color: white;
-    border-top: 1px solid #f1f5f9;
+    background-color: var(--bg-color);
+    border-top: 1px solid var(--border-color);
 }
 .m-nav-item {
-    color: #94a3b8;
+    color: var(--text-secondary);
 }
 .m-nav-item.active {
     color: #2563eb;
@@ -338,7 +338,7 @@
 /* Floating Elements */
 .floating-card {
     position: absolute;
-    background-color: white;
+    background-color: var(--bg-color);
     border-radius: 1rem;
     padding: 0.75rem;
     box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
@@ -363,7 +363,7 @@
 .fc-title {
     font-size: 0.75rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--text-primary);
 }
 .fc-price {
     font-size: 0.75rem;
@@ -399,7 +399,7 @@
 }
 .fc-avatar {
     width: 24px; height: 24px;
-    background-color: #0f172a; color: white;
+    background-color: var(--text-primary); color: var(--bg-color);
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     font-size: 0.6rem;
@@ -417,7 +417,7 @@
 /* Features Section */
 .features-section {
     padding: 5rem 1.5rem;
-    background-color: #f8fafc;
+    background-color: var(--bg-color);
 }
 
 .section-title {
@@ -437,11 +437,11 @@
 }
 
 .feature-card {
-    background-color: white;
+    background-color: var(--bg-color);
     padding: 2rem;
     border-radius: 1.5rem;
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
-    border: 1px solid #f1f5f9;
+    border: 1px solid var(--border-color);
 }
 
 .feature-icon {
@@ -458,7 +458,7 @@
 }
 
 .feature-card p {
-    color: #64748b;
+    color: var(--text-secondary);
     line-height: 1.6;
 }
 
@@ -490,7 +490,7 @@
 }
 
 .install-content p {
-    color: #94a3b8;
+    color: var(--text-secondary);
     margin-bottom: 2rem;
 }
 
