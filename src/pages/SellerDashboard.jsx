@@ -14,6 +14,12 @@ const SellerDashboard = () => {
     const [loading, setLoading] = useState(true);
     const requestingVerif = sellerData?.verificationStatus === 'pending';
     const [isUpgrading, setIsUpgrading] = useState(false);
+    
+    // Rating editing state
+    const [isEditingRating, setIsEditingRating] = useState(false);
+    const [editScore, setEditScore] = useState('');
+    const [editCount, setEditCount] = useState('');
+    const [savingRating, setSavingRating] = useState(false);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -30,19 +36,6 @@ const SellerDashboard = () => {
                 let currentSellerData = null;
                 if (sellerSnap.exists()) {
                     currentSellerData = { id: sellerSnap.id, ...sellerSnap.data() };
-                    
-                    // Fetch ratings
-                    const ratingsQ = query(collection(db, 'ratings'), where('sellerId', '==', currentUser.uid));
-                    const ratingsSnap = await getDocs(ratingsQ);
-                    let score = 0;
-                    let count = 0;
-                    ratingsSnap.forEach(doc => {
-                        score += doc.data().stars || 0;
-                        count += 1;
-                    });
-                    currentSellerData.ratingScore = score;
-                    currentSellerData.ratingCount = count;
-                    
                     setSellerData(currentSellerData);
                 }
 
@@ -147,6 +140,43 @@ const SellerDashboard = () => {
     };
 
     const simulatedViews = calculateRealisticViews();
+
+    const handleSaveRating = async () => {
+        setSavingRating(true);
+        try {
+            const scoreNum = parseFloat(editScore) || 0;
+            const countNum = parseInt(editCount) || 0;
+            
+            // To get an average of 'scoreNum', the total ratingScore should be scoreNum * countNum
+            const newTotalScore = scoreNum * countNum;
+
+            const userRef = doc(db, 'users', currentUser.uid);
+            await updateDoc(userRef, { 
+                ratingScore: newTotalScore,
+                ratingCount: countNum
+            });
+            
+            setSellerData(prev => ({
+                ...prev,
+                ratingScore: newTotalScore,
+                ratingCount: countNum
+            }));
+            
+            setIsEditingRating(false);
+        } catch (error) {
+            console.error("Error saving rating:", error);
+            alert("Failed to update rating.");
+        } finally {
+            setSavingRating(false);
+        }
+    };
+
+    const handleEditRatingClick = () => {
+        const currentAverage = sellerData?.ratingCount ? (sellerData.ratingScore / sellerData.ratingCount).toFixed(1) : '5.0';
+        setEditScore(currentAverage);
+        setEditCount(sellerData?.ratingCount || '10');
+        setIsEditingRating(true);
+    };
 
     if (loading) {
         return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}>Loading dashboard...</div>;
@@ -266,14 +296,51 @@ const SellerDashboard = () => {
                     <div style={{ padding: '1rem', backgroundColor: 'rgba(244, 63, 94, 0.1)', borderRadius: '1rem', color: '#f43f5e' }}>
                         <Star size={28} />
                     </div>
-                    <div>
+                    <div style={{ flex: 1 }}>
                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.25rem' }}>Seller Rating</p>
-                        <h3 style={{ fontSize: '1.75rem', fontWeight: '800' }}>
-                            {sellerData?.ratingCount ? (sellerData.ratingScore / sellerData.ratingCount).toFixed(1) : 'New'}
-                            <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: '500', marginLeft: '0.5rem' }}>
-                                ({sellerData?.ratingCount || 0} revs)
-                            </span>
-                        </h3>
+                        
+                        {isEditingRating ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                <input 
+                                    type="number" 
+                                    min="1" max="5" step="0.1"
+                                    value={editScore} 
+                                    onChange={e => setEditScore(e.target.value)} 
+                                    placeholder="Avg Rating (e.g. 4.8)"
+                                    style={{ padding: '0.4rem', borderRadius: '0.25rem', border: '1px solid var(--border-color)', width: '100%' }}
+                                />
+                                <input 
+                                    type="number" 
+                                    value={editCount} 
+                                    onChange={e => setEditCount(e.target.value)} 
+                                    placeholder="Number of Buyers"
+                                    style={{ padding: '0.4rem', borderRadius: '0.25rem', border: '1px solid var(--border-color)', width: '100%' }}
+                                />
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button onClick={handleSaveRating} disabled={savingRating} className="btn btn-primary" style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem', flex: 1 }}>
+                                        {savingRating ? 'Saving...' : 'Save'}
+                                    </button>
+                                    <button onClick={() => setIsEditingRating(false)} className="btn btn-secondary" style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem', flex: 1 }}>
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <h3 style={{ fontSize: '1.75rem', fontWeight: '800' }}>
+                                    {sellerData?.ratingCount ? (sellerData.ratingScore / sellerData.ratingCount).toFixed(1) : 'New'}
+                                    <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: '500', marginLeft: '0.5rem' }}>
+                                        ({sellerData?.ratingCount || 0} revs)
+                                    </span>
+                                </h3>
+                                <button 
+                                    onClick={handleEditRatingClick}
+                                    style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '0.75rem', cursor: 'pointer', padding: 0, marginTop: '0.25rem', fontWeight: '600' }}
+                                >
+                                    Edit Rating
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
