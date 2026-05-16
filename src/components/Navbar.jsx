@@ -64,22 +64,16 @@ const Navbar = () => {
                 {/* Right side */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     {/* Role-Specific Primary Navigation */}
-                    {isAuthenticated && isSeller ? (
+                    {isAuthenticated && isSeller && (
                         <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginRight: '0.5rem' }}>
-                            <Link to="/dashboard" style={{ fontSize: '0.875rem', fontWeight: '800', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                <Store size={16} /> Dashboard
+                            <Link to="/add-product" style={{ fontSize: '0.8125rem', fontWeight: '800', color: 'white', display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.4rem 0.875rem', backgroundColor: 'var(--primary-color)', borderRadius: '99px', boxShadow: '0 2px 4px rgba(37,99,235,0.2)' }}>
+                                <PlusCircle size={14} color="white" /> Post Product
                             </Link>
-                            <Link to="/add-product" style={{ fontSize: '0.8125rem', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.35rem 0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '99px', border: '1px solid var(--border-color)' }}>
-                                <PlusCircle size={14} color="var(--primary-color)" /> Add Product
+                            <Link to="/dashboard" style={{ fontSize: '0.875rem', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                <Store size={16} /> Dashboard
                             </Link>
                             <div style={{ width: '1px', height: '16px', backgroundColor: 'var(--border-color)' }}></div>
                             <Link to="/market" style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                <Compass size={16} /> Market
-                            </Link>
-                        </div>
-                    ) : (
-                        <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginRight: '0.5rem' }}>
-                            <Link to="/market" style={{ fontSize: '0.875rem', fontWeight: '800', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                                 <Compass size={16} /> Browse Market
                             </Link>
                         </div>
@@ -87,7 +81,6 @@ const Navbar = () => {
 
                     {!isAuthenticated ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Link to="/market" className="mobile-only" style={{ fontSize: '0.8125rem', fontWeight: '700', color: 'var(--primary-color)', marginRight: '0.5rem' }}>Market</Link>
                             <Link to="/login" style={{ fontSize: '0.8125rem', fontWeight: '700', color: 'var(--text-secondary)' }}>Log in</Link>
                             <Link to="/register" className="btn btn-primary" style={{ fontSize: '0.8125rem', padding: '0.4rem 0.75rem', borderRadius: 'var(--radius-md)' }}>Sign up</Link>
                         </div>
@@ -214,28 +207,25 @@ const Navbar = () => {
                                         </Link>
                                     )}
 
-                                    {/* Mobile Only: Browse Market */}
-                                    <Link
-                                        to="/market"
-                                        className="mobile-only"
-                                        onClick={() => setMenuOpen(false)}
-                                        style={{
-                                            width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                            padding: '0.8rem 1rem', background: 'none', border: 'none',
-                                            color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.875rem',
-                                            fontWeight: '600', textDecoration: 'none',
-                                            transition: 'background 0.15s',
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-color)'}
-                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                    >
-                                        <Compass size={16} />
-                                        Browse Market
-                                    </Link>
-
-                                    {/* Seller Dashboard & Add Product shortcuts */}
+                                    {/* Mobile Only: Browse Market (Sellers Only) */}
                                     {isSeller && (
                                         <>
+                                            <Link
+                                                to="/add-product"
+                                                onClick={() => setMenuOpen(false)}
+                                                style={{
+                                                    width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                                    padding: '0.8rem 1rem', background: 'none', border: 'none',
+                                                    color: 'var(--primary-color)', cursor: 'pointer', fontSize: '0.875rem',
+                                                    fontWeight: '700', textDecoration: 'none',
+                                                    transition: 'background 0.15s',
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(37,99,235,0.06)'}
+                                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                            >
+                                                <PlusCircle size={16} />
+                                                Post Product
+                                            </Link>
                                             <Link
                                                 to="/dashboard"
                                                 onClick={() => setMenuOpen(false)}
@@ -253,20 +243,21 @@ const Navbar = () => {
                                                 My Dashboard
                                             </Link>
                                             <Link
-                                                to="/add-product"
+                                                to="/market"
+                                                className="mobile-only"
                                                 onClick={() => setMenuOpen(false)}
                                                 style={{
                                                     width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
                                                     padding: '0.8rem 1rem', background: 'none', border: 'none',
-                                                    color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.875rem',
+                                                    color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.875rem',
                                                     fontWeight: '600', textDecoration: 'none',
                                                     transition: 'background 0.15s',
                                                 }}
                                                 onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-color)'}
                                                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                                             >
-                                                <PlusCircle size={16} />
-                                                Add Product
+                                                <Compass size={16} />
+                                                Browse Market
                                             </Link>
                                         </>
                                     )}
