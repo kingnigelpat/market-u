@@ -28,6 +28,7 @@ dist-ssr
 .env.local
 .env.*.local
 firebase-key.json
+serviceAccountKey.json
 *.pem
 credentials.json
 node_modules/
