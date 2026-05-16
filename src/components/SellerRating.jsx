@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, increment, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -62,11 +62,6 @@ const SellerRating = ({ sellerId }) => {
 
         try {
             const sellerRef = doc(db, 'users', sellerId);
-            
-            // We use arrayUnion for ratedBy so we can't easily use increment for the total without risking race conditions
-            // but for a simple MVP, we'll do a read-modify-write since transactions are overkill here, or we just rely on increment
-            // Actually, we can use increment and arrayUnion in the same updateDoc
-            const { arrayUnion } = await import('firebase/firestore');
             
             await updateDoc(sellerRef, {
                 ratingScore: increment(stars),

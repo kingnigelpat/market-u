@@ -6,7 +6,7 @@ import { signOut } from 'firebase/auth';
 import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Heart } from 'lucide-react';
 
 const Navbar = () => {
-    const { isAuthenticated, isSeller, userRole } = useAuth();
+    const { isAuthenticated, isSeller, userRole, savedItems } = useAuth();
     const navigate = useNavigate();
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
     const [menuOpen, setMenuOpen] = useState(false);
@@ -85,8 +85,48 @@ const Navbar = () => {
                             <Link to="/register" className="btn btn-primary" style={{ fontSize: '0.8125rem', padding: '0.4rem 0.75rem', borderRadius: 'var(--radius-md)' }}>Sign up</Link>
                         </div>
                     ) : (
-                        <div style={{ position: 'relative' }} ref={menuRef}>
-                            {/* Avatar / Menu trigger */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <Link to="/saved" title="Saved Items" style={{ 
+                                position: 'relative', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                backgroundColor: 'var(--surface-color)',
+                                border: '1.5px solid var(--border-color)',
+                                color: 'var(--text-primary)',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary-color)'}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+                            >
+                                <Heart size={18} fill={savedItems?.length > 0 ? '#ef4444' : 'none'} color={savedItems?.length > 0 ? '#ef4444' : 'currentColor'} />
+                                {savedItems && savedItems.length > 0 && (
+                                    <span style={{
+                                        position: 'absolute',
+                                        top: '-4px',
+                                        right: '-4px',
+                                        backgroundColor: '#ef4444',
+                                        color: 'white',
+                                        fontSize: '0.65rem',
+                                        fontWeight: '800',
+                                        width: '18px',
+                                        height: '18px',
+                                        borderRadius: '50%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                    }}>
+                                        {savedItems.length}
+                                    </span>
+                                )}
+                            </Link>
+
+                            <div style={{ position: 'relative' }} ref={menuRef}>
+                                {/* Avatar / Menu trigger */}
                             <button
                                 onClick={() => setMenuOpen(prev => !prev)}
                                 style={{
@@ -301,6 +341,7 @@ const Navbar = () => {
                                     </button>
                                 </div>
                             )}
+                            </div>
                         </div>
                     )}
                 </div>

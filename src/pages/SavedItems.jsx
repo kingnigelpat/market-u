@@ -58,7 +58,7 @@ const SavedItems = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
                 <Heart size={28} color="#ef4444" fill="#ef4444" />
                 <h1 style={{ fontSize: '2rem', fontWeight: '900', margin: 0, letterSpacing: '-0.02em' }}>
-                    Saved Items
+                    Your Wishlist
                 </h1>
             </div>
 

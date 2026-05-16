@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import VerifiedBadge from './VerifiedBadge';
 import { MessageCircle, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +9,7 @@ import { optimizeImage } from '../utils/cloudinary';
 const ProductCard = ({ product, index = 0 }) => {
     const { isAuthenticated, savedItems, toggleSavedItem } = useAuth();
     const [showPrompt, setShowPrompt] = useState(false);
+    const navigate = useNavigate();
 
     const handleWhatsApp = (e) => {
         e.preventDefault(); // Prevent navigating to product detail
@@ -33,15 +34,16 @@ const ProductCard = ({ product, index = 0 }) => {
 
     return (
         <>
-            <Link 
-                to={`/product/${product.id}`} 
+            <div 
+                onClick={() => navigate(`/product/${product.id}`)}
                 className="card animate-fade-in-up" 
                 style={{ 
                     display: 'flex', 
                     flexDirection: 'column', 
                     height: '100%', 
                     position: 'relative',
-                    animationDelay: `${index * 0.05}s`
+                    animationDelay: `${index * 0.05}s`,
+                    cursor: 'pointer'
                 }}
             >
                 <div style={{ position: 'relative', paddingTop: '100%', backgroundColor: 'var(--bg-color)', overflow: 'hidden' }}>
@@ -118,7 +120,7 @@ const ProductCard = ({ product, index = 0 }) => {
                         <MessageCircle size={16} /> Chat on WhatsApp
                     </button>
                 </div>
-            </Link>
+            </div>
 
             <AuthPromptModal 
                 isOpen={showPrompt} 
