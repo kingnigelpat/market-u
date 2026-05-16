@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
-    const { isAuthenticated, isSeller, userRole, currentUser } = useAuth();
+    const { isAuthenticated, isSeller, userRole, currentUser, userName } = useAuth();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -97,7 +97,7 @@ const Home = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                         <div>
                             <h1 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>
-                                {isAuthenticated ? `Hi, ${currentUser?.displayName?.split(' ')[0] || 'there'} 👋` : 'Campus Market 🚀'}
+                                {isAuthenticated ? `Hi, ${(currentUser?.displayName || userName)?.split(' ')[0] || 'there'} 👋` : 'Campus Market 🚀'}
                             </h1>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '0.25rem', margin: 0 }}>
                                 Find what you need instantly

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { auth, db } from '../firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { UserPlus } from 'lucide-react';
 
@@ -38,6 +38,11 @@ const Register = () => {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
             const user = userCredential.user;
+
+            // Update Auth Profile
+            await updateProfile(user, {
+                displayName: formData.name
+            });
 
             // Save user details to Firestore
             await setDoc(doc(db, 'users', user.uid), {

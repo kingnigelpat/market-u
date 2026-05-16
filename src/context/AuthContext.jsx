@@ -13,27 +13,33 @@ export function useAuth() {
 export function AuthProvider({ children }) {
     const [currentUser, setCurrentUser] = useState(null);
     const [userRole, setUserRole] = useState(null); // 'buyer', 'seller', 'admin'
+    const [userName, setUserName] = useState('');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
                 setCurrentUser(user);
-                // Fetch user role from Firestore
+                // Fetch user role and name from Firestore
                 try {
                     const userDoc = await getDoc(doc(db, 'users', user.uid));
                     if (userDoc.exists()) {
-                        setUserRole(userDoc.data().role || 'buyer');
+                        const data = userDoc.data();
+                        setUserRole(data.role || 'buyer');
+                        setUserName(data.name || '');
                     } else {
                         setUserRole('buyer');
+                        setUserName('');
                     }
                 } catch (error) {
-                    console.error("Error fetching user role:", error);
+                    console.error("Error fetching user data:", error);
                     setUserRole('buyer');
+                    setUserName('');
                 }
             } else {
                 setCurrentUser(null);
                 setUserRole(null);
+                setUserName('');
             }
             setLoading(false);
         });
@@ -44,6 +50,7 @@ export function AuthProvider({ children }) {
     const value = {
         currentUser,
         userRole,
+        userName,
         isAuthenticated: !!currentUser,
         isSeller: userRole === 'seller' || userRole === 'admin',
         isAdmin: userRole === 'admin'
