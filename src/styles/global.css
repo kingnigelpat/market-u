@@ -455,6 +455,10 @@ select:focus {
 }
 
 /* Mobile Polish */
+.mobile-only {
+  display: none !important;
+}
+
 @media (max-width: 480px) {
   .main-content {
     padding: 0.5rem 0;
@@ -464,6 +468,9 @@ select:focus {
   }
   .hide-on-mobile {
     display: none !important;
+  }
+  .mobile-only {
+    display: flex !important;
   }
 }
 
