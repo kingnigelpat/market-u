@@ -30,6 +30,19 @@ const SellerDashboard = () => {
                 let currentSellerData = null;
                 if (sellerSnap.exists()) {
                     currentSellerData = { id: sellerSnap.id, ...sellerSnap.data() };
+                    
+                    // Fetch ratings
+                    const ratingsQ = query(collection(db, 'ratings'), where('sellerId', '==', currentUser.uid));
+                    const ratingsSnap = await getDocs(ratingsQ);
+                    let score = 0;
+                    let count = 0;
+                    ratingsSnap.forEach(doc => {
+                        score += doc.data().stars || 0;
+                        count += 1;
+                    });
+                    currentSellerData.ratingScore = score;
+                    currentSellerData.ratingCount = count;
+                    
                     setSellerData(currentSellerData);
                 }
 

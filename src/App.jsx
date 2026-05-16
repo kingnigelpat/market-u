@@ -11,7 +11,6 @@ const Home = lazy(() => import('./pages/Home.jsx'));
 const Login = lazy(() => import('./pages/Login.jsx'));
 const Register = lazy(() => import('./pages/Register.jsx'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail.jsx'));
-const SavedItems = lazy(() => import('./pages/SavedItems.jsx'));
 const SellerDashboard = lazy(() => import('./pages/SellerDashboard.jsx'));
 const AddProduct = lazy(() => import('./pages/AddProduct.jsx'));
 const EditProduct = lazy(() => import('./pages/EditProduct.jsx'));
@@ -45,7 +44,6 @@ const AppContent = () => {
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
                         <Route path="/product/:id" element={<ProductDetail />} />
-                        <Route path="/saved" element={<ProtectedRoute><SavedItems /></ProtectedRoute>} />
 
                         {/* Protected Routes */}
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>

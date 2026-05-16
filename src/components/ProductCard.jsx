@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import VerifiedBadge from './VerifiedBadge';
-import { MessageCircle, Heart } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AuthPromptModal from './AuthPromptModal';
 import { optimizeImage } from '../utils/cloudinary';
 
 const ProductCard = ({ product, index = 0 }) => {
-    const { isAuthenticated, savedItems, toggleSavedItem } = useAuth();
+    const { isAuthenticated } = useAuth();
     const [showPrompt, setShowPrompt] = useState(false);
     const navigate = useNavigate();
 
@@ -55,38 +55,6 @@ const ProductCard = ({ product, index = 0 }) => {
                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
                         className="product-card-image"
                     />
-                    {isAuthenticated && (
-                        <button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                toggleSavedItem(product.id);
-                            }}
-                            style={{
-                                position: 'absolute',
-                                top: '0.5rem',
-                                right: '0.5rem',
-                                background: 'white',
-                                border: 'none',
-                                borderRadius: '50%',
-                                width: '32px',
-                                height: '32px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                zIndex: 10,
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                                color: savedItems?.includes(product.id) ? '#ef4444' : '#94a3b8',
-                                transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-                            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                            aria-label={savedItems?.includes(product.id) ? "Remove from wishlist" : "Add to wishlist"}
-                        >
-                            <Heart size={18} fill={savedItems?.includes(product.id) ? '#ef4444' : 'none'} />
-                        </button>
-                    )}
                     {product.category && (
                         <span style={{ position: 'absolute', top: '0.5rem', left: '0.5rem', background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '0.75rem', padding: '0.25rem 0.5rem', borderRadius: '4px', fontWeight: '500', zIndex: 5 }}>
                             {product.category}

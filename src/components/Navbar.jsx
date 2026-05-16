@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Heart } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass } from 'lucide-react';
 
 const Navbar = () => {
-    const { isAuthenticated, isSeller, userRole, savedItems } = useAuth();
+    const { isAuthenticated, isSeller, userRole } = useAuth();
     const navigate = useNavigate();
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
     const [menuOpen, setMenuOpen] = useState(false);
@@ -86,45 +86,6 @@ const Navbar = () => {
                         </div>
                     ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <Link to="/saved" title="Saved Items" style={{ 
-                                position: 'relative', 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center',
-                                width: '36px',
-                                height: '36px',
-                                borderRadius: '50%',
-                                backgroundColor: 'var(--surface-color)',
-                                border: '1.5px solid var(--border-color)',
-                                color: 'var(--text-primary)',
-                                transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary-color)'}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
-                            >
-                                <Heart size={18} fill={savedItems?.length > 0 ? '#ef4444' : 'none'} color={savedItems?.length > 0 ? '#ef4444' : 'currentColor'} />
-                                {savedItems && savedItems.length > 0 && (
-                                    <span style={{
-                                        position: 'absolute',
-                                        top: '-4px',
-                                        right: '-4px',
-                                        backgroundColor: '#ef4444',
-                                        color: 'white',
-                                        fontSize: '0.65rem',
-                                        fontWeight: '800',
-                                        width: '18px',
-                                        height: '18px',
-                                        borderRadius: '50%',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                    }}>
-                                        {savedItems.length}
-                                    </span>
-                                )}
-                            </Link>
-
                             <div style={{ position: 'relative' }} ref={menuRef}>
                                 {/* Avatar / Menu trigger */}
                             <button
@@ -219,24 +180,6 @@ const Navbar = () => {
                                             {theme === 'dark' ? 'ON' : 'OFF'}
                                         </span>
                                     </button>
-
-                                    {/* Saved Items */}
-                                    <Link
-                                        to="/saved"
-                                        onClick={() => setMenuOpen(false)}
-                                        style={{
-                                            width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                            padding: '0.8rem 1rem', background: 'none', border: 'none',
-                                            color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.875rem',
-                                            fontWeight: '600', textDecoration: 'none',
-                                            transition: 'background 0.15s',
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-color)'}
-                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                    >
-                                        <Heart size={16} />
-                                        Saved Items
-                                    </Link>
 
                                     {/* Become a Seller (only for buyers) */}
                                     {!isSeller && (

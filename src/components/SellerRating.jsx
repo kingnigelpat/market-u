@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, getDoc, updateDoc, increment, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -16,28 +16,35 @@ const SellerRating = ({ sellerId }) => {
     useEffect(() => {
         if (!sellerId) return;
 
-        const fetchRating = async () => {
+        const fetchRatings = async () => {
             try {
-                const sellerDoc = await getDoc(doc(db, 'users', sellerId));
-                if (sellerDoc.exists()) {
-                    const data = sellerDoc.data();
-                    setRating({
-                        score: data.ratingScore || 0,
-                        count: data.ratingCount || 0
-                    });
+                // Query all ratings for this seller
+                const q = query(collection(db, 'ratings'), where('sellerId', '==', sellerId));
+                const querySnapshot = await getDocs(q);
+                
+                let totalScore = 0;
+                let count = 0;
+                let hasRated = false;
 
-                    if (currentUser && data.ratedBy && data.ratedBy.includes(currentUser.uid)) {
-                        setUserHasRated(true);
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    totalScore += data.stars || 0;
+                    count += 1;
+                    if (currentUser && data.buyerId === currentUser.uid) {
+                        hasRated = true;
                     }
-                }
+                });
+
+                setRating({ score: totalScore, count });
+                setUserHasRated(hasRated);
             } catch (error) {
-                console.error("Error fetching seller rating:", error);
+                console.error("Error fetching seller ratings:", error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchRating();
+        fetchRatings();
     }, [sellerId, currentUser]);
 
     const handleRate = async (stars) => {
@@ -61,14 +68,18 @@ const SellerRating = ({ sellerId }) => {
         }));
 
         try {
-            const sellerRef = doc(db, 'users', sellerId);
+            // Use a separate collection so we don't violate user document security rules
+            const ratingId = `${sellerId}_${currentUser.uid}`;
+            const ratingRef = doc(db, 'ratings', ratingId);
             
-            await updateDoc(sellerRef, {
-                ratingScore: increment(stars),
-                ratingCount: increment(1),
-                ratedBy: arrayUnion(currentUser.uid)
+            await setDoc(ratingRef, {
+                sellerId: sellerId,
+                buyerId: currentUser.uid,
+                stars: stars,
+                timestamp: serverTimestamp()
             });
             
+            // Removed old updateDoc that was causing failure
         } catch (error) {
             console.error("Error rating seller:", error);
             // Revert optimistic update
@@ -101,8 +112,8 @@ const SellerRating = ({ sellerId }) => {
             </div>
 
             {(!isOwner && !userHasRated) && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
-                    <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginRight: '0.5rem' }}>Rate seller:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.5rem' }}>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginRight: '0.5rem' }}>Tap to rate:</span>
                     {[1, 2, 3, 4, 5].map((star) => (
                         <button
                             key={star}
@@ -113,14 +124,18 @@ const SellerRating = ({ sellerId }) => {
                                 background: 'none',
                                 border: 'none',
                                 cursor: 'pointer',
-                                padding: '0.1rem',
-                                color: star <= hoverStar ? '#f59e0b' : '#cbd5e1',
-                                transition: 'color 0.2s',
-                                display: 'flex'
+                                padding: '0.5rem', // Much bigger hit area
+                                margin: '0 0.1rem',
+                                color: star <= hoverStar ? '#f59e0b' : '#e2e8f0',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: '50%'
                             }}
                             title={`Rate ${star} stars`}
                         >
-                            <Star size={18} fill={star <= hoverStar ? '#f59e0b' : 'none'} />
+                            <Star size={26} fill={star <= hoverStar ? '#f59e0b' : 'none'} />
                         </button>
                     ))}
                 </div>

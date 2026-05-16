@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, deleteDoc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../firebase';
-import { MessageCircle, ArrowLeft, Trash2, Edit, Heart } from 'lucide-react';
+import { MessageCircle, ArrowLeft, Trash2, Edit } from 'lucide-react';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SellerRating from '../components/SellerRating';
 import { useAuth } from '../context/AuthContext';
@@ -13,7 +13,7 @@ import { optimizeImage } from '../utils/cloudinary';
 const ProductDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { currentUser, isAuthenticated, savedItems, toggleSavedItem } = useAuth();
+    const { currentUser, isAuthenticated } = useAuth();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
@@ -192,37 +192,6 @@ const ProductDetail = () => {
                             <h1 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.25rem)', fontWeight: '900', margin: 0, letterSpacing: '-0.03em', lineHeight: '1.1' }}>
                                 {product.title}
                             </h1>
-                            {isAuthenticated && !isOwner && (
-                                <button
-                                    onClick={() => toggleSavedItem(product.id)}
-                                    style={{
-                                        background: 'var(--surface-color)',
-                                        border: '1px solid var(--border-color)',
-                                        borderRadius: '50%',
-                                        width: '44px',
-                                        height: '44px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                        flexShrink: 0,
-                                        boxShadow: 'var(--shadow-sm)',
-                                        color: savedItems?.includes(product.id) ? '#ef4444' : 'var(--text-secondary)',
-                                        transition: 'all 0.2s ease'
-                                    }}
-                                    onMouseEnter={e => {
-                                        e.currentTarget.style.transform = 'scale(1.05)';
-                                        e.currentTarget.style.borderColor = savedItems?.includes(product.id) ? '#ef4444' : 'var(--primary-color)';
-                                    }}
-                                    onMouseLeave={e => {
-                                        e.currentTarget.style.transform = 'scale(1)';
-                                        e.currentTarget.style.borderColor = 'var(--border-color)';
-                                    }}
-                                    title={savedItems?.includes(product.id) ? "Remove from wishlist" : "Add to wishlist"}
-                                >
-                                    <Heart size={22} fill={savedItems?.includes(product.id) ? '#ef4444' : 'none'} />
-                                </button>
-                            )}
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--surface-color)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
