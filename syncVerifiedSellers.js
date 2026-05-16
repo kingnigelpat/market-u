@@ -1,4 +1,3 @@
-/* eslint-env node */
 // syncVerifiedSellers.js
 // Run this script whenever you verify a seller to sync their status to all their products
 // Usage: node syncVerifiedSellers.js

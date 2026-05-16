@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Heart } from 'lucide-react';
 
 const Navbar = () => {
     const { isAuthenticated, isSeller, userRole } = useAuth();
@@ -179,6 +179,24 @@ const Navbar = () => {
                                             {theme === 'dark' ? 'ON' : 'OFF'}
                                         </span>
                                     </button>
+
+                                    {/* Saved Items */}
+                                    <Link
+                                        to="/saved"
+                                        onClick={() => setMenuOpen(false)}
+                                        style={{
+                                            width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                            padding: '0.8rem 1rem', background: 'none', border: 'none',
+                                            color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.875rem',
+                                            fontWeight: '600', textDecoration: 'none',
+                                            transition: 'background 0.15s',
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-color)'}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    >
+                                        <Heart size={16} />
+                                        Saved Items
+                                    </Link>
 
                                     {/* Become a Seller (only for buyers) */}
                                     {!isSeller && (

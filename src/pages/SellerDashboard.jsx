@@ -5,14 +5,14 @@ import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Link } from 'react-router-dom';
-import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap } from 'lucide-react';
+import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap, Star } from 'lucide-react';
 
 const SellerDashboard = () => {
     const { currentUser, userRole } = useAuth();
     const [products, setProducts] = useState([]);
     const [sellerData, setSellerData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [requestingVerif, setRequestingVerif] = useState(false);
+    const requestingVerif = sellerData?.verificationStatus === 'pending';
     const [isUpgrading, setIsUpgrading] = useState(false);
 
     useEffect(() => {
@@ -245,6 +245,21 @@ const SellerDashboard = () => {
                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.25rem' }}>Seller Level</p>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: products.length >= 3 ? '#d97706' : 'var(--text-primary)' }}>
                             {products.length >= 10 ? 'Power Seller 👑' : products.length >= 3 ? 'Active Seller 🌟' : 'Beginner'}
+                        </h3>
+                    </div>
+                </div>
+
+                <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                    <div style={{ padding: '1rem', backgroundColor: 'rgba(244, 63, 94, 0.1)', borderRadius: '1rem', color: '#f43f5e' }}>
+                        <Star size={28} />
+                    </div>
+                    <div>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.25rem' }}>Seller Rating</p>
+                        <h3 style={{ fontSize: '1.75rem', fontWeight: '800' }}>
+                            {sellerData?.ratingCount ? (sellerData.ratingScore / sellerData.ratingCount).toFixed(1) : 'New'}
+                            <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: '500', marginLeft: '0.5rem' }}>
+                                ({sellerData?.ratingCount || 0} revs)
+                            </span>
                         </h3>
                     </div>
                 </div>
