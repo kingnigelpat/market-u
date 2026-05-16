@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { collection, query, orderBy, getDocs, where, limit } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
-import { Search, SlidersHorizontal, PackagePlus, ArrowRight } from 'lucide-react';
+import { Search, PackagePlus, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
-    const { isAuthenticated, isSeller, userRole, currentUser, userName } = useAuth();
+    const { isAuthenticated, isSeller, currentUser, userName } = useAuth();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');

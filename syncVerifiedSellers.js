@@ -1,3 +1,4 @@
+/* eslint-env node */
 // syncVerifiedSellers.js
 // Run this script whenever you verify a seller to sync their status to all their products
 // Usage: node syncVerifiedSellers.js
@@ -71,10 +72,12 @@ async function syncVerifiedSellers() {
   }
 
   console.log(`\n🎉 Sync complete! Updated ${totalUpdated} products.`);
+  // eslint-disable-next-line no-undef
   process.exit(0);
 }
 
 syncVerifiedSellers().catch((err) => {
   console.error("❌ Error:", err);
+  // eslint-disable-next-line no-undef
   process.exit(1);
 });

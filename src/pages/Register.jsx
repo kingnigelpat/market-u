@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
@@ -8,20 +8,16 @@ import { UserPlus } from 'lucide-react';
 const Register = () => {
     const location = useLocation();
     
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        password: '',
-        role: 'buyer'
-    });
-
-    useEffect(() => {
+    const [formData, setFormData] = useState(() => {
         const params = new URLSearchParams(location.search);
-        if (params.get('role') === 'seller') {
-            setFormData(prev => ({ ...prev, role: 'seller' }));
-        }
-    }, [location]);
+        return {
+            name: '',
+            email: '',
+            phone: '',
+            password: '',
+            role: params.get('role') === 'seller' ? 'seller' : 'buyer'
+        };
+    });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
