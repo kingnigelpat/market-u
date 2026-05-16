@@ -15,6 +15,15 @@ const Home = () => {
     const [verifiedOnly, setVerifiedOnly] = useState(false);
     const productsRef = useRef(null);
 
+    const [showDownloadPrompt, setShowDownloadPrompt] = useState(() => {
+        return localStorage.getItem('hideDownloadPrompt') !== 'true';
+    });
+
+    const dismissDownloadPrompt = () => {
+        setShowDownloadPrompt(false);
+        localStorage.setItem('hideDownloadPrompt', 'true');
+    };
+
     const handleSearch = (term, category = null) => {
         if (term !== null) setSearchTerm(term);
         if (category !== null) setCategoryFilter(category);
@@ -55,9 +64,9 @@ const Home = () => {
         fetchProducts();
     }, []);
 
-    // Filter AND SORT (Verified first, then by views/demand)
     const filteredProducts = products.filter(product => {
-        const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                              (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase()));
         const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
         const matchesVerified = !verifiedOnly || Boolean(product.sellerVerified) === true;
         return matchesSearch && matchesCategory && matchesVerified;
@@ -142,27 +151,46 @@ const Home = () => {
             </div>
 
             <div className="container" ref={productsRef}>
-                {/* Buyer to Seller Prompt Banner */}
-                {isAuthenticated && !isSeller && (
+                {/* Download App Prompt Banner */}
+                {showDownloadPrompt && (
                     <div className="animate-fade-in-up" style={{ 
                         marginBottom: '2.5rem', 
                         padding: '1.5rem', 
-                        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.02) 100%)',
+                        background: isSeller 
+                            ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.02) 100%)' 
+                            : 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.02) 100%)',
                         borderRadius: 'var(--radius-xl)',
-                        border: '1px solid rgba(37, 99, 235, 0.15)',
+                        border: isSeller ? '1px solid rgba(245, 158, 11, 0.15)' : '1px solid rgba(37, 99, 235, 0.15)',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         textAlign: 'center',
-                        gap: '1rem'
+                        gap: '1rem',
+                        position: 'relative'
                     }}>
+                        <button 
+                            onClick={dismissDownloadPrompt}
+                            style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '0.25rem' }}
+                            aria-label="Dismiss"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
                         <div>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: '800', marginBottom: '0.25rem' }}>Want to earn extra money?</h3>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>List your products or services on Market-U and reach hundreds of students.</p>
+                            {isSeller ? (
+                                <>
+                                    <h3 style={{ fontSize: '1.125rem', fontWeight: '800', marginBottom: '0.25rem', color: '#d97706' }}>⭐️ Premium Seller Access</h3>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Download our app to manage your store, track views, and reply to customers faster!</p>
+                                </>
+                            ) : (
+                                <>
+                                    <h3 style={{ fontSize: '1.125rem', fontWeight: '800', marginBottom: '0.25rem' }}>Get the Market-U App</h3>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Experience faster browsing and get instant notifications when items drop.</p>
+                                </>
+                            )}
                         </div>
-                        <Link to="/dashboard" className="btn btn-primary" style={{ padding: '0.625rem 1.5rem', borderRadius: 'var(--radius-lg)', fontSize: '0.875rem' }}>
-                            Start Selling Today
-                        </Link>
+                        <button className="btn btn-primary" style={{ padding: '0.625rem 1.5rem', borderRadius: 'var(--radius-lg)', fontSize: '0.875rem', backgroundColor: isSeller ? '#d97706' : 'var(--primary-color)', color: 'white', border: 'none' }}>
+                            Download App
+                        </button>
                     </div>
                 )}
 
