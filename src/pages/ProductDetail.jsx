@@ -106,7 +106,7 @@ const ProductDetail = () => {
     };
 
     return (
-        <div className="container" style={{ paddingBottom: '4rem' }}>
+        <div className="container">
             {/* Lightbox Modal */}
             {selectedImage && (
                 <div 

@@ -82,7 +82,7 @@ const Home = () => {
     });
 
     return (
-        <div className="market-container" style={{ paddingBottom: '8rem', backgroundColor: 'var(--bg-color)', minHeight: '100vh' }}>
+        <div className="market-container" style={{ backgroundColor: 'var(--bg-color)' }}>
             {/* Minimal Active Dashboard Hero - Mobile First */}
             <div className="dashboard-hero" style={{ 
                 backgroundColor: 'var(--surface-color)',

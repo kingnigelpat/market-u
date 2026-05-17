@@ -8,7 +8,6 @@ const Footer = () => {
       backgroundColor: '#0f172a', 
       color: 'white', 
       padding: '4rem 0 2rem 0',
-      marginTop: '4rem',
       borderTop: '1px solid rgba(255, 255, 255, 0.1)'
     }}>
       <div className="container">
