@@ -5,6 +5,7 @@ import ProductCard from '../components/ProductCard';
 import { Search, PackagePlus, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import InstallGuideModal from '../components/InstallGuideModal';
 
 const Home = () => {
     const { isAuthenticated, isSeller, currentUser, userName } = useAuth();
@@ -13,6 +14,7 @@ const Home = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('all');
     const [verifiedOnly, setVerifiedOnly] = useState(false);
+    const [showInstallGuide, setShowInstallGuide] = useState(false);
     const productsRef = useRef(null);
 
     const [showDownloadPrompt, setShowDownloadPrompt] = useState(() => {
@@ -188,7 +190,11 @@ const Home = () => {
                                 </>
                             )}
                         </div>
-                        <button className="btn btn-primary" style={{ padding: '0.625rem 1.5rem', borderRadius: 'var(--radius-lg)', fontSize: '0.875rem', backgroundColor: isSeller ? '#d97706' : 'var(--primary-color)', color: 'white', border: 'none' }}>
+                        <button 
+                            className="btn btn-primary" 
+                            onClick={() => setShowInstallGuide(true)}
+                            style={{ padding: '0.625rem 1.5rem', borderRadius: 'var(--radius-lg)', fontSize: '0.875rem', backgroundColor: isSeller ? '#d97706' : 'var(--primary-color)', color: 'white', border: 'none' }}
+                        >
                             Download App
                         </button>
                     </div>
@@ -282,6 +288,11 @@ const Home = () => {
                     </div>
                 )}
             </div>
+
+            <InstallGuideModal 
+                isOpen={showInstallGuide} 
+                onClose={() => setShowInstallGuide(false)} 
+            />
 
             <style>{`
                 .hero-orb {
