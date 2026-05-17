@@ -8,6 +8,7 @@ import SellerRating from '../components/SellerRating';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import AuthPromptModal from '../components/AuthPromptModal';
+import ReadOnlyRating from '../components/ReadOnlyRating';
 import { optimizeImage } from '../utils/cloudinary';
 
 const ProductDetail = () => {
@@ -199,12 +200,13 @@ const ProductDetail = () => {
                                 {product.sellerName ? product.sellerName.charAt(0).toUpperCase() : 'S'}
                             </div>
                             <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                                     <span style={{ fontWeight: '700', fontSize: '1rem' }}>{product.sellerName}</span>
                                     {product.sellerVerified && <VerifiedBadge size={16} />}
+                                    <ReadOnlyRating sellerId={product.sellerId} />
                                 </div>
                                 <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>Verified Campus Seller</span>
-                                <SellerRating sellerId={product.sellerId} />
+                                <SellerRating sellerId={product.sellerId} hideAverage={true} />
                             </div>
                         </div>
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import VerifiedBadge from './VerifiedBadge';
+import ReadOnlyRating from './ReadOnlyRating';
 import { MessageCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AuthPromptModal from './AuthPromptModal';
@@ -73,9 +74,10 @@ const ProductCard = ({ product, index = 0 }) => {
                         </h3>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 'auto' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 'auto', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: product.sellerVerified ? '700' : '500', color: product.sellerVerified ? 'var(--text-primary)' : 'inherit' }}>{product.sellerName || 'Seller'}</span>
                         {product.sellerVerified && <VerifiedBadge size={14} />}
+                        <ReadOnlyRating sellerId={product.sellerId} />
                     </div>
 
                     <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>

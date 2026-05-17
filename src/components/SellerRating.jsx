@@ -5,7 +5,7 @@ import { Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AuthPromptModal from './AuthPromptModal';
 
-const SellerRating = ({ sellerId }) => {
+const SellerRating = ({ sellerId, hideAverage = false }) => {
     const { currentUser, isAuthenticated } = useAuth();
     const [rating, setRating] = useState({ score: 0, count: 0 });
     const [userHasRated, setUserHasRated] = useState(false);
@@ -98,17 +98,19 @@ const SellerRating = ({ sellerId }) => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', color: '#f59e0b' }}>
-                    <Star size={16} fill="#f59e0b" />
-                    <span style={{ fontWeight: '800', marginLeft: '0.25rem', color: 'var(--text-primary)' }}>
-                        {averageRating > 0 ? averageRating : 'New'}
+            {!hideAverage && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', color: '#f59e0b' }}>
+                        <Star size={16} fill="#f59e0b" />
+                        <span style={{ fontWeight: '800', marginLeft: '0.25rem', color: 'var(--text-primary)' }}>
+                            {averageRating > 0 ? averageRating : 'New'}
+                        </span>
+                    </div>
+                    <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                        ({rating.count} {rating.count === 1 ? 'review' : 'reviews'})
                     </span>
                 </div>
-                <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                    ({rating.count} {rating.count === 1 ? 'review' : 'reviews'})
-                </span>
-            </div>
+            )}
 
             {(!isOwner && !userHasRated) && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.5rem' }}>
