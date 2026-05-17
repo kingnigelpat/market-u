@@ -136,7 +136,7 @@ const Footer = () => {
 
           <div>
             <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '1.5rem' }}>Developed By</h3>
-            <a href="https://raehub.live" target="_blank" rel="noopener noreferrer" style={{ 
+            <a href="https://raehub.live/" target="_blank" rel="noopener noreferrer" style={{ 
               display: 'block',
               padding: '1.25rem',
               backgroundColor: 'rgba(255, 255, 255, 0.03)',
@@ -181,7 +181,7 @@ const Footer = () => {
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ color: '#64748b', fontSize: '0.875rem' }}>Powered by</span>
-            <a href="https://raehub.live" target="_blank" rel="noopener noreferrer" style={{ 
+            <a href="https://raehub.live/" target="_blank" rel="noopener noreferrer" style={{ 
               fontWeight: '800', 
               fontSize: '0.875rem', 
               letterSpacing: '0.05em',
