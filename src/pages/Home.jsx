@@ -42,11 +42,11 @@ const Home = () => {
         const fetchProducts = async () => {
             setLoading(true);
             try {
-                // Fetch Products - Limit to top 50 for speed
+                // Fetch Products - Limit to top 2000 for speed
                 const q = query(
                     collection(db, 'products'), 
                     orderBy('createdAt', 'desc'),
-                    limit(50)
+                    limit(2000)
                 );
                 const querySnapshot = await getDocs(q);
 
