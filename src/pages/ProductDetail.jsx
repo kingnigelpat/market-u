@@ -15,7 +15,7 @@ import { sendPushNotification } from '../utils/notifications';
 const ProductDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { currentUser, isAuthenticated, userName, userPhone, isSeller } = useAuth();
+    const { currentUser, isAuthenticated, userName, userPhone } = useAuth();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
@@ -156,7 +156,6 @@ const ProductDetail = () => {
 
     // Determine interest button state
     const isDone = alreadyInterested || interestSuccess;
-    const isViewerSeller = isSeller;
 
     return (
         <div className="container">
@@ -275,11 +274,11 @@ const ProductDetail = () => {
                             </div>
                         </div>
 
-                        {/* I'm Interested Button — only shown to non-owners */}
+                        {/* I'm Interested Button — shown to everyone except the owner */}
                         {!isOwner && (
                             <button
                                 onClick={handleInterested}
-                                disabled={interestLoading || isDone || isViewerSeller}
+                                disabled={interestLoading || isDone}
                                 id="interested-btn"
                                 style={{
                                     width: '100%',
@@ -292,30 +291,20 @@ const ProductDetail = () => {
                                     justifyContent: 'center',
                                     gap: '0.625rem',
                                     border: 'none',
-                                    cursor: isDone || isViewerSeller ? 'default' : 'pointer',
+                                    cursor: isDone ? 'default' : 'pointer',
                                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                     backgroundColor: isDone
                                         ? 'rgba(16, 185, 129, 0.1)'
-                                        : isViewerSeller
-                                        ? 'var(--surface-color)'
                                         : 'var(--primary-color)',
-                                    color: isDone
-                                        ? 'var(--success-color)'
-                                        : isViewerSeller
-                                        ? 'var(--text-secondary)'
-                                        : 'white',
-                                    boxShadow: isDone || isViewerSeller
-                                        ? 'none'
-                                        : '0 10px 20px -5px rgba(37, 99, 235, 0.35)',
-                                    border: isDone ? '1px solid rgba(16, 185, 129, 0.3)' : isViewerSeller ? '1px solid var(--border-color)' : 'none',
+                                    color: isDone ? 'var(--success-color)' : 'white',
+                                    boxShadow: isDone ? 'none' : '0 10px 20px -5px rgba(37, 99, 235, 0.35)',
+                                    border: isDone ? '1px solid rgba(16, 185, 129, 0.3)' : 'none',
                                 }}
                             >
                                 {interestLoading ? (
                                     <><Loader size={22} style={{ animation: 'spin 0.8s linear infinite' }} /> Saving...</>
                                 ) : isDone ? (
                                     <><CheckCircle size={22} /> Interest Recorded!</>
-                                ) : isViewerSeller ? (
-                                    <><Heart size={22} /> Sellers can&apos;t express interest</>
                                 ) : (
                                     <><Heart size={22} /> I&apos;m Interested</>
                                 )}
