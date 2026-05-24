@@ -1,19 +1,52 @@
-import admin from 'firebase-admin';
+/**
+ * /api/notify.js — Vercel Serverless Function
+ * Sends FCM push notifications to seller devices using FCM HTTP v1 API.
+ * Requires FIREBASE_SERVICE_ACCOUNT env var (JSON string of serviceAccountKey.json)
+ */
 
-// Initialize Firebase Admin once (Vercel keeps functions warm)
-if (!admin.apps.length) {
-    try {
-        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-        });
-    } catch (e) {
-        console.error('Firebase Admin init failed:', e);
-    }
+// Minimal JWT + OAuth2 implementation to get FCM access token from service account
+// (avoids needing firebase-admin as a bundled serverless dependency)
+
+function base64url(str) {
+    return Buffer.from(str)
+        .toString('base64')
+        .replace(/=/g, '')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_');
+}
+
+async function getAccessToken(serviceAccount) {
+    const { createSign } = await import('crypto');
+
+    const now = Math.floor(Date.now() / 1000);
+    const header = base64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+    const payload = base64url(JSON.stringify({
+        iss: serviceAccount.client_email,
+        scope: 'https://www.googleapis.com/auth/firebase.messaging',
+        aud: 'https://oauth2.googleapis.com/token',
+        exp: now + 3600,
+        iat: now,
+    }));
+
+    const signingInput = `${header}.${payload}`;
+    const sign = createSign('RSA-SHA256');
+    sign.update(signingInput);
+    const signature = sign.sign(serviceAccount.private_key, 'base64')
+        .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+
+    const jwt = `${signingInput}.${signature}`;
+
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+    });
+
+    const tokenData = await tokenRes.json();
+    return tokenData.access_token;
 }
 
 export default async function handler(req, res) {
-    // Allow CORS from same origin
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -27,41 +60,68 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'No FCM tokens provided' });
     }
 
-    const notification = {
-        title: '🔔 New Interest on Market-U!',
-        body: `${buyerName} is interested in your ${productName}! Open Market-U to contact them.`,
-    };
+    const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!serviceAccountRaw) {
+        console.error('FIREBASE_SERVICE_ACCOUNT env var not set');
+        return res.status(500).json({ error: 'Server not configured for push notifications' });
+    }
 
-    const webpush = {
-        notification: {
-            title: notification.title,
-            body: notification.body,
-            icon: 'https://market-u.vercel.app/icon.png',
-            badge: 'https://market-u.vercel.app/icon.png',
-            vibrate: [200, 100, 200, 100, 200],
-            requireInteraction: true,
-            tag: 'market-u-interest',
-        },
-        fcmOptions: {
-            link: 'https://market-u.vercel.app/notifications',
-        },
-    };
+    let serviceAccount;
+    try {
+        serviceAccount = JSON.parse(serviceAccountRaw);
+    } catch (e) {
+        return res.status(500).json({ error: 'Invalid service account JSON' });
+    }
 
-    // Send to all stored device tokens (laptop + mobile)
-    const sendResults = await Promise.allSettled(
+    let accessToken;
+    try {
+        accessToken = await getAccessToken(serviceAccount);
+    } catch (e) {
+        console.error('Failed to get FCM access token:', e);
+        return res.status(500).json({ error: 'Auth failed' });
+    }
+
+    const projectId = serviceAccount.project_id;
+    const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+
+    const results = await Promise.allSettled(
         fcmTokens.map(token =>
-            admin.messaging().send({
-                token,
-                notification,
-                webpush,
-            })
+            fetch(fcmUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: {
+                        token,
+                        notification: {
+                            title: '🔔 New Interest on Market-U!',
+                            body: `${buyerName} is interested in your ${productName}! Open Market-U to contact them.`,
+                        },
+                        webpush: {
+                            notification: {
+                                title: '🔔 New Interest on Market-U!',
+                                body: `${buyerName} is interested in your ${productName}! Tap to contact them.`,
+                                icon: '/icon.png',
+                                badge: '/icon.png',
+                                vibrate: [200, 100, 200, 100, 200],
+                                requireInteraction: true,
+                                tag: 'market-u-interest',
+                            },
+                            fcm_options: {
+                                link: '/notifications',
+                            },
+                        },
+                    },
+                }),
+            }).then(r => r.json())
         )
     );
 
-    const succeeded = sendResults.filter(r => r.status === 'fulfilled').length;
-    const failed = sendResults.filter(r => r.status === 'rejected').length;
-
-    console.log(`FCM push: ${succeeded} sent, ${failed} failed`);
+    const succeeded = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    console.log(`Push result: ${succeeded} sent, ${failed} failed`);
 
     return res.status(200).json({ succeeded, failed });
 }
