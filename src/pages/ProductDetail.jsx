@@ -309,7 +309,7 @@ const ProductDetail = () => {
                                 {interestLoading ? (
                                     <><Loader size={22} style={{ animation: 'spin 0.8s linear infinite' }} /> Saving...</>
                                 ) : isDone ? (
-                                    <><CheckCircle size={22} /> Interest Recorded!</>
+                                    <><CheckCircle size={22} /> Seller Notified! 🎉</>
                                 ) : (
                                     <><Heart size={22} /> I&apos;m Interested</>
                                 )}
@@ -319,7 +319,7 @@ const ProductDetail = () => {
                         {/* Success sub-text */}
                         {interestSuccess && (
                             <p style={{ textAlign: 'center', marginTop: '0.75rem', fontSize: '0.875rem', color: 'var(--success-color)', fontWeight: '600' }}>
-                                ✅ The seller will be notified!
+                                The seller has been notified and will contact you soon 😊
                             </p>
                         )}
 
