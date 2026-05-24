@@ -99,13 +99,11 @@ export default async function handler(req, res) {
                             title: '🔔 New Interest on Market-U!',
                             body: `${buyerName} is interested in your ${productName}! Open Market-U to contact them.`,
                         },
-                        // High priority — wakes up Android even when Chrome is closed
                         android: {
                             priority: 'high',
                             notification: {
                                 sound: 'default',
-                                defaultSound: true,
-                                notificationPriority: 'PRIORITY_HIGH',
+                                notification_priority: 'PRIORITY_HIGH',
                                 visibility: 'PUBLIC',
                             },
                         },
