@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass } from 'lucide-react';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell } from 'lucide-react';
 
 const Navbar = () => {
-    const { isAuthenticated, isSeller, userRole } = useAuth();
+    const { isAuthenticated, isSeller, userRole, currentUser } = useAuth();
     const navigate = useNavigate();
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
     const [menuOpen, setMenuOpen] = useState(false);
+    const [unseenCount, setUnseenCount] = useState(0);
     const menuRef = useRef(null);
 
     useEffect(() => {
@@ -27,6 +29,28 @@ const Navbar = () => {
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, []);
+
+    // Real-time unseen interest count for sellers
+    useEffect(() => {
+        if (!isSeller || !currentUser) {
+            setUnseenCount(0);
+            return;
+        }
+
+        const q = query(
+            collection(db, 'interests'),
+            where('sellerId', '==', currentUser.uid),
+            where('seen', '==', false)
+        );
+
+        const unsub = onSnapshot(q, (snap) => {
+            setUnseenCount(snap.size);
+        }, (err) => {
+            console.warn('Notification count error:', err);
+        });
+
+        return () => unsub();
+    }, [isSeller, currentUser]);
 
     const toggleTheme = () => {
         setTheme(prev => prev === 'light' ? 'dark' : 'light');
@@ -85,7 +109,70 @@ const Navbar = () => {
                             <Link to="/register" className="btn btn-primary" style={{ fontSize: '0.8125rem', padding: '0.4rem 0.75rem', borderRadius: 'var(--radius-md)' }}>Sign up</Link>
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+
+                            {/* 🔔 Notification Bell — Sellers Only */}
+                            {isSeller && (
+                                <Link
+                                    to="/notifications"
+                                    id="notification-bell"
+                                    title="Notifications"
+                                    style={{
+                                        position: 'relative',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '38px',
+                                        height: '38px',
+                                        borderRadius: '50%',
+                                        backgroundColor: unseenCount > 0 ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+                                        border: `1.5px solid ${unseenCount > 0 ? 'rgba(37, 99, 235, 0.3)' : 'var(--border-color)'}`,
+                                        color: unseenCount > 0 ? 'var(--primary-color)' : 'var(--text-secondary)',
+                                        transition: 'all 0.2s ease',
+                                        textDecoration: 'none',
+                                    }}
+                                    onMouseEnter={e => {
+                                        e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.1)';
+                                        e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.3)';
+                                        e.currentTarget.style.color = 'var(--primary-color)';
+                                    }}
+                                    onMouseLeave={e => {
+                                        if (unseenCount === 0) {
+                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                            e.currentTarget.style.borderColor = 'var(--border-color)';
+                                            e.currentTarget.style.color = 'var(--text-secondary)';
+                                        }
+                                    }}
+                                >
+                                    <Bell size={18} style={{
+                                        animation: unseenCount > 0 ? 'bellRing 2s ease-in-out infinite' : 'none',
+                                    }} />
+                                    {unseenCount > 0 && (
+                                        <span style={{
+                                            position: 'absolute',
+                                            top: '-4px',
+                                            right: '-4px',
+                                            minWidth: '18px',
+                                            height: '18px',
+                                            backgroundColor: '#EF4444',
+                                            color: 'white',
+                                            borderRadius: '99px',
+                                            fontSize: '0.65rem',
+                                            fontWeight: '800',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            padding: '0 4px',
+                                            border: '2px solid var(--nav-bg)',
+                                            lineHeight: 1,
+                                            animation: 'badgePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                        }}>
+                                            {unseenCount > 99 ? '99+' : unseenCount}
+                                        </span>
+                                    )}
+                                </Link>
+                            )}
+
                             <div style={{ position: 'relative' }} ref={menuRef}>
                                 {/* Avatar / Menu trigger */}
                             <button
@@ -208,9 +295,37 @@ const Navbar = () => {
                                         </Link>
                                     )}
 
-                                    {/* Mobile Only: Browse Market (Sellers Only) */}
+                                    {/* Mobile Only: Seller navigation */}
                                     {isSeller && (
                                         <>
+                                            {/* Notifications link in dropdown */}
+                                            <Link
+                                                to="/notifications"
+                                                onClick={() => setMenuOpen(false)}
+                                                style={{
+                                                    width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                                    padding: '0.8rem 1rem', background: 'none', border: 'none',
+                                                    color: unseenCount > 0 ? 'var(--primary-color)' : 'var(--text-primary)',
+                                                    cursor: 'pointer', fontSize: '0.875rem',
+                                                    fontWeight: unseenCount > 0 ? '700' : '600', textDecoration: 'none',
+                                                    transition: 'background 0.15s',
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(37,99,235,0.06)'}
+                                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                            >
+                                                <Bell size={16} />
+                                                Notifications
+                                                {unseenCount > 0 && (
+                                                    <span style={{
+                                                        marginLeft: 'auto', minWidth: '20px', height: '20px',
+                                                        backgroundColor: '#EF4444', color: 'white',
+                                                        borderRadius: '99px', fontSize: '0.65rem', fontWeight: '800',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px',
+                                                    }}>
+                                                        {unseenCount > 99 ? '99+' : unseenCount}
+                                                    </span>
+                                                )}
+                                            </Link>
                                             <Link
                                                 to="/add-product"
                                                 onClick={() => setMenuOpen(false)}
@@ -294,6 +409,18 @@ const Navbar = () => {
                 @keyframes dropdownSlide {
                     from { opacity: 0; transform: translateY(-8px) scale(0.97); }
                     to   { opacity: 1; transform: translateY(0)   scale(1);    }
+                }
+                @keyframes bellRing {
+                    0%, 100% { transform: rotate(0deg); }
+                    10%      { transform: rotate(12deg); }
+                    20%      { transform: rotate(-10deg); }
+                    30%      { transform: rotate(8deg); }
+                    40%      { transform: rotate(-6deg); }
+                    50%      { transform: rotate(0deg); }
+                }
+                @keyframes badgePop {
+                    from { transform: scale(0); }
+                    to   { transform: scale(1); }
                 }
             `}</style>
         </nav>

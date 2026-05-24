@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, deleteDoc, updateDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc, updateDoc, increment, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { MessageCircle, ArrowLeft, Trash2, Edit } from 'lucide-react';
+import { ArrowLeft, Trash2, Edit, Heart, CheckCircle, Loader } from 'lucide-react';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SellerRating from '../components/SellerRating';
 import { useAuth } from '../context/AuthContext';
@@ -14,12 +14,17 @@ import { optimizeImage } from '../utils/cloudinary';
 const ProductDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { currentUser, isAuthenticated } = useAuth();
+    const { currentUser, isAuthenticated, userName, userPhone, isSeller } = useAuth();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [showPrompt, setShowPrompt] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+
+    // Interest state
+    const [interestLoading, setInterestLoading] = useState(false);
+    const [alreadyInterested, setAlreadyInterested] = useState(false);
+    const [interestSuccess, setInterestSuccess] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -49,6 +54,21 @@ const ProductDetail = () => {
                     }
 
                     setProduct(productData);
+
+                    // Check if current buyer already expressed interest
+                    if (currentUser && currentUser.uid !== productData.sellerId) {
+                        try {
+                            const interestQuery = query(
+                                collection(db, 'interests'),
+                                where('buyerId', '==', currentUser.uid),
+                                where('productId', '==', id)
+                            );
+                            const snap = await getDocs(interestQuery);
+                            if (!snap.empty) setAlreadyInterested(true);
+                        } catch (e) {
+                            // If rules deny (e.g. seller viewing buyer interests), silently ignore
+                        }
+                    }
                 } else {
                     console.error("No such product!");
                 }
@@ -71,25 +91,39 @@ const ProductDetail = () => {
         return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}>Product not found.</div>;
     }
 
-    const handleWhatsApp = () => {
+    const isOwner = currentUser && product && currentUser.uid === product.sellerId;
+
+    const handleInterested = async () => {
         if (!isAuthenticated) {
             setShowPrompt(true);
             return;
         }
 
-        let phone = product.sellerPhone ? product.sellerPhone.replace(/\D/g, '') : '';
-        if (phone.startsWith('0')) {
-            phone = '234' + phone.substring(1);
-        } else if (phone && !phone.startsWith('234')) {
-            phone = '234' + phone;
+        if (isOwner) return; // Sellers can't be interested in their own product
+
+        if (alreadyInterested || interestSuccess) return;
+
+        setInterestLoading(true);
+        try {
+            await addDoc(collection(db, 'interests'), {
+                buyerId: currentUser.uid,
+                buyerName: userName || currentUser.displayName || 'A buyer',
+                buyerPhone: userPhone || '',
+                sellerId: product.sellerId,
+                productId: id,
+                productName: product.title,
+                createdAt: serverTimestamp(),
+                seen: false,
+            });
+            setInterestSuccess(true);
+            setAlreadyInterested(true);
+        } catch (error) {
+            console.error("Error saving interest:", error);
+            alert("Something went wrong. Please try again.");
+        } finally {
+            setInterestLoading(false);
         }
-
-        const message = encodeURIComponent(`Hi ${product.sellerName}, I'm interested in your product: ${product.title} on Market-U!`);
-        const whatsappUrl = `https://wa.me/${phone}?text=${message}`;
-        window.location.href = whatsappUrl;
     };
-
-    const isOwner = currentUser && product && currentUser.uid === product.sellerId;
 
     const handleDelete = async () => {
         if (window.confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
@@ -104,6 +138,10 @@ const ProductDetail = () => {
             }
         }
     };
+
+    // Determine interest button state
+    const isDone = alreadyInterested || interestSuccess;
+    const isViewerSeller = isSeller;
 
     return (
         <div className="container">
@@ -222,17 +260,62 @@ const ProductDetail = () => {
                             </div>
                         </div>
 
-                        <button
-                            onClick={handleWhatsApp}
-                            className="btn btn-whatsapp"
-                            style={{ width: '100%', padding: '1.25rem', fontSize: '1.125rem', fontWeight: '700', borderRadius: 'var(--radius-lg)', justifyContent: 'center', boxShadow: '0 10px 20px -5px rgba(37, 211, 102, 0.3)' }}
-                        >
-                            <MessageCircle size={24} />
-                            Contact on WhatsApp
-                        </button>
+                        {/* I'm Interested Button — only shown to non-owners */}
+                        {!isOwner && (
+                            <button
+                                onClick={handleInterested}
+                                disabled={interestLoading || isDone || isViewerSeller}
+                                id="interested-btn"
+                                style={{
+                                    width: '100%',
+                                    padding: '1.25rem',
+                                    fontSize: '1.125rem',
+                                    fontWeight: '700',
+                                    borderRadius: 'var(--radius-lg)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.625rem',
+                                    border: 'none',
+                                    cursor: isDone || isViewerSeller ? 'default' : 'pointer',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    backgroundColor: isDone
+                                        ? 'rgba(16, 185, 129, 0.1)'
+                                        : isViewerSeller
+                                        ? 'var(--surface-color)'
+                                        : 'var(--primary-color)',
+                                    color: isDone
+                                        ? 'var(--success-color)'
+                                        : isViewerSeller
+                                        ? 'var(--text-secondary)'
+                                        : 'white',
+                                    boxShadow: isDone || isViewerSeller
+                                        ? 'none'
+                                        : '0 10px 20px -5px rgba(37, 99, 235, 0.35)',
+                                    border: isDone ? '1px solid rgba(16, 185, 129, 0.3)' : isViewerSeller ? '1px solid var(--border-color)' : 'none',
+                                }}
+                            >
+                                {interestLoading ? (
+                                    <><Loader size={22} style={{ animation: 'spin 0.8s linear infinite' }} /> Saving...</>
+                                ) : isDone ? (
+                                    <><CheckCircle size={22} /> Interest Recorded!</>
+                                ) : isViewerSeller ? (
+                                    <><Heart size={22} /> Sellers can&apos;t express interest</>
+                                ) : (
+                                    <><Heart size={22} /> I&apos;m Interested</>
+                                )}
+                            </button>
+                        )}
+
+                        {/* Success sub-text */}
+                        {interestSuccess && (
+                            <p style={{ textAlign: 'center', marginTop: '0.75rem', fontSize: '0.875rem', color: 'var(--success-color)', fontWeight: '600' }}>
+                                ✅ The seller will be notified!
+                            </p>
+                        )}
 
                         {isOwner && (
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0' }}>
                                 <Link
                                     to={`/edit-product/${id}`}
                                     className="btn btn-secondary"

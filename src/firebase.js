@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getAnalytics } from 'firebase/analytics';
+import { getMessaging, isSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -26,5 +27,18 @@ try {
     console.error("Firebase Analytics failed to initialize:", e);
 }
 
-export { analytics };
+// FCM Messaging — gracefully skip in unsupported environments (e.g. Safari without SW)
+let messaging = null;
+(async () => {
+    try {
+        const supported = await isSupported();
+        if (supported) {
+            messaging = getMessaging(app);
+        }
+    } catch (e) {
+        console.warn("Firebase Messaging not supported in this environment:", e);
+    }
+})();
+
+export { analytics, messaging };
 export default app;
