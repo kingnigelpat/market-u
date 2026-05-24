@@ -2,46 +2,22 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import VerifiedBadge from './VerifiedBadge';
 import ReadOnlyRating from './ReadOnlyRating';
-import { MessageCircle } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import AuthPromptModal from './AuthPromptModal';
+import { Heart } from 'lucide-react';
 import { optimizeImage } from '../utils/cloudinary';
 
 const ProductCard = ({ product, index = 0 }) => {
-    const { isAuthenticated } = useAuth();
-    const [showPrompt, setShowPrompt] = useState(false);
     const navigate = useNavigate();
-
-    const handleWhatsApp = (e) => {
-        e.preventDefault(); // Prevent navigating to product detail
-        
-        if (!isAuthenticated) {
-            setShowPrompt(true);
-            return;
-        }
-
-        let phone = product.sellerPhone ? product.sellerPhone.replace(/\D/g, '') : '';
-        // Standardize to Nigeria (+234)
-        if (phone.startsWith('0')) {
-            phone = '234' + phone.substring(1);
-        } else if (phone && !phone.startsWith('234')) {
-            phone = '234' + phone;
-        }
-
-        const message = encodeURIComponent(`Hi ${product.sellerName}, I'm interested in your product: ${product.title} on Market-U!`);
-        const whatsappUrl = `https://wa.me/${phone}?text=${message}`;
-        window.location.href = whatsappUrl;
-    };
+    const [hovered, setHovered] = useState(false);
 
     return (
         <>
-            <div 
+            <div
                 onClick={() => navigate(`/product/${product.id}`)}
-                className="card animate-fade-in-up" 
-                style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    height: '100%', 
+                className="card animate-fade-in-up"
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
                     position: 'relative',
                     animationDelay: `${index * 0.05}s`,
                     cursor: 'pointer'
@@ -67,6 +43,7 @@ const ProductCard = ({ product, index = 0 }) => {
                         </span>
                     )}
                 </div>
+
                 <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ marginBottom: '0.25rem' }}>
                         <h3 style={{ fontSize: '1rem', fontWeight: '600', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.3' }}>
@@ -86,17 +63,31 @@ const ProductCard = ({ product, index = 0 }) => {
                         </span>
                     </div>
 
-                    <button onClick={handleWhatsApp} className="btn btn-whatsapp" style={{ width: '100%', marginTop: 'auto', padding: '0.625rem', fontSize: '0.875rem', justifyContent: 'center', zIndex: 10 }}>
-                        <MessageCircle size={16} /> Chat on WhatsApp
+                    {/* "I'm Interested" card button — navigates to product detail to complete the action */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
+                        className="btn"
+                        onMouseEnter={() => setHovered(true)}
+                        onMouseLeave={() => setHovered(false)}
+                        style={{
+                            width: '100%',
+                            marginTop: 'auto',
+                            padding: '0.625rem',
+                            fontSize: '0.875rem',
+                            justifyContent: 'center',
+                            zIndex: 10,
+                            backgroundColor: hovered ? 'var(--primary-hover)' : 'var(--primary-color)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 'var(--radius-lg)',
+                            transition: 'all 0.2s ease',
+                            boxShadow: hovered ? '0 6px 16px -4px rgba(37,99,235,0.4)' : '0 2px 8px -2px rgba(37,99,235,0.25)',
+                        }}
+                    >
+                        <Heart size={16} /> I&apos;m Interested
                     </button>
                 </div>
             </div>
-
-            <AuthPromptModal 
-                isOpen={showPrompt} 
-                onClose={() => setShowPrompt(false)} 
-                message="Sign up to contact sellers and start using Market-U"
-            />
         </>
     );
 };
