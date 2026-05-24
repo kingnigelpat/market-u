@@ -1,20 +1,20 @@
 import { getToken, onMessage } from 'firebase/messaging';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
 /**
  * Requests notification permission from the browser.
- * If granted, retrieves the FCM token and saves it to the user's Firestore document.
- * Safe to call multiple times — idempotent.
+ * If granted, retrieves the FCM token and APPENDS it to the user's
+ * fcmTokens array in Firestore (supports multiple devices: laptop + mobile).
  *
  * @param {string} userId - The authenticated user's UID
- * @param {object} messagingInstance - The Firebase messaging instance from firebase.js
+ * @param {object} messagingInstance - The Firebase messaging instance
  */
 export async function requestNotificationPermission(userId, messagingInstance) {
     if (!messagingInstance || !userId) return;
-    if (!('Notification' in window)) return; // Not supported
+    if (!('Notification' in window)) return;
 
     try {
         const permission = await Notification.requestPermission();
@@ -23,7 +23,7 @@ export async function requestNotificationPermission(userId, messagingInstance) {
             return;
         }
 
-        // Register our FCM-compatible service worker
+        // Register the FCM-compatible service worker
         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
             scope: '/'
         });
@@ -34,8 +34,11 @@ export async function requestNotificationPermission(userId, messagingInstance) {
         });
 
         if (token) {
-            // Save FCM token to the seller's Firestore user document
-            await updateDoc(doc(db, 'users', userId), { fcmToken: token });
+            // Use arrayUnion so BOTH laptop and mobile tokens are stored
+            // This means the seller gets push on ALL their logged-in devices
+            await updateDoc(doc(db, 'users', userId), {
+                fcmTokens: arrayUnion(token)
+            });
             console.log('FCM token saved for user:', userId);
         }
     } catch (error) {
@@ -44,8 +47,32 @@ export async function requestNotificationPermission(userId, messagingInstance) {
 }
 
 /**
+ * Sends a push notification to the seller via the Vercel serverless function.
+ * Fetches seller's FCM tokens from Firestore, then calls /api/notify.
+ *
+ * @param {string[]} fcmTokens - Array of seller's FCM tokens
+ * @param {string} buyerName - Name of the interested buyer
+ * @param {string} productName - Name of the product
+ */
+export async function sendPushNotification(fcmTokens, buyerName, productName) {
+    if (!fcmTokens || fcmTokens.length === 0) return;
+
+    try {
+        const res = await fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fcmTokens, buyerName, productName }),
+        });
+        const data = await res.json();
+        console.log('Push notification result:', data);
+    } catch (e) {
+        console.warn('Push notification failed (non-critical):', e);
+    }
+}
+
+/**
  * Sets up a foreground message listener.
- * Shows a browser notification if the seller's tab is open and a message arrives.
+ * Shows a browser notification if the seller's tab is open.
  *
  * @param {object} messagingInstance - Firebase messaging instance
  * @param {function} onReceive - Optional callback for in-app handling
@@ -56,12 +83,12 @@ export function listenForForegroundMessages(messagingInstance, onReceive) {
         console.log('[FCM] Foreground message:', payload);
         const { title, body } = payload.notification || {};
 
-        // Show browser notification even when tab is active
         if (Notification.permission === 'granted' && title) {
             new Notification(title, {
                 body,
                 icon: '/icon.png',
                 badge: '/icon.png',
+                vibrate: [200, 100, 200],
             });
         }
 

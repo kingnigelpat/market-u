@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import AuthPromptModal from '../components/AuthPromptModal';
 import ReadOnlyRating from '../components/ReadOnlyRating';
 import { optimizeImage } from '../utils/cloudinary';
+import { sendPushNotification } from '../utils/notifications';
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -105,9 +106,11 @@ const ProductDetail = () => {
 
         setInterestLoading(true);
         try {
+            const buyerName = userName || currentUser.displayName || 'A buyer';
+
             await addDoc(collection(db, 'interests'), {
                 buyerId: currentUser.uid,
-                buyerName: userName || currentUser.displayName || 'A buyer',
+                buyerName,
                 buyerPhone: userPhone || '',
                 sellerId: product.sellerId,
                 productId: id,
@@ -115,8 +118,20 @@ const ProductDetail = () => {
                 createdAt: serverTimestamp(),
                 seen: false,
             });
+
             setInterestSuccess(true);
             setAlreadyInterested(true);
+
+            // Send real push notification to seller on ALL their devices
+            try {
+                const sellerDoc = await getDoc(doc(db, 'users', product.sellerId));
+                const fcmTokens = sellerDoc.data()?.fcmTokens || [];
+                if (fcmTokens.length > 0) {
+                    sendPushNotification(fcmTokens, buyerName, product.title);
+                }
+            } catch (e) {
+                console.warn('Could not send push notification:', e);
+            }
         } catch (error) {
             console.error("Error saving interest:", error);
             alert("Something went wrong. Please try again.");
