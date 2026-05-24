@@ -23,10 +23,12 @@ export async function requestNotificationPermission(userId, messagingInstance) {
             return;
         }
 
-        // Register the FCM-compatible service worker
+        // Register + force update so the latest SW version is always active
         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-            scope: '/'
+            scope: '/',
+            updateViaCache: 'none',
         });
+        await registration.update();
 
         const token = await getToken(messagingInstance, {
             vapidKey: VAPID_KEY,
@@ -34,9 +36,9 @@ export async function requestNotificationPermission(userId, messagingInstance) {
         });
 
         if (token) {
-            // Use arrayUnion so BOTH laptop and mobile tokens are stored
-            // This means the seller gets push on ALL their logged-in devices
+            // Save to BOTH fields: fcmToken (old, backward compat) + fcmTokens array (new, multi-device)
             await updateDoc(doc(db, 'users', userId), {
+                fcmToken: token,
                 fcmTokens: arrayUnion(token)
             });
             console.log('FCM token saved for user:', userId);

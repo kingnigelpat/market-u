@@ -125,7 +125,12 @@ const ProductDetail = () => {
             // Send real push notification to seller on ALL their devices
             try {
                 const sellerDoc = await getDoc(doc(db, 'users', product.sellerId));
-                const fcmTokens = sellerDoc.data()?.fcmTokens || [];
+                const sellerData = sellerDoc.data() || {};
+                // Support both new fcmTokens array AND old single fcmToken field
+                let fcmTokens = sellerData.fcmTokens || [];
+                if (fcmTokens.length === 0 && sellerData.fcmToken) {
+                    fcmTokens = [sellerData.fcmToken];
+                }
                 if (fcmTokens.length > 0) {
                     sendPushNotification(fcmTokens, buyerName, product.title);
                 }

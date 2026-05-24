@@ -3,14 +3,9 @@ import react from '@vitejs/plugin-react'
 import fs from 'fs'
 import path from 'path'
 
-// Custom plugin: generates firebase-messaging-sw.js into /public at build/dev time
-// using env vars so nothing sensitive is hardcoded in the repo.
 function firebaseSwPlugin() {
   return {
     name: 'firebase-messaging-sw',
-    buildStart() {
-      // loadEnv reads from .env — works in both dev and build
-    },
     configResolved(config) {
       const env = config.env
 
@@ -30,25 +25,58 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// Handle FCM background messages
 messaging.onBackgroundMessage((payload) => {
-  console.log('[SW] Background message received:', payload);
-  const { title, body, icon } = payload.notification || {};
-  self.registration.showNotification(title || '\\uD83D\\uDD14 Market-U', {
-    body: body || 'You have a new notification',
-    icon: icon || '/icon.png',
+  console.log('[SW] onBackgroundMessage:', payload);
+
+  const title = (payload.notification && payload.notification.title) || '\uD83D\uDD14 Market-U';
+  const body = (payload.notification && payload.notification.body) || 'You have a new notification';
+
+  self.registration.showNotification(title, {
+    body: body,
+    icon: '/icon.png',
     badge: '/icon.png',
+    vibrate: [200, 100, 200, 100, 200],
+    requireInteraction: true,
     tag: 'market-u-interest',
     data: payload.data || {},
   });
 });
 
+// Fallback: raw push event in case FCM messaging doesn't catch it
+self.addEventListener('push', (event) => {
+  console.log('[SW] raw push event:', event);
+  if (!event.data) return;
+
+  let payload = {};
+  try { payload = event.data.json(); } catch(e) {}
+
+  const title = (payload.notification && payload.notification.title) || '\uD83D\uDD14 Market-U';
+  const body = (payload.notification && payload.notification.body) || 'Someone is interested in your product!';
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: body,
+      icon: '/icon.png',
+      badge: '/icon.png',
+      vibrate: [200, 100, 200, 100, 200],
+      requireInteraction: true,
+      tag: 'market-u-interest',
+    })
+  );
+});
+
+// Open app to /notifications when notification is clicked
 self.addEventListener('notificationclick', (event) => {
+  console.log('[SW] notificationclick');
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
-          return client.focus();
+          client.focus();
+          client.navigate('/notifications');
+          return;
         }
       }
       if (clients.openWindow) {
@@ -70,8 +98,5 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
     plugins: [react(), firebaseSwPlugin()],
-    define: {
-      // Make all VITE_ env vars available
-    }
   }
 })
