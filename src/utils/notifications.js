@@ -23,12 +23,18 @@ export async function requestNotificationPermission(userId, messagingInstance) {
             return;
         }
 
-        // Register + force update so the latest SW version is always active
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+        // Reuse an existing active SW registration if available — avoids a forced
+        // network update round-trip on every call which added ~300–500ms of latency.
+        const existingRegistration = await navigator.serviceWorker.getRegistration('/');
+        const registration = existingRegistration ?? await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
             scope: '/',
             updateViaCache: 'none',
         });
-        await registration.update();
+
+        // Only force-update when there is genuinely no active worker yet
+        if (!existingRegistration || !existingRegistration.active) {
+            await registration.update();
+        }
 
         const token = await getToken(messagingInstance, {
             vapidKey: VAPID_KEY,

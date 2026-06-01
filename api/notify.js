@@ -7,6 +7,33 @@
 // Minimal JWT + OAuth2 implementation to get FCM access token from service account
 // (avoids needing firebase-admin as a bundled serverless dependency)
 
+// ── Token cache ──────────────────────────────────────────────────────────────
+// Vercel reuses warm function instances, so caching the token here saves
+// the Google OAuth round-trip (~500ms–1s) on every subsequent notification.
+let _cachedToken = null;
+let _tokenExpiresAt = 0; // Unix seconds
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Rate limiter ──────────────────────────────────────────────────────────────
+// Simple in-memory rate limiter: max 10 notification requests per IP per minute.
+// Resets on cold start (acceptable — bad actors don't benefit much from that).
+const _rateLimitMap = new Map(); // ip -> { count, resetAt }
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+
+function isRateLimited(ip) {
+    const now = Date.now();
+    const entry = _rateLimitMap.get(ip);
+    if (!entry || now > entry.resetAt) {
+        _rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+        return false;
+    }
+    if (entry.count >= RATE_LIMIT_MAX) return true;
+    entry.count++;
+    return false;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function base64url(str) {
     return Buffer.from(str)
         .toString('base64')
@@ -16,9 +43,15 @@ function base64url(str) {
 }
 
 async function getAccessToken(serviceAccount) {
+    const now = Math.floor(Date.now() / 1000);
+
+    // Return cached token if it's still valid (tokens last 1hr; we refresh 5min early)
+    if (_cachedToken && now < _tokenExpiresAt - 300) {
+        return _cachedToken;
+    }
+
     const { createSign } = await import('crypto');
 
-    const now = Math.floor(Date.now() / 1000);
     const header = base64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
     const payload = base64url(JSON.stringify({
         iss: serviceAccount.client_email,
@@ -43,7 +76,13 @@ async function getAccessToken(serviceAccount) {
     });
 
     const tokenData = await tokenRes.json();
-    return tokenData.access_token;
+
+    // Cache the new token
+    _cachedToken = tokenData.access_token;
+    _tokenExpiresAt = now + 3600;
+    console.log('[FCM] Fresh OAuth token fetched and cached.');
+
+    return _cachedToken;
 }
 
 export default async function handler(req, res) {
@@ -53,6 +92,14 @@ export default async function handler(req, res) {
 
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+    // ── Rate limit check ──────────────────────────────────────────────────────
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
+    if (isRateLimited(clientIp)) {
+        console.warn(`[FCM] Rate limit hit for IP: ${clientIp}`);
+        return res.status(429).json({ error: 'Too many requests. Please slow down.' });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     const { fcmTokens, buyerName, productName } = req.body;
 
@@ -84,9 +131,10 @@ export default async function handler(req, res) {
     const projectId = serviceAccount.project_id;
     const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
 
+    // Fan-out all FCM sends in parallel for speed
     const results = await Promise.allSettled(
-        fcmTokens.map(token =>
-            fetch(fcmUrl, {
+        fcmTokens.map(async (token) => {
+            const fcmRes = await fetch(fcmUrl, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -107,7 +155,7 @@ export default async function handler(req, res) {
                         webpush: {
                             headers: {
                                 Urgency: 'high',
-                                TTL: '300',
+                                TTL: '86400', // 24hr TTL so offline devices still get it
                             },
                             notification: {
                                 title: '🔔 New Interest on Market-U!',
@@ -116,7 +164,7 @@ export default async function handler(req, res) {
                                 badge: '/icon.png',
                                 vibrate: [200, 100, 200, 100, 200],
                                 requireInteraction: true,
-                                tag: 'market-u-interest',
+                                tag: `market-u-interest-${Date.now()}`, // unique tag so multiple notifs stack
                             },
                             fcm_options: {
                                 link: '/notifications',
@@ -124,12 +172,30 @@ export default async function handler(req, res) {
                         },
                     },
                 }),
-            }).then(r => r.json())
-        )
+            });
+            const json = await fcmRes.json();
+            // If token is stale/invalid, log it but don't throw — don't block others
+            if (json.error) {
+                console.warn(`[FCM] Token send failed:`, json.error.message || json.error);
+            }
+            return json;
+        })
     );
 
-    const succeeded = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
+    // Count actual FCM outcomes — a fulfilled promise can still carry an FCM error
+    // in its response body, so we check the json.name field (present on success).
+    let succeeded = 0;
+    let failed = 0;
+    for (const r of results) {
+        if (r.status === 'fulfilled' && r.value?.name) {
+            succeeded++;
+        } else {
+            failed++;
+            // Log the rejection reason or FCM error for debugging
+            const reason = r.status === 'rejected' ? r.reason : r.value?.error?.message;
+            if (reason) console.warn('[FCM] Delivery failure:', reason);
+        }
+    }
     console.log(`Push result: ${succeeded} sent, ${failed} failed`);
 
     return res.status(200).json({ succeeded, failed });
