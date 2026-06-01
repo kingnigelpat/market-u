@@ -16,6 +16,18 @@ export async function requestNotificationPermission(userId, messagingInstance) {
     if (!messagingInstance || !userId) return;
     if (!('Notification' in window)) return;
 
+    // iOS only supports web push for INSTALLED PWAs (Add to Home Screen).
+    // If we're on iOS Safari (not standalone), skip silently —
+    // the IOSInstallBanner component will guide the user to install first.
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone =
+        window.navigator.standalone === true ||
+        window.matchMedia('(display-mode: standalone)').matches;
+    if (isIOS && !isStandalone) {
+        console.log('[FCM] iOS detected but not installed as PWA — skipping notification setup.');
+        return;
+    }
+
     try {
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {

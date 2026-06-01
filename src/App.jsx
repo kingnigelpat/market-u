@@ -5,6 +5,7 @@ import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import SupportButton from './components/SupportButton.jsx';
+import IOSInstallBanner from './components/IOSInstallBanner.jsx';
 
 const Landing = lazy(() => import('./pages/Landing.jsx'));
 const Home = lazy(() => import('./pages/Home.jsx'));
@@ -81,6 +82,7 @@ const AppContent = () => {
             </main>
             <Footer />
             <SupportButton />
+            <IOSInstallBanner />
         </div>
     );
 };
