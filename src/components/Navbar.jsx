@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings } from 'lucide-react';
 
 const Navbar = () => {
     const { isAuthenticated, isSeller, userRole, currentUser } = useAuth();
@@ -377,6 +377,24 @@ const Navbar = () => {
                                             </Link>
                                         </>
                                     )}
+
+                                    {/* Account Settings — all users */}
+                                    <Link
+                                        to="/profile"
+                                        onClick={() => setMenuOpen(false)}
+                                        style={{
+                                            width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                            padding: '0.8rem 1rem', background: 'none', border: 'none',
+                                            color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.875rem',
+                                            fontWeight: '600', textDecoration: 'none',
+                                            transition: 'background 0.15s',
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-color)'}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    >
+                                        <Settings size={16} />
+                                        Account Settings
+                                    </Link>
 
                                     {/* Divider */}
                                     <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '0.25rem 0' }} />
