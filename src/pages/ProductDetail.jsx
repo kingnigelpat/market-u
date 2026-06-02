@@ -131,8 +131,12 @@ const ProductDetail = () => {
                 if (fcmTokens.length === 0 && sellerData.fcmToken) {
                     fcmTokens = [sellerData.fcmToken];
                 }
+                console.log('[Notify] Seller FCM tokens found:', fcmTokens.length, fcmTokens.map(t => t.slice(0, 15) + '...'));
                 if (fcmTokens.length > 0) {
-                    sendPushNotification(fcmTokens, buyerName, product.title);
+                    const result = await sendPushNotification(fcmTokens, buyerName, product.title);
+                    console.log('[Notify] Push result:', result);
+                } else {
+                    console.warn('[Notify] No FCM tokens on seller account — notification not sent');
                 }
             } catch (e) {
                 console.warn('Could not send push notification:', e);

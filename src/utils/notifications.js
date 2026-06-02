@@ -85,14 +85,60 @@ export async function sendPushNotification(fcmTokens, buyerName, productName) {
         });
         const data = await res.json();
         console.log('Push notification result:', data);
+        return data;
     } catch (e) {
         console.warn('Push notification failed (non-critical):', e);
     }
 }
 
 /**
+ * Plays the notification chime sound.
+ * Uses HTMLAudioElement with a fallback to the Web Audio API synthesised tone.
+ * Must be called from a user-gesture context OR after the user has interacted
+ * with the page at least once (browser autoplay policy).
+ */
+export function playNotificationSound() {
+    try {
+        const audio = new Audio('/notification-sound.wav');
+        audio.volume = 1.0;
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch((err) => {
+                // Autoplay blocked — fallback to Web Audio API oscillator chime
+                console.warn('[FCM] Audio autoplay blocked, using Web Audio fallback:', err);
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const gainNode = ctx.createGain();
+                    gainNode.connect(ctx.destination);
+
+                    const playTone = (freq, startTime, duration) => {
+                        const osc = ctx.createOscillator();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, startTime);
+                        osc.connect(gainNode);
+                        gainNode.gain.setValueAtTime(0.4, startTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                        osc.start(startTime);
+                        osc.stop(startTime + duration);
+                    };
+
+                    const now = ctx.currentTime;
+                    playTone(880, now, 0.3);
+                    playTone(1100, now + 0.15, 0.3);
+                } catch (webAudioErr) {
+                    console.warn('[FCM] Web Audio fallback also failed:', webAudioErr);
+                }
+            });
+        }
+    } catch (e) {
+        console.warn('[FCM] playNotificationSound error:', e);
+    }
+}
+
+/**
  * Sets up a foreground message listener.
  * Shows a browser notification if the seller's tab is open.
+ * Also plays a chime sound so the seller hears it even with the tab focused.
  *
  * @param {object} messagingInstance - Firebase messaging instance
  * @param {function} onReceive - Optional callback for in-app handling
@@ -102,6 +148,9 @@ export function listenForForegroundMessages(messagingInstance, onReceive) {
     return onMessage(messagingInstance, (payload) => {
         console.log('[FCM] Foreground message:', payload);
         const { title, body } = payload.notification || {};
+
+        // Play chime — foreground notifications are often silent in browsers
+        playNotificationSound();
 
         if (Notification.permission === 'granted' && title) {
             new Notification(title, {

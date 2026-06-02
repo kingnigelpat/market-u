@@ -131,52 +131,65 @@ export default async function handler(req, res) {
     const projectId = serviceAccount.project_id;
     const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
 
+    // Derive the app's origin for absolute URLs required by FCM webpush
+    // Use the incoming host header; fall back to the canonical domain.
+    const host = req.headers['x-forwarded-host'] || req.headers['host'] || 'market-u.vercel.app';
+    const protocol = (req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+    const appOrigin = `${protocol}://${host}`;
+
     // Fan-out all FCM sends in parallel for speed
     const results = await Promise.allSettled(
         fcmTokens.map(async (token) => {
+            const messageBody = {
+                message: {
+                    token,
+                    notification: {
+                        title: '🔔 New Interest on Market-U!',
+                        body: `${buyerName} is interested in your ${productName}! Open Market-U to contact them.`,
+                    },
+                    // Android: wake up device even when Chrome is closed
+                    android: {
+                        priority: 'high',
+                    },
+                    // iOS + Desktop web push
+                    // FCM requires ABSOLUTE URLs for icon/badge — relative paths are silently ignored
+                    webpush: {
+                        headers: {
+                            Urgency: 'high',
+                            TTL: '86400', // 24hr TTL so offline devices still get it
+                        },
+                        notification: {
+                            title: '🔔 New Interest on Market-U!',
+                            body: `${buyerName} is interested in your ${productName}! Tap to contact them.`,
+                            icon: `${appOrigin}/icon.png`,
+                            badge: `${appOrigin}/icon.png`,
+                            vibrate: [200, 100, 200, 100, 200],
+                            requireInteraction: true,
+                            tag: `market-u-interest-${Date.now()}`,
+                        },
+                        fcm_options: {
+                            link: `${appOrigin}/notifications`,
+                        },
+                    },
+                },
+            };
+
+            console.log('[FCM] Sending to token:', token.slice(0, 20) + '...', 'origin:', appOrigin);
+
             const fcmRes = await fetch(fcmUrl, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    message: {
-                        token,
-                        notification: {
-                            title: '🔔 New Interest on Market-U!',
-                            body: `${buyerName} is interested in your ${productName}! Open Market-U to contact them.`,
-                        },
-                        // Android: wake up device even when Chrome is closed
-                        android: {
-                            priority: 'high',
-                        },
-                        // iOS + Desktop web push
-                        webpush: {
-                            headers: {
-                                Urgency: 'high',
-                                TTL: '86400', // 24hr TTL so offline devices still get it
-                            },
-                            notification: {
-                                title: '🔔 New Interest on Market-U!',
-                                body: `${buyerName} is interested in your ${productName}! Tap to contact them.`,
-                                icon: '/icon.png',
-                                badge: '/icon.png',
-                                vibrate: [200, 100, 200, 100, 200],
-                                requireInteraction: true,
-                                tag: `market-u-interest-${Date.now()}`, // unique tag so multiple notifs stack
-                            },
-                            fcm_options: {
-                                link: '/notifications',
-                            },
-                        },
-                    },
-                }),
+                body: JSON.stringify(messageBody),
             });
             const json = await fcmRes.json();
-            // If token is stale/invalid, log it but don't throw — don't block others
+            // Log full FCM response so we can see exactly what failed
             if (json.error) {
-                console.warn(`[FCM] Token send failed:`, json.error.message || json.error);
+                console.warn(`[FCM] Token send failed (status ${fcmRes.status}):`, JSON.stringify(json.error));
+            } else {
+                console.log('[FCM] Token send success:', json.name);
             }
             return json;
         })
@@ -186,17 +199,20 @@ export default async function handler(req, res) {
     // in its response body, so we check the json.name field (present on success).
     let succeeded = 0;
     let failed = 0;
+    const errors = [];
     for (const r of results) {
         if (r.status === 'fulfilled' && r.value?.name) {
             succeeded++;
         } else {
             failed++;
-            // Log the rejection reason or FCM error for debugging
-            const reason = r.status === 'rejected' ? r.reason : r.value?.error?.message;
-            if (reason) console.warn('[FCM] Delivery failure:', reason);
+            const reason = r.status === 'rejected' ? r.reason?.message : r.value?.error?.message;
+            if (reason) {
+                errors.push(reason);
+                console.warn('[FCM] Delivery failure:', reason);
+            }
         }
     }
     console.log(`Push result: ${succeeded} sent, ${failed} failed`);
 
-    return res.status(200).json({ succeeded, failed });
+    return res.status(200).json({ succeeded, failed, errors });
 }

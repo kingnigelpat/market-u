@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { auth, db, messaging } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { requestNotificationPermission } from '../utils/notifications';
+import { requestNotificationPermission, listenForForegroundMessages } from '../utils/notifications';
 
 const AuthContext = createContext();
 
@@ -18,6 +18,29 @@ export function AuthProvider({ children }) {
     const [userPhone, setUserPhone] = useState('');
     const [loading, setLoading] = useState(true);
     const notifRequestedRef = useRef(false); // prevent multiple permission prompts per session
+    const unlistenForegroundRef = useRef(null); // cleanup foreground listener
+
+    // Prime Web Audio context on first user interaction (required by browser autoplay policy)
+    useEffect(() => {
+        let primed = false;
+        const prime = () => {
+            if (primed) return;
+            primed = true;
+            try {
+                // Create & immediately suspend a silent AudioContext to unlock future plays
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                ctx.resume().catch(() => {});
+            } catch (_) {}
+            document.removeEventListener('click', prime);
+            document.removeEventListener('touchstart', prime);
+        };
+        document.addEventListener('click', prime);
+        document.addEventListener('touchstart', prime);
+        return () => {
+            document.removeEventListener('click', prime);
+            document.removeEventListener('touchstart', prime);
+        };
+    }, []);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -39,6 +62,9 @@ export function AuthProvider({ children }) {
                             // Small delay so the UI settles before the browser prompt appears
                             setTimeout(() => {
                                 requestNotificationPermission(user.uid, messaging);
+                                // Set up foreground push listener (plays chime + shows notification)
+                                if (unlistenForegroundRef.current) unlistenForegroundRef.current();
+                                unlistenForegroundRef.current = listenForForegroundMessages(messaging, null);
                             }, 2000);
                         }
                     } else {
@@ -62,7 +88,10 @@ export function AuthProvider({ children }) {
             setLoading(false);
         });
 
-        return unsubscribe;
+        return () => {
+            unsubscribe();
+            if (unlistenForegroundRef.current) unlistenForegroundRef.current();
+        };
     }, []);
 
     const value = {
