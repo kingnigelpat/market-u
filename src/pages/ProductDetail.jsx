@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, deleteDoc, updateDoc, increment, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ArrowLeft, Trash2, Edit, Heart, CheckCircle, Loader } from 'lucide-react';
+import { ArrowLeft, Trash2, Edit, Heart, CheckCircle, Loader, Clock, AlertCircle } from 'lucide-react';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SellerRating from '../components/SellerRating';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +26,8 @@ const ProductDetail = () => {
     const [interestLoading, setInterestLoading] = useState(false);
     const [alreadyInterested, setAlreadyInterested] = useState(false);
     const [interestSuccess, setInterestSuccess] = useState(false);
+    const [showFallback, setShowFallback] = useState(false);
+    const fallbackTimerRef = useRef(null);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -83,6 +85,19 @@ const ProductDetail = () => {
         fetchProduct();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
+
+    // Start 45-second fallback timer when buyer successfully expresses interest
+    useEffect(() => {
+        if (interestSuccess && !showFallback) {
+            fallbackTimerRef.current = setTimeout(() => {
+                setShowFallback(true);
+            }, 45000);
+        }
+        return () => {
+            if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [interestSuccess]);
 
     if (loading) {
         return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}>Loading product details...</div>;
@@ -320,11 +335,69 @@ const ProductDetail = () => {
                             </button>
                         )}
 
-                        {/* Success sub-text */}
+                        {/* Success sub-text + fallback */}
                         {interestSuccess && (
-                            <p style={{ textAlign: 'center', marginTop: '0.75rem', fontSize: '0.875rem', color: 'var(--success-color)', fontWeight: '600' }}>
-                                The seller has been notified and will contact you soon 😊
-                            </p>
+                            <div style={{ marginTop: '1rem' }}>
+                                {!showFallback ? (
+                                    <p style={{ textAlign: 'center', fontSize: '0.875rem', color: 'var(--success-color)', fontWeight: '600', margin: 0 }}>
+                                        The seller has been notified and will contact you soon 😊
+                                    </p>
+                                ) : (
+                                    <div style={{
+                                        backgroundColor: 'rgba(245, 158, 11, 0.07)',
+                                        border: '1px solid rgba(245, 158, 11, 0.25)',
+                                        borderRadius: '14px',
+                                        padding: '1.125rem 1.25rem',
+                                        textAlign: 'left',
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.625rem' }}>
+                                            <Clock size={16} color="#d97706" />
+                                            <span style={{ fontWeight: '700', fontSize: '0.9375rem', color: '#d97706' }}>Seller seems busy right now</span>
+                                        </div>
+                                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0', lineHeight: '1.55' }}>
+                                            If this is urgent, contact our support team directly and they will update the seller manually.
+                                        </p>
+                                        <div style={{
+                                            backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                                            borderRadius: '10px',
+                                            padding: '0.75rem 1rem',
+                                            marginBottom: '1rem',
+                                            fontSize: '0.8125rem',
+                                            color: 'var(--text-secondary)',
+                                            lineHeight: '1.6',
+                                        }}>
+                                            <div><span style={{ color: 'var(--text-secondary)' }}>Seller:</span> <strong style={{ color: 'var(--text-primary)' }}>{product.sellerName}</strong></div>
+                                            <div><span style={{ color: 'var(--text-secondary)' }}>Product:</span> <strong style={{ color: 'var(--text-primary)' }}>{product.title}</strong></div>
+                                        </div>
+                                        <a
+                                            href={`https://wa.me/2347073544811?text=${encodeURIComponent(`Hi Support, I'm interested in a product but the seller hasn't responded yet.\n\nSeller: ${product.sellerName}\nProduct: ${product.title}\n\nPlease help me reach them. Thank you!`)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem',
+                                                padding: '0.625rem 1.125rem',
+                                                backgroundColor: '#25D366',
+                                                color: 'white',
+                                                borderRadius: '99px',
+                                                fontWeight: '700',
+                                                fontSize: '0.875rem',
+                                                textDecoration: 'none',
+                                                boxShadow: '0 4px 12px -2px rgba(37, 211, 102, 0.35)',
+                                                transition: 'all 0.2s ease',
+                                                width: '100%',
+                                                justifyContent: 'center',
+                                            }}
+                                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1DA851'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#25D366'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                                        >
+                                            <AlertCircle size={15} />
+                                            Contact Support on WhatsApp
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
                         )}
 
                         {isOwner && (

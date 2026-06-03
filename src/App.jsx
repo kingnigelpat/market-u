@@ -6,6 +6,7 @@ import Footer from './components/Footer.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import SupportButton from './components/SupportButton.jsx';
 import IOSInstallBanner from './components/IOSInstallBanner.jsx';
+import WhatsAppGroupModal from './components/WhatsAppGroupModal.jsx';
 
 const Landing = lazy(() => import('./pages/Landing.jsx'));
 const Home = lazy(() => import('./pages/Home.jsx'));
@@ -21,7 +22,7 @@ const Profile = lazy(() => import('./pages/Profile.jsx'));
 import './styles/global.css';
 
 const AppContent = () => {
-    const { loading } = useAuth();
+    const { loading, isSeller, joinedGroupChat, setJoinedGroupChat } = useAuth();
     const navigate = useNavigate();
 
     // Listen for NAVIGATE messages from the service worker (notification click)
@@ -83,6 +84,10 @@ const AppContent = () => {
             <Footer />
             <SupportButton />
             <IOSInstallBanner />
+            {/* WhatsApp Seller Group Modal — shown to sellers who haven't joined yet */}
+            {isSeller && !joinedGroupChat && (
+                <WhatsAppGroupModal onDismiss={() => setJoinedGroupChat(true)} />
+            )}
         </div>
     );
 };

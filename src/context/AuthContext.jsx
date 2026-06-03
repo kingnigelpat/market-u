@@ -16,6 +16,7 @@ export function AuthProvider({ children }) {
     const [userRole, setUserRole] = useState(null); // 'buyer', 'seller', 'admin'
     const [userName, setUserName] = useState('');
     const [userPhone, setUserPhone] = useState('');
+    const [joinedGroupChat, setJoinedGroupChat] = useState(false);
     const [loading, setLoading] = useState(true);
     const notifRequestedRef = useRef(false); // prevent multiple permission prompts per session
     const unlistenForegroundRef = useRef(null); // cleanup foreground listener
@@ -55,6 +56,7 @@ export function AuthProvider({ children }) {
                         setUserRole(role);
                         setUserName(data.name || '');
                         setUserPhone(data.phone || '');
+                        setJoinedGroupChat(!!data.joinedGroupChat);
 
                         // Request FCM notification permission for sellers (once per session)
                         if ((role === 'seller' || role === 'admin') && !notifRequestedRef.current) {
@@ -83,6 +85,7 @@ export function AuthProvider({ children }) {
                 setUserRole(null);
                 setUserName('');
                 setUserPhone('');
+                setJoinedGroupChat(false);
                 notifRequestedRef.current = false;
             }
             setLoading(false);
@@ -99,6 +102,8 @@ export function AuthProvider({ children }) {
         userRole,
         userName,
         userPhone,
+        joinedGroupChat,
+        setJoinedGroupChat,
         isAuthenticated: !!currentUser,
         isSeller: userRole === 'seller' || userRole === 'admin',
         isAdmin: userRole === 'admin'
