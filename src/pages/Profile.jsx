@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { auth, db } from '../firebase';
+import { auth, db, messaging } from '../firebase';
 import {
     updatePassword,
     reauthenticateWithCredential,
@@ -12,7 +12,10 @@ import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import {
     User, Phone, Lock, Trash2, ArrowLeft,
     CheckCircle, AlertCircle, Eye, EyeOff, Save, ShieldAlert,
+    Bell, Send, Smartphone, RefreshCw,
 } from 'lucide-react';
+import { requestNotificationPermission } from '../utils/notifications';
+import { getToken } from 'firebase/messaging';
 
 // ── Tiny reusable alert ────────────────────────────────────────────────────────
 function Alert({ type, message }) {
@@ -154,6 +157,156 @@ const Profile = () => {
     const [deleteStatus, setDeleteStatus] = useState({ type: '', msg: '' });
     const [deleting, setDeleting] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    // Notification setup & testing state
+    const [checkingNotifs, setCheckingNotifs] = useState(true);
+    const [notifPermission, setNotifPermission] = useState('default');
+    const [fcmTokenActive, setFcmTokenActive] = useState(false);
+    const [testNotifLoading, setTestNotifLoading] = useState(false);
+    const [testNotifCountdown, setTestNotifCountdown] = useState(null);
+    const [notifStatus, setNotifStatus] = useState({ type: '', msg: '' });
+    const [isIOSDevice, setIsIOSDevice] = useState(false);
+    const [isIOSStandalone, setIsIOSStandalone] = useState(false);
+
+    // Sync notification status on mount
+    const checkNotificationStatus = async () => {
+        setCheckingNotifs(true);
+        const hasNotif = 'Notification' in window;
+        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+
+        setIsIOSDevice(isIOS);
+        setIsIOSStandalone(isStandalone);
+
+        if (!hasNotif) {
+            setNotifPermission('unsupported');
+            setCheckingNotifs(false);
+            return;
+        }
+
+        const currentPerm = Notification.permission;
+        setNotifPermission(currentPerm);
+
+        // If granted, check if FCM token is registered for this device
+        if (currentPerm === 'granted' && currentUser && (userRole === 'seller' || userRole === 'admin')) {
+            try {
+                const reg = await navigator.serviceWorker.getRegistration('/');
+                if (reg && messaging) {
+                    const token = await getToken(messaging, {
+                        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+                        serviceWorkerRegistration: reg,
+                    });
+                    if (token) {
+                        setFcmTokenActive(true);
+                    }
+                }
+            } catch (e) {
+                console.warn('[FCM] Error checking active token on profile page:', e);
+            }
+        }
+        setCheckingNotifs(false);
+    };
+
+    useEffect(() => {
+        checkNotificationStatus();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentUser, userRole]);
+
+    const handleEnableNotifs = async () => {
+        setNotifStatus({ type: '', msg: '' });
+        if (!('Notification' in window)) return;
+        
+        try {
+            await requestNotificationPermission(currentUser.uid, messaging);
+            // Recheck status
+            const perm = Notification.permission;
+            setNotifPermission(perm);
+            if (perm === 'granted') {
+                setNotifStatus({ type: 'success', msg: 'Push notifications enabled successfully!' });
+                checkNotificationStatus();
+            } else if (perm === 'denied') {
+                setNotifStatus({ type: 'error', msg: 'Permission denied. Please unblock notifications in your browser settings.' });
+            }
+        } catch (e) {
+            console.error('Error enabling notifications:', e);
+            setNotifStatus({ type: 'error', msg: 'Failed to request notification permission.' });
+        }
+    };
+
+    const handleSendTestNotif = async () => {
+        setNotifStatus({ type: '', msg: '' });
+        setTestNotifLoading(true);
+
+        try {
+            const reg = await navigator.serviceWorker.getRegistration('/');
+            if (!reg) {
+                throw new Error('Service Worker registration not found. Please refresh the page.');
+            }
+            if (!messaging) {
+                throw new Error('Firebase Messaging not supported or not loaded.');
+            }
+
+            const token = await getToken(messaging, {
+                vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+                serviceWorkerRegistration: reg,
+            });
+
+            if (!token) {
+                throw new Error('Could not retrieve FCM token for this device.');
+            }
+
+            // Start a 3-second countdown
+            let count = 3;
+            setTestNotifCountdown(count);
+
+            const interval = setInterval(() => {
+                count--;
+                if (count <= 0) {
+                    clearInterval(interval);
+                    setTestNotifCountdown(null);
+                    // Actually send the test notification
+                    sendFCMTest(token);
+                } else {
+                    setTestNotifCountdown(count);
+                }
+            }, 1000);
+
+        } catch (err) {
+            setNotifStatus({ type: 'error', msg: err.message || 'Error triggering test notification.' });
+            setTestNotifLoading(false);
+        }
+    };
+
+    const sendFCMTest = async (token) => {
+        try {
+            const res = await fetch('/api/notify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fcmTokens: [token],
+                    buyerName: 'Test Buyer ⚡',
+                    productName: 'Your Listed Item'
+                }),
+            });
+
+            const data = await res.json();
+            if (data.succeeded > 0) {
+                setNotifStatus({
+                    type: 'success',
+                    msg: '🔔 Test notification sent! Lock your screen now to verify. (It should arrive in a few seconds)'
+                });
+            } else {
+                setNotifStatus({
+                    type: 'error',
+                    msg: data.errors?.[0] || 'Notification delivery failed on server.'
+                });
+            }
+        } catch (e) {
+            setNotifStatus({ type: 'error', msg: 'Failed to hit notification API endpoint.' });
+        } finally {
+            setTestNotifLoading(false);
+        }
+    };
 
     // ── Save name ────────────────────────────────────────────────────────────
     const handleSaveName = async (e) => {
@@ -360,6 +513,178 @@ const Profile = () => {
                         {savingPhone ? 'Saving…' : 'Save Phone'}
                     </button>
                 </form>
+            </Section>
+
+            {/* ── Push Notifications ── */}
+            <Section icon={<Bell size={18} />} title="Push Notifications" subtitle="Receive instant alerts on your phone when buyers express interest">
+                <style>{`
+                    @keyframes profile-spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                    .profile-spin-icon {
+                        animation: profile-spin 1s linear infinite;
+                    }
+                `}</style>
+                {checkingNotifs ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                        <RefreshCw size={16} className="profile-spin-icon" />
+                        <span>Checking notification status...</span>
+                    </div>
+                ) : (
+                    <div>
+                        <Alert type={notifStatus.type} message={notifStatus.msg} />
+                        
+                        {/* Status Grid */}
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr',
+                            gap: '1rem',
+                            backgroundColor: 'rgba(37,99,235,0.03)',
+                            padding: '1rem',
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px solid var(--border-color)',
+                            marginBottom: '1.25rem',
+                        }}>
+                            <div>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Permission Status</span>
+                                {notifPermission === 'granted' && (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.625rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', backgroundColor: 'rgba(16,185,129,0.1)', color: 'var(--success-color)' }}>
+                                        Active ✅
+                                    </span>
+                                )}
+                                {notifPermission === 'denied' && (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.625rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', backgroundColor: 'rgba(239,68,68,0.1)', color: 'var(--danger-color)' }}>
+                                        Blocked ❌
+                                    </span>
+                                )}
+                                {notifPermission === 'default' && (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.625rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', backgroundColor: 'rgba(245,158,11,0.1)', color: '#D97706' }}>
+                                        Not Setup ⚠️
+                                    </span>
+                                )}
+                                {notifPermission === 'unsupported' && (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.625rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', backgroundColor: 'rgba(148,163,184,0.1)', color: '#64748B' }}>
+                                        Unsupported 🚫
+                                    </span>
+                                )}
+                            </div>
+                            
+                            <div>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Device Connection</span>
+                                <span style={{ fontWeight: '700', fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                                    {notifPermission === 'granted' && fcmTokenActive ? 'Registered 📱' : notifPermission === 'granted' ? 'Syncing...' : 'Disconnected'}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Interactive UI based on role and status */}
+                        {userRole !== 'seller' && userRole !== 'admin' ? (
+                            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                Note: Push notifications are currently only active for sellers to receive instant buyer interest alerts. Switch to a seller account to enable.
+                            </p>
+                        ) : (
+                            <div>
+                                {/* Permission default: Show setup button */}
+                                {notifPermission === 'default' && (
+                                    <div>
+                                        <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                            Allow notification permissions in your browser to receive real-time push alerts whenever buyers express interest in your items — even when your phone is locked or screen is off.
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={handleEnableNotifs}
+                                            className="btn btn-primary"
+                                            style={{ gap: '0.5rem', width: '100%', justifyContent: 'center', padding: '0.875rem' }}
+                                        >
+                                            <Bell size={16} /> Enable Push Notifications
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Permission denied: Show browser reset instructions */}
+                                {notifPermission === 'denied' && (
+                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                                        <p style={{ color: 'var(--danger-color)', fontWeight: '700', margin: '0 0 0.5rem 0' }}>
+                                            Notifications are blocked by your browser settings.
+                                        </p>
+                                        <p style={{ margin: '0 0 1rem 0' }}>
+                                            To unblock:
+                                        </p>
+                                        <ol style={{ margin: '0 0 1.25rem 0', paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                            <li>Click the settings/lock icon in your browser address bar next to the URL.</li>
+                                            <li>Find <strong>Notifications</strong> and change it to <strong>Allow</strong>.</li>
+                                            <li>Click the refresh button below to re-verify status.</li>
+                                        </ol>
+                                        <button
+                                            type="button"
+                                            onClick={checkNotificationStatus}
+                                            className="btn btn-secondary"
+                                            style={{ gap: '0.5rem', width: '100%', justifyContent: 'center' }}
+                                        >
+                                            <RefreshCw size={16} /> Refresh Status
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Permission unsupported: Show PWA guidance */}
+                                {notifPermission === 'unsupported' && (
+                                    <div>
+                                        {isIOSDevice ? (
+                                            <div>
+                                                <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                                                    Apple iOS requires you to **Install the app** (Add to Home Screen) before you can receive push notifications on your iPhone.
+                                                </p>
+                                                <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                                                    Please tap the Share icon in Safari, select <strong>"Add to Home Screen"</strong>, then open the installed app from your home screen to enable notifications.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                                Push notifications are not supported on this browser or device. Try using Google Chrome or Microsoft Edge.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Permission granted: Show testing actions */}
+                                {notifPermission === 'granted' && (
+                                    <div>
+                                        <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                            Notifications are fully active on this browser! You can verify it works by sending a test push notification to this device.
+                                        </p>
+                                        
+                                        <button
+                                            type="button"
+                                            onClick={handleSendTestNotif}
+                                            disabled={testNotifLoading}
+                                            className="btn btn-primary"
+                                            style={{
+                                                gap: '0.5rem', 
+                                                width: '100%', 
+                                                justifyContent: 'center', 
+                                                padding: '0.875rem',
+                                                backgroundColor: testNotifCountdown !== null ? '#D97706' : 'var(--primary-color)'
+                                            }}
+                                        >
+                                            {testNotifCountdown !== null ? (
+                                                <>
+                                                    <RefreshCw size={16} className="profile-spin-icon" />
+                                                    Lock screen now! Sending in {testNotifCountdown}s...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Send size={16} />
+                                                    {testNotifLoading ? 'Sending...' : 'Send Test Push Notification'}
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
             </Section>
 
             {/* ── Change Password ── */}

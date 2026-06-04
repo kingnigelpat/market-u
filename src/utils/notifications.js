@@ -38,7 +38,7 @@ export async function requestNotificationPermission(userId, messagingInstance) {
         // Reuse an existing active SW registration if available — avoids a forced
         // network update round-trip on every call which added ~300–500ms of latency.
         const existingRegistration = await navigator.serviceWorker.getRegistration('/');
-        const registration = existingRegistration ?? await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+        const registration = existingRegistration ?? await navigator.serviceWorker.register('/sw.js', {
             scope: '/',
             updateViaCache: 'none',
         });

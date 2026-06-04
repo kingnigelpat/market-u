@@ -35,4 +35,5 @@ node_modules/
 dist/
 
 # Auto-generated files (built from env vars — never commit)
-public/firebase-messaging-sw.js
+public/sw.js
+
