@@ -18,6 +18,7 @@ const AddProduct = lazy(() => import('./pages/AddProduct.jsx'));
 const EditProduct = lazy(() => import('./pages/EditProduct.jsx'));
 const Notifications = lazy(() => import('./pages/Notifications.jsx'));
 const Profile = lazy(() => import('./pages/Profile.jsx'));
+const SavedItems = lazy(() => import('./pages/SavedItems.jsx'));
 
 import './styles/global.css';
 
@@ -77,6 +78,9 @@ const AppContent = () => {
                         </Route>
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
                             <Route path="/profile" element={<Profile />} />
+                        </Route>
+                        <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
+                            <Route path="/saved" element={<SavedItems />} />
                         </Route>
                     </Routes>
                 </Suspense>

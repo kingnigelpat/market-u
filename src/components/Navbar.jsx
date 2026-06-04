@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark } from 'lucide-react';
 
 const Navbar = () => {
     const { isAuthenticated, isSeller, userRole, currentUser } = useAuth();
@@ -12,6 +12,7 @@ const Navbar = () => {
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
     const [menuOpen, setMenuOpen] = useState(false);
     const [unseenCount, setUnseenCount] = useState(0);
+    const [savedCount, setSavedCount] = useState(0);
     const menuRef = useRef(null);
 
     useEffect(() => {
@@ -51,6 +52,17 @@ const Navbar = () => {
 
         return () => unsub();
     }, [isSeller, currentUser]);
+
+    // Live saved-items count for buyers
+    useEffect(() => {
+        if (!isAuthenticated || !currentUser) { setSavedCount(0); return; }
+        const q = query(
+            collection(db, 'savedItems'),
+            where('buyerId', '==', currentUser.uid)
+        );
+        const unsub = onSnapshot(q, snap => setSavedCount(snap.size), () => {});
+        return () => unsub();
+    }, [isAuthenticated, currentUser]);
 
     const toggleTheme = () => {
         setTheme(prev => prev === 'light' ? 'dark' : 'light');
@@ -168,6 +180,65 @@ const Navbar = () => {
                                             animation: 'badgePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                                         }}>
                                             {unseenCount > 99 ? '99+' : unseenCount}
+                                        </span>
+                                    )}
+                                </Link>
+                            )}
+
+                            {/* 🔖 Saved Items — Buyers (desktop) */}
+                            {isAuthenticated && !isSeller && (
+                                <Link
+                                    to="/saved"
+                                    id="saved-items-btn"
+                                    title="Saved Items"
+                                    style={{
+                                        position: 'relative',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '38px',
+                                        height: '38px',
+                                        borderRadius: '50%',
+                                        backgroundColor: savedCount > 0 ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+                                        border: `1.5px solid ${savedCount > 0 ? 'rgba(37, 99, 235, 0.3)' : 'var(--border-color)'}`,
+                                        color: savedCount > 0 ? 'var(--primary-color)' : 'var(--text-secondary)',
+                                        transition: 'all 0.2s ease',
+                                        textDecoration: 'none',
+                                    }}
+                                    onMouseEnter={e => {
+                                        e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.1)';
+                                        e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.3)';
+                                        e.currentTarget.style.color = 'var(--primary-color)';
+                                    }}
+                                    onMouseLeave={e => {
+                                        if (savedCount === 0) {
+                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                            e.currentTarget.style.borderColor = 'var(--border-color)';
+                                            e.currentTarget.style.color = 'var(--text-secondary)';
+                                        }
+                                    }}
+                                >
+                                    <Bookmark size={18} />
+                                    {savedCount > 0 && (
+                                        <span style={{
+                                            position: 'absolute',
+                                            top: '-4px',
+                                            right: '-4px',
+                                            minWidth: '18px',
+                                            height: '18px',
+                                            backgroundColor: 'var(--primary-color)',
+                                            color: 'white',
+                                            borderRadius: '99px',
+                                            fontSize: '0.65rem',
+                                            fontWeight: '800',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            padding: '0 4px',
+                                            border: '2px solid var(--nav-bg)',
+                                            lineHeight: 1,
+                                        }}>
+                                            {savedCount > 99 ? '99+' : savedCount}
                                         </span>
                                     )}
                                 </Link>
@@ -394,6 +465,34 @@ const Navbar = () => {
                                     >
                                         <Settings size={16} />
                                         Account Settings
+                                    </Link>
+
+                                    {/* Saved Items — all authenticated users */}
+                                    <Link
+                                        to="/saved"
+                                        onClick={() => setMenuOpen(false)}
+                                        style={{
+                                            width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                            padding: '0.8rem 1rem', background: 'none', border: 'none',
+                                            color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.875rem',
+                                            fontWeight: '600', textDecoration: 'none',
+                                            transition: 'background 0.15s',
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-color)'}
+                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    >
+                                        <Bookmark size={16} />
+                                        Saved Items
+                                        {savedCount > 0 && (
+                                            <span style={{
+                                                marginLeft: 'auto', minWidth: '20px', height: '20px',
+                                                backgroundColor: 'rgba(37,99,235,0.12)', color: 'var(--primary-color)',
+                                                borderRadius: '99px', fontSize: '0.65rem', fontWeight: '800',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px',
+                                            }}>
+                                                {savedCount > 99 ? '99+' : savedCount}
+                                            </span>
+                                        )}
                                     </Link>
 
                                     {/* Divider */}
