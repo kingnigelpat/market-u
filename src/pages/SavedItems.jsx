@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, deleteDoc, doc, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -22,11 +22,17 @@ const SavedItems = () => {
             try {
                 const q = query(
                     collection(db, 'savedItems'),
-                    where('buyerId', '==', currentUser.uid),
-                    orderBy('savedAt', 'desc')
+                    where('buyerId', '==', currentUser.uid)
                 );
                 const snap = await getDocs(q);
-                setItems(snap.docs.map(d => ({ docId: d.id, ...d.data() })));
+                const data = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+                // Sort client-side: newest first
+                data.sort((a, b) => {
+                    const ta = a.savedAt?.seconds ?? 0;
+                    const tb = b.savedAt?.seconds ?? 0;
+                    return tb - ta;
+                });
+                setItems(data);
             } catch (e) {
                 console.error('Error fetching saved items:', e);
             } finally {
