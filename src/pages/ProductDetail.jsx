@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, deleteDoc, updateDoc, increment, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc, updateDoc, increment, addDoc, deleteDoc as deleteFirestoreDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ArrowLeft, Trash2, Edit, Heart, CheckCircle, Loader, Clock, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Trash2, Edit, Heart, CheckCircle, Loader, Clock, AlertCircle, Bookmark, BookmarkCheck } from 'lucide-react';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SellerRating from '../components/SellerRating';
 import { useAuth } from '../context/AuthContext';
@@ -27,7 +27,14 @@ const ProductDetail = () => {
     const [alreadyInterested, setAlreadyInterested] = useState(false);
     const [interestSuccess, setInterestSuccess] = useState(false);
     const [showFallback, setShowFallback] = useState(false);
+    const [countdown, setCountdown] = useState(null); // null = not started
     const fallbackTimerRef = useRef(null);
+    const countdownRef = useRef(null);
+
+    // Save for Later state
+    const [saved, setSaved] = useState(false);
+    const [savedDocId, setSavedDocId] = useState(null);
+    const [saveLoading, setSaveLoading] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -71,6 +78,20 @@ const ProductDetail = () => {
                         } catch (e) {
                             // If rules deny (e.g. seller viewing buyer interests), silently ignore
                         }
+
+                        // Check if buyer already saved this product
+                        try {
+                            const savedQuery = query(
+                                collection(db, 'savedItems'),
+                                where('buyerId', '==', currentUser.uid),
+                                where('productId', '==', id)
+                            );
+                            const savedSnap = await getDocs(savedQuery);
+                            if (!savedSnap.empty) {
+                                setSaved(true);
+                                setSavedDocId(savedSnap.docs[0].id);
+                            }
+                        } catch (e) { /* silently ignore */ }
                     }
                 } else {
                     console.error("No such product!");
@@ -86,18 +107,30 @@ const ProductDetail = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
-    // Start 45-second fallback timer when buyer successfully expresses interest
+    // Start 45-second countdown + fallback when buyer successfully expresses interest
     useEffect(() => {
-        if (interestSuccess && !showFallback) {
-            fallbackTimerRef.current = setTimeout(() => {
-                setShowFallback(true);
-            }, 45000);
+        if (interestSuccess && countdown === null) {
+            setCountdown(45);
         }
         return () => {
             if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
+            if (countdownRef.current) clearInterval(countdownRef.current);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [interestSuccess]);
+
+    // Tick the countdown every second
+    useEffect(() => {
+        if (countdown === null) return;
+        if (countdown <= 0) {
+            setShowFallback(true);
+            return;
+        }
+        countdownRef.current = setTimeout(() => {
+            setCountdown(prev => (prev !== null ? prev - 1 : null));
+        }, 1000);
+        return () => clearTimeout(countdownRef.current);
+    }, [countdown]);
 
     if (loading) {
         return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}>Loading product details...</div>;
@@ -161,6 +194,41 @@ const ProductDetail = () => {
             alert("Something went wrong. Please try again.");
         } finally {
             setInterestLoading(false);
+        }
+    };
+
+    const handleSaveLater = async () => {
+        if (!isAuthenticated) {
+            setShowPrompt(true);
+            return;
+        }
+        if (isOwner) return;
+        setSaveLoading(true);
+        try {
+            if (saved && savedDocId) {
+                // Unsave
+                await deleteFirestoreDoc(doc(db, 'savedItems', savedDocId));
+                setSaved(false);
+                setSavedDocId(null);
+            } else {
+                // Save
+                const ref = await addDoc(collection(db, 'savedItems'), {
+                    buyerId: currentUser.uid,
+                    productId: id,
+                    productTitle: product.title,
+                    productPrice: product.price,
+                    productImage: product.images?.[0] || '',
+                    sellerName: product.sellerName,
+                    sellerId: product.sellerId,
+                    savedAt: serverTimestamp(),
+                });
+                setSaved(true);
+                setSavedDocId(ref.id);
+            }
+        } catch (e) {
+            console.error('Save for later error:', e);
+        } finally {
+            setSaveLoading(false);
         }
     };
 
@@ -269,7 +337,51 @@ const ProductDetail = () => {
                             <h1 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.25rem)', fontWeight: '900', margin: 0, letterSpacing: '-0.03em', lineHeight: '1.1' }}>
                                 {product.title}
                             </h1>
+                            {/* Save for Later — only for non-owners */}
+                            {!isOwner && (
+                                <button
+                                    onClick={handleSaveLater}
+                                    disabled={saveLoading}
+                                    title={saved ? 'Remove from saved' : 'Save for later'}
+                                    style={{
+                                        flexShrink: 0,
+                                        width: '44px',
+                                        height: '44px',
+                                        borderRadius: '12px',
+                                        border: saved ? '1.5px solid rgba(37, 99, 235, 0.4)' : '1.5px solid var(--border-color)',
+                                        backgroundColor: saved ? 'rgba(37, 99, 235, 0.08)' : 'var(--surface-color)',
+                                        color: saved ? 'var(--primary-color)' : 'var(--text-secondary)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: saveLoading ? 'not-allowed' : 'pointer',
+                                        transition: 'all 0.2s',
+                                        opacity: saveLoading ? 0.6 : 1,
+                                    }}
+                                    onMouseEnter={e => { if (!saveLoading) { e.currentTarget.style.backgroundColor = saved ? 'rgba(37,99,235,0.12)' : 'var(--bg-color)'; } }}
+                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = saved ? 'rgba(37,99,235,0.08)' : 'var(--surface-color)'; }}
+                                >
+                                    {saved
+                                        ? <BookmarkCheck size={20} />
+                                        : <Bookmark size={20} />}
+                                </button>
+                            )}
                         </div>
+                        {/* Saved confirmation */}
+                        {saved && !isOwner && (
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.4rem',
+                                fontSize: '0.8125rem',
+                                color: 'var(--primary-color)',
+                                fontWeight: '600',
+                                marginBottom: '0.75rem',
+                                marginTop: '-0.5rem',
+                            }}>
+                                <BookmarkCheck size={13} /> Saved for later
+                            </div>
+                        )}
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--surface-color)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
                             <div style={{ width: '40px', height: '40px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--primary-color)', border: '1px solid var(--border-color)' }}>
@@ -335,13 +447,52 @@ const ProductDetail = () => {
                             </button>
                         )}
 
-                        {/* Success sub-text + fallback */}
+                        {/* Success sub-text + countdown + fallback */}
                         {interestSuccess && (
                             <div style={{ marginTop: '1rem' }}>
                                 {!showFallback ? (
-                                    <p style={{ textAlign: 'center', fontSize: '0.875rem', color: 'var(--success-color)', fontWeight: '600', margin: 0 }}>
-                                        The seller has been notified and will contact you soon 😊
-                                    </p>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <p style={{ fontSize: '0.875rem', color: 'var(--success-color)', fontWeight: '600', margin: '0 0 0.75rem 0' }}>
+                                            The seller has been notified and will contact you soon 😊
+                                        </p>
+                                        {/* Visible countdown ring */}
+                                        {countdown !== null && countdown > 0 && (
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem' }}>
+                                                <div style={{
+                                                    position: 'relative',
+                                                    width: '48px',
+                                                    height: '48px',
+                                                }}>
+                                                    <svg width="48" height="48" style={{ transform: 'rotate(-90deg)' }}>
+                                                        <circle cx="24" cy="24" r="20" fill="none" stroke="var(--border-color)" strokeWidth="3" />
+                                                        <circle
+                                                            cx="24" cy="24" r="20"
+                                                            fill="none"
+                                                            stroke="var(--primary-color)"
+                                                            strokeWidth="3"
+                                                            strokeLinecap="round"
+                                                            strokeDasharray={`${2 * Math.PI * 20}`}
+                                                            strokeDashoffset={`${2 * Math.PI * 20 * (1 - countdown / 45)}`}
+                                                            style={{ transition: 'stroke-dashoffset 0.9s linear' }}
+                                                        />
+                                                    </svg>
+                                                    <span style={{
+                                                        position: 'absolute',
+                                                        inset: 0,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontSize: '0.8125rem',
+                                                        fontWeight: '800',
+                                                        color: 'var(--primary-color)',
+                                                    }}>{countdown}s</span>
+                                                </div>
+                                                <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', maxWidth: '160px', textAlign: 'left', lineHeight: '1.4' }}>
+                                                    Waiting for seller response…
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
                                 ) : (
                                     <div style={{
                                         backgroundColor: 'rgba(245, 158, 11, 0.07)',
