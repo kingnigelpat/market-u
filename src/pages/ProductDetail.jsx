@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, deleteDoc, updateDoc, increment, addDoc, deleteDoc as deleteFirestoreDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc, updateDoc, increment, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ArrowLeft, Trash2, Edit, Heart, CheckCircle, Loader, Clock, AlertCircle, Bookmark, BookmarkCheck } from 'lucide-react';
 import VerifiedBadge from '../components/VerifiedBadge';
@@ -35,6 +35,7 @@ const ProductDetail = () => {
     const [saved, setSaved] = useState(false);
     const [savedDocId, setSavedDocId] = useState(null);
     const [saveLoading, setSaveLoading] = useState(false);
+    const [saveError, setSaveError] = useState('');
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -204,10 +205,11 @@ const ProductDetail = () => {
         }
         if (isOwner) return;
         setSaveLoading(true);
+        setSaveError('');
         try {
             if (saved && savedDocId) {
                 // Unsave
-                await deleteFirestoreDoc(doc(db, 'savedItems', savedDocId));
+                await deleteDoc(doc(db, 'savedItems', savedDocId));
                 setSaved(false);
                 setSavedDocId(null);
             } else {
@@ -227,6 +229,7 @@ const ProductDetail = () => {
             }
         } catch (e) {
             console.error('Save for later error:', e);
+            setSaveError('Could not save — check your connection and try again.');
         } finally {
             setSaveLoading(false);
         }
@@ -380,6 +383,21 @@ const ProductDetail = () => {
                                 marginTop: '-0.5rem',
                             }}>
                                 <BookmarkCheck size={13} /> Saved for later
+                            </div>
+                        )}
+                        {/* Save error */}
+                        {saveError && (
+                            <div style={{
+                                fontSize: '0.8125rem',
+                                color: 'var(--danger-color)',
+                                marginBottom: '0.75rem',
+                                marginTop: '-0.5rem',
+                                padding: '0.5rem 0.75rem',
+                                backgroundColor: 'rgba(239, 68, 68, 0.07)',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(239, 68, 68, 0.15)',
+                            }}>
+                                ⚠️ {saveError}
                             </div>
                         )}
 
