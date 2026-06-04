@@ -28,7 +28,6 @@ const ProductDetail = () => {
     const [interestSuccess, setInterestSuccess] = useState(false);
     const [showFallback, setShowFallback] = useState(false);
     const [countdown, setCountdown] = useState(null); // null = not started
-    const fallbackTimerRef = useRef(null);
     const countdownRef = useRef(null);
 
     // Save for Later state
@@ -108,14 +107,42 @@ const ProductDetail = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
-    // Start 45-second countdown + fallback when buyer successfully expresses interest
+    // On mount: check localStorage to resume any in-progress countdown for this product
+    useEffect(() => {
+        const key = `interest_ts_${id}`;
+        const saved = localStorage.getItem(key);
+        if (saved) {
+            const elapsed = Math.floor((Date.now() - parseInt(saved, 10)) / 1000);
+            const remaining = 45 - elapsed;
+            if (remaining <= 0) {
+                // Already expired — show fallback immediately, clean up
+                localStorage.removeItem(key);
+                setInterestSuccess(true);
+                setAlreadyInterested(true);
+                setCountdown(0);
+                setShowFallback(true);
+            } else {
+                // Resume mid-countdown
+                setInterestSuccess(true);
+                setAlreadyInterested(true);
+                setCountdown(remaining);
+            }
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
+
+    // When interest is first expressed, save timestamp to localStorage
     useEffect(() => {
         if (interestSuccess && countdown === null) {
+            const key = `interest_ts_${id}`;
+            // Only write if not already set (avoid overwriting on re-mount)
+            if (!localStorage.getItem(key)) {
+                localStorage.setItem(key, Date.now().toString());
+            }
             setCountdown(45);
         }
         return () => {
-            if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
-            if (countdownRef.current) clearInterval(countdownRef.current);
+            if (countdownRef.current) clearTimeout(countdownRef.current);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [interestSuccess]);
@@ -124,6 +151,7 @@ const ProductDetail = () => {
     useEffect(() => {
         if (countdown === null) return;
         if (countdown <= 0) {
+            localStorage.removeItem(`interest_ts_${id}`);
             setShowFallback(true);
             return;
         }
@@ -131,7 +159,7 @@ const ProductDetail = () => {
             setCountdown(prev => (prev !== null ? prev - 1 : null));
         }, 1000);
         return () => clearTimeout(countdownRef.current);
-    }, [countdown]);
+    }, [countdown, id]);
 
     if (loading) {
         return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}>Loading product details...</div>;
