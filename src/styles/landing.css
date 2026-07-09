@@ -330,6 +330,14 @@
   align-self: stretch;
 }
 
+.hero-schools-note {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 .hero-visual {
   position: relative;
   width: 100%;
@@ -842,6 +850,7 @@
 .delay-200 { animation-delay: 0.2s; }
 .delay-300 { animation-delay: 0.3s; }
 .delay-400 { animation-delay: 0.4s; }
+.delay-450 { animation-delay: 0.45s; }
 .delay-500 { animation-delay: 0.5s; }
 
 @media (min-width: 768px) {

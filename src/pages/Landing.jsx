@@ -138,6 +138,10 @@ const Landing = () => {
                 </div>
               </div>
             </div>
+
+            <p className="hero-schools-note animate-fade-in-up delay-450">
+              More schools joining soon 🚀
+            </p>
           </div>
 
           <div className="hero-visual animate-fade-in-up delay-500">

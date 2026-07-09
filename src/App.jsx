@@ -5,6 +5,7 @@ import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import SupportButton from './components/SupportButton.jsx';
+import AIAssistant from './components/AIAssistant.jsx';
 import IOSInstallBanner from './components/IOSInstallBanner.jsx';
 import WhatsAppGroupModal from './components/WhatsAppGroupModal.jsx';
 
@@ -88,6 +89,7 @@ const AppContent = () => {
                 </Suspense>
             </main>
             <Footer />
+            <AIAssistant />
             <SupportButton />
             <IOSInstallBanner />
             {/* WhatsApp Seller Group Modal — shown to sellers who haven't joined yet */}
