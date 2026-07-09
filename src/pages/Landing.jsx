@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import '../styles/landing.css';
-import { Search, ShoppingBag, Tag, CheckCircle2, Smartphone, Zap, Shield, ArrowRight, Star, Users, Package, Sparkles } from 'lucide-react';
+import { Search, ShoppingBag, Tag, CheckCircle2, Smartphone, Zap, Shield, ArrowRight, Star, Users, Package, Sparkles, Building2, Globe, GraduationCap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AuthPromptModal from '../components/AuthPromptModal';
 
@@ -139,9 +139,10 @@ const Landing = () => {
               </div>
             </div>
 
-            <p className="hero-schools-note animate-fade-in-up delay-450">
-              More schools joining soon 🚀
-            </p>
+            <div className="hero-schools-badge animate-fade-in-up delay-450">
+              <GraduationCap size={14} />
+              <span>More schools joining soon</span>
+            </div>
           </div>
 
           <div className="hero-visual animate-fade-in-up delay-500">
@@ -290,6 +291,59 @@ const Landing = () => {
                   <div className="install-phone-text">MarketU</div>
                   <div className="install-phone-btn">Install</div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="about-section">
+          <div className="about-card">
+            <div className="about-content">
+              <span className="about-eyebrow">About MarketU</span>
+              <h2 className="about-title">Built by students,<br />for students.</h2>
+              <p className="about-description">
+                MarketU is a campus marketplace platform <strong>created and owned by Rae Company</strong> — 
+                a digital innovation hub building tools that connect students and make campus life easier.
+              </p>
+              <p className="about-description">
+                We believe in safe, verified, and instant transactions between students. 
+                Every seller is verified, every item is local, and every transaction is designed 
+                to happen face-to-face on campus.
+              </p>
+              <div className="about-stats-row">
+                <div className="about-stat">
+                  <Building2 size={18} />
+                  <div>
+                    <div className="about-stat-num">1+</div>
+                    <div className="about-stat-label">School Active</div>
+                  </div>
+                </div>
+                <div className="about-stat">
+                  <Users size={18} />
+                  <div>
+                    <div className="about-stat-num">500+</div>
+                    <div className="about-stat-label">Students</div>
+                  </div>
+                </div>
+                <div className="about-stat">
+                  <Globe size={18} />
+                  <div>
+                    <div className="about-stat-num">1.2k+</div>
+                    <div className="about-stat-label">Items Listed</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="about-brand">
+              <div className="about-brand-card">
+                <div className="about-brand-icon">
+                  <Building2 size={24} />
+                </div>
+                <h3>Rae Company</h3>
+                <p>Building the future of digital connectivity and campus tools.</p>
+                <a href="https://raehub.live/" target="_blank" rel="noopener noreferrer" className="about-brand-link">
+                  Visit Website <ArrowRight size={14} />
+                </a>
               </div>
             </div>
           </div>
