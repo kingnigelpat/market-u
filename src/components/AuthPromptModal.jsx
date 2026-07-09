@@ -20,14 +20,15 @@ const AuthPromptModal = ({ isOpen, onClose, message }) => {
             padding: '1.5rem'
         }} onClick={onClose}>
             <div style={{
-                backgroundColor: 'white',
+                backgroundColor: 'var(--surface-elevated)',
                 padding: '2.5rem 2rem',
-                borderRadius: 'var(--radius-xl)',
+                borderRadius: 'var(--radius-2xl)',
                 maxWidth: '400px',
                 width: '100%',
                 position: 'relative',
                 textAlign: 'center',
-                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
+                boxShadow: 'var(--shadow-lg)',
+                border: '1px solid var(--border)',
                 animation: 'modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
             }} onClick={e => e.stopPropagation()}>
                 <button 
@@ -46,8 +47,8 @@ const AuthPromptModal = ({ isOpen, onClose, message }) => {
                 <div style={{ 
                     width: '64px', 
                     height: '64px', 
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)', 
-                    color: 'var(--primary-color)', 
+                    backgroundColor: 'var(--primary-light)', 
+                    color: 'var(--primary)', 
                     borderRadius: '20px', 
                     display: 'flex', 
                     alignItems: 'center', 
@@ -61,7 +62,7 @@ const AuthPromptModal = ({ isOpen, onClose, message }) => {
                     </svg>
                 </div>
 
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>
                     Authentication Required
                 </h3>
                 <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: '1.6' }}>

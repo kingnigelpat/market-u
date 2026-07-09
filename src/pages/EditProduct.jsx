@@ -100,7 +100,7 @@ const EditProduct = () => {
     }
 
     if (error && !formData.title) {
-        return <div className="container" style={{ padding: '3rem 0', textAlign: 'center', color: 'var(--danger-color)' }}>{error}</div>;
+        return <div className="container" style={{ padding: '3rem 0', textAlign: 'center', color: 'var(--danger)' }}>{error}</div>;
     }
 
     return (
@@ -117,7 +117,7 @@ const EditProduct = () => {
 
                 <div className="card mobile-card-padding">
                     {error && (
-                        <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger-color)', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+                        <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
                             {error}
                         </div>
                     )}

@@ -60,11 +60,11 @@ const IOSInstallBanner = () => {
                 position: 'fixed',
                 bottom: 0, left: 0, right: 0,
                 zIndex: 9991,
-                backgroundColor: 'var(--bg-color)',
+                backgroundColor: 'var(--bg)',
                 borderRadius: '20px 20px 0 0',
                 padding: '1.5rem 1.5rem 2.5rem',
                 boxShadow: '0 -12px 40px rgba(0,0,0,0.2)',
-                border: '1px solid var(--border-color)',
+                border: '1px solid var(--border)',
                 animation: 'slideUpBanner 0.35s cubic-bezier(0.16,1,0.3,1)',
                 maxWidth: '500px',
                 margin: '0 auto',
@@ -72,7 +72,7 @@ const IOSInstallBanner = () => {
                 {/* Handle */}
                 <div style={{
                     width: '40px', height: '4px', borderRadius: '99px',
-                    backgroundColor: 'var(--border-color)',
+                    backgroundColor: 'var(--border)',
                     margin: '0 auto 1.25rem',
                 }} />
 
@@ -111,8 +111,8 @@ const IOSInstallBanner = () => {
                     marginBottom: '1.25rem',
                     display: 'flex', gap: '0.5rem', alignItems: 'flex-start',
                 }}>
-                    <Bell size={16} style={{ color: 'var(--primary-color)', flexShrink: 0, marginTop: '2px' }} />
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.55, margin: 0 }}>
+                    <Bell size={16} style={{ color: 'var(--primary)', flexShrink: 0, marginTop: '2px' }} />
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text)', lineHeight: 1.55, margin: 0 }}>
                         Apple only allows push notifications for <strong>installed apps</strong>.
                         Add Market-U to your Home Screen so you get instant buyer alerts — even when your phone is locked.
                     </p>
@@ -123,17 +123,17 @@ const IOSInstallBanner = () => {
                     {[
                         {
                             num: '1',
-                            icon: <Share size={18} style={{ color: 'var(--primary-color)' }} />,
+                            icon: <Share size={18} style={{ color: 'var(--primary)' }} />,
                             text: <>Tap the <strong>Share</strong> button <span style={{ fontSize: '1.1em' }}>⎙</span> at the bottom of Safari</>,
                         },
                         {
                             num: '2',
-                            icon: <PlusSquare size={18} style={{ color: 'var(--primary-color)' }} />,
+                            icon: <PlusSquare size={18} style={{ color: 'var(--primary)' }} />,
                             text: <>Scroll down and tap <strong>"Add to Home Screen"</strong></>,
                         },
                         {
                             num: '3',
-                            icon: <Bell size={18} style={{ color: 'var(--primary-color)' }} />,
+                            icon: <Bell size={18} style={{ color: 'var(--primary)' }} />,
                             text: <>Open Market-U from your home screen and <strong>allow notifications</strong></>,
                         },
                     ].map(step => (
@@ -145,7 +145,7 @@ const IOSInstallBanner = () => {
                             }}>
                                 {step.icon}
                             </div>
-                            <p style={{ fontSize: '0.875rem', color: 'var(--text-primary)', margin: 0, lineHeight: 1.5 }}>
+                            <p style={{ fontSize: '0.875rem', color: 'var(--text)', margin: 0, lineHeight: 1.5 }}>
                                 {step.text}
                             </p>
                         </div>
@@ -157,7 +157,7 @@ const IOSInstallBanner = () => {
                     onClick={dismiss}
                     style={{
                         width: '100%', padding: '0.875rem',
-                        backgroundColor: 'var(--primary-color)',
+                        backgroundColor: 'var(--primary)',
                         color: 'white', border: 'none', borderRadius: 'var(--radius-lg)',
                         fontWeight: '700', fontSize: '0.9375rem', cursor: 'pointer',
                         letterSpacing: '-0.01em',

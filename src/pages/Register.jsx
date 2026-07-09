@@ -81,7 +81,7 @@ const Register = () => {
                 {error && (
                     <div style={{ 
                         backgroundColor: 'rgba(239, 68, 68, 0.08)', 
-                        color: 'var(--danger-color)', 
+                        color: 'var(--danger)', 
                         padding: '1rem', 
                         borderRadius: 'var(--radius-lg)', 
                         marginBottom: '1.5rem', 
@@ -160,7 +160,7 @@ const Register = () => {
                                 cursor: 'pointer',
                                 padding: '0.75rem',
                                 borderRadius: 'var(--radius-lg)',
-                                border: formData.role === 'buyer' ? '2px solid var(--primary-color)' : '1px solid var(--border-color)',
+                                border: formData.role === 'buyer' ? '2px solid var(--primary)' : '1px solid var(--border)',
                                 backgroundColor: formData.role === 'buyer' ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
                                 transition: 'all 0.2s'
                             }}>
@@ -176,7 +176,7 @@ const Register = () => {
                                 cursor: 'pointer',
                                 padding: '0.75rem',
                                 borderRadius: 'var(--radius-lg)',
-                                border: formData.role === 'seller' ? '2px solid var(--primary-color)' : '1px solid var(--border-color)',
+                                border: formData.role === 'seller' ? '2px solid var(--primary)' : '1px solid var(--border)',
                                 backgroundColor: formData.role === 'seller' ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
                                 transition: 'all 0.2s'
                             }}>
@@ -204,7 +204,7 @@ const Register = () => {
                 </form>
 
                 <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.9375rem', color: 'var(--text-secondary)' }}>
-                    Already have an account? <Link to="/login" style={{ color: 'var(--primary-color)', fontWeight: '700' }}>Log in</Link>
+                    Already have an account? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: '700' }}>Log in</Link>
                 </div>
             </div>
         </div>

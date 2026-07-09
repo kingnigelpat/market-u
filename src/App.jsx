@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
@@ -25,6 +25,8 @@ import './styles/global.css';
 const AppContent = () => {
     const { loading, isSeller, joinedGroupChat, setJoinedGroupChat } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    const isLanding = location.pathname === '/';
 
     // Listen for NAVIGATE messages from the service worker (notification click)
     useEffect(() => {
@@ -50,7 +52,7 @@ const AppContent = () => {
     return (
         <div className="app-container">
             <Navbar />
-            <main className="main-content">
+            <main className={`main-content ${!isLanding ? 'main-content--with-padding' : ''}`}>
                 <Suspense fallback={
                     <div className="loading-overlay">
                         <div className="spinner"></div>

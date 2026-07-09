@@ -51,7 +51,7 @@ const Login = () => {
                 {resetSent && (
                     <div style={{ 
                         backgroundColor: 'rgba(37, 99, 235, 0.08)', 
-                        color: 'var(--primary-color)', 
+                        color: 'var(--primary)', 
                         padding: '1rem', 
                         borderRadius: 'var(--radius-lg)', 
                         marginBottom: '1.5rem', 
@@ -67,7 +67,7 @@ const Login = () => {
                 {error && (
                     <div style={{ 
                         backgroundColor: 'rgba(239, 68, 68, 0.08)', 
-                        color: 'var(--danger-color)', 
+                        color: 'var(--danger)', 
                         padding: '1rem', 
                         borderRadius: 'var(--radius-lg)', 
                         marginBottom: '1.5rem', 
@@ -101,7 +101,7 @@ const Login = () => {
                                 style={{ 
                                     background: 'none', 
                                     border: 'none', 
-                                    color: 'var(--primary-color)', 
+                                    color: 'var(--primary)', 
                                     fontSize: '0.875rem', 
                                     cursor: 'pointer',
                                     padding: 0,
@@ -138,7 +138,7 @@ const Login = () => {
                 </form>
 
                 <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.9375rem', color: 'var(--text-secondary)' }}>
-                    Don't have an account? <Link to="/register" style={{ color: 'var(--primary-color)', fontWeight: '700' }}>Create an account</Link>
+                    Don't have an account? <Link to="/register" style={{ color: 'var(--primary)', fontWeight: '700' }}>Create an account</Link>
                 </div>
             </div>
         </div>

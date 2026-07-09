@@ -4,7 +4,7 @@ const VerifiedBadge = ({ size = 20, className = '' }) => {
     return (
         <div
             className={`verified-badge ${className}`}
-            style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--primary-color)' }}
+            style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--primary)' }}
             title="Verified Seller"
         >
             <ShieldCheck size={size} fill="currentColor" color="white" />

@@ -102,7 +102,7 @@ const SellerRating = ({ sellerId, hideAverage = false }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', color: '#f59e0b' }}>
                         <Star size={16} fill="#f59e0b" />
-                        <span style={{ fontWeight: '800', marginLeft: '0.25rem', color: 'var(--text-primary)' }}>
+                        <span style={{ fontWeight: '800', marginLeft: '0.25rem', color: 'var(--text)' }}>
                             {averageRating > 0 ? averageRating : 'New'}
                         </span>
                     </div>

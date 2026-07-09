@@ -51,13 +51,13 @@ const WhatsAppGroupModal = ({ onDismiss }) => {
             <div
                 className="animate-fade-in-up"
                 style={{
-                    background: 'var(--surface-color)',
+                    background: 'var(--surface)',
                     borderRadius: '24px',
                     padding: '2.5rem 2rem',
                     maxWidth: '420px',
                     width: '100%',
                     boxShadow: '0 32px 64px -12px rgba(0,0,0,0.5)',
-                    border: '1px solid var(--border-color)',
+                    border: '1px solid var(--border)',
                     textAlign: 'center',
                     position: 'relative',
                     overflow: 'hidden',
@@ -95,7 +95,7 @@ const WhatsAppGroupModal = ({ onDismiss }) => {
                     fontWeight: '900',
                     letterSpacing: '-0.03em',
                     marginBottom: '0.75rem',
-                    color: 'var(--text-primary)',
+                    color: 'var(--text)',
                 }}>
                     Join the Seller Group Chat 📣
                 </h2>
@@ -106,7 +106,7 @@ const WhatsAppGroupModal = ({ onDismiss }) => {
                     lineHeight: '1.65',
                     marginBottom: '0.75rem',
                 }}>
-                    All Market-U sellers <strong style={{ color: 'var(--text-primary)' }}>must</strong> join our official WhatsApp group to receive important updates, order alerts, and announcements.
+                    All Market-U sellers <strong style={{ color: 'var(--text)' }}>must</strong> join our official WhatsApp group to receive important updates, order alerts, and announcements.
                 </p>
 
                 <div style={{
@@ -123,7 +123,7 @@ const WhatsAppGroupModal = ({ onDismiss }) => {
                     textAlign: 'left',
                 }}>
                     <span style={{ fontSize: '1.25rem', flexShrink: 0 }}>🔒</span>
-                    <span>This group is <strong style={{ color: 'var(--text-primary)' }}>sellers only</strong>. Buyers cannot join.</span>
+                    <span>This group is <strong style={{ color: 'var(--text)' }}>sellers only</strong>. Buyers cannot join.</span>
                 </div>
 
                 {/* Join button */}
@@ -169,14 +169,14 @@ const WhatsAppGroupModal = ({ onDismiss }) => {
                         fontSize: '0.9375rem',
                         fontWeight: '600',
                         cursor: saving ? 'not-allowed' : 'pointer',
-                        border: '1px solid var(--border-color)',
+                        border: '1px solid var(--border)',
                         backgroundColor: 'transparent',
                         color: 'var(--text-secondary)',
                         transition: 'all 0.2s',
                     }}
                     onMouseEnter={e => {
-                        e.currentTarget.style.backgroundColor = 'var(--bg-color)';
-                        e.currentTarget.style.color = 'var(--text-primary)';
+                        e.currentTarget.style.backgroundColor = 'var(--bg)';
+                        e.currentTarget.style.color = 'var(--text)';
                     }}
                     onMouseLeave={e => {
                         e.currentTarget.style.backgroundColor = 'transparent';

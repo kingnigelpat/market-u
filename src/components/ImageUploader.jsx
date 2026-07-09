@@ -35,7 +35,7 @@ const ImageUploader = ({ onChange, maxImages = 2 }) => {
 
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                 {previews.map((preview, index) => (
-                    <div key={index} style={{ position: 'relative', width: '100px', height: '100px', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                    <div key={index} style={{ position: 'relative', width: '100px', height: '100px', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border)' }}>
                         <img src={preview} alt={`Preview ${index}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         <button
                             type="button"
@@ -48,7 +48,7 @@ const ImageUploader = ({ onChange, maxImages = 2 }) => {
                 ))}
 
                 {images.length < maxImages && (
-                    <label style={{ width: '100px', height: '100px', border: '2px dashed var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                    <label style={{ width: '100px', height: '100px', border: '2px dashed var(--border)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)' }}>
                         <Upload size={24} />
                         <span style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>Upload</span>
                         <input type="file" multiple accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />

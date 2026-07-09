@@ -337,9 +337,9 @@ const ProductDetail = () => {
                                         width: '100%', 
                                         borderRadius: 'var(--radius-xl)', 
                                         overflow: 'hidden', 
-                                        backgroundColor: 'var(--surface-color)',
+                                        backgroundColor: 'var(--surface)',
                                         cursor: 'zoom-in',
-                                        border: '1px solid var(--border-color)',
+                                        border: '1px solid var(--border)',
                                         boxShadow: 'var(--shadow-sm)',
                                         transition: 'transform 0.2s'
                                     }}
@@ -355,7 +355,7 @@ const ProductDetail = () => {
                             ))}
                         </div>
                     ) : (
-                        <div style={{ padding: '4rem', textAlign: 'center', backgroundColor: 'var(--surface-color)', borderRadius: 'var(--radius-xl)', border: '2px dashed var(--border-color)' }}>
+                        <div style={{ padding: '4rem', textAlign: 'center', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-xl)', border: '2px dashed var(--border)' }}>
                             No images available
                         </div>
                     )}
@@ -379,9 +379,9 @@ const ProductDetail = () => {
                                         width: '44px',
                                         height: '44px',
                                         borderRadius: '12px',
-                                        border: saved ? '1.5px solid rgba(37, 99, 235, 0.4)' : '1.5px solid var(--border-color)',
-                                        backgroundColor: saved ? 'rgba(37, 99, 235, 0.08)' : 'var(--surface-color)',
-                                        color: saved ? 'var(--primary-color)' : 'var(--text-secondary)',
+                                        border: saved ? '1.5px solid rgba(37, 99, 235, 0.4)' : '1.5px solid var(--border)',
+                                        backgroundColor: saved ? 'rgba(37, 99, 235, 0.08)' : 'var(--surface)',
+                                        color: saved ? 'var(--primary)' : 'var(--text-secondary)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
@@ -389,8 +389,8 @@ const ProductDetail = () => {
                                         transition: 'all 0.2s',
                                         opacity: saveLoading ? 0.6 : 1,
                                     }}
-                                    onMouseEnter={e => { if (!saveLoading) { e.currentTarget.style.backgroundColor = saved ? 'rgba(37,99,235,0.12)' : 'var(--bg-color)'; } }}
-                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = saved ? 'rgba(37,99,235,0.08)' : 'var(--surface-color)'; }}
+                                    onMouseEnter={e => { if (!saveLoading) { e.currentTarget.style.backgroundColor = saved ? 'rgba(37,99,235,0.12)' : 'var(--bg)'; } }}
+                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = saved ? 'rgba(37,99,235,0.08)' : 'var(--surface)'; }}
                                 >
                                     {saved
                                         ? <BookmarkCheck size={20} />
@@ -405,7 +405,7 @@ const ProductDetail = () => {
                                 alignItems: 'center',
                                 gap: '0.4rem',
                                 fontSize: '0.8125rem',
-                                color: 'var(--primary-color)',
+                                color: 'var(--primary)',
                                 fontWeight: '600',
                                 marginBottom: '0.75rem',
                                 marginTop: '-0.5rem',
@@ -417,7 +417,7 @@ const ProductDetail = () => {
                         {saveError && (
                             <div style={{
                                 fontSize: '0.8125rem',
-                                color: 'var(--danger-color)',
+                                color: 'var(--danger)',
                                 marginBottom: '0.75rem',
                                 marginTop: '-0.5rem',
                                 padding: '0.5rem 0.75rem',
@@ -429,8 +429,8 @@ const ProductDetail = () => {
                             </div>
                         )}
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--surface-color)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
-                            <div style={{ width: '40px', height: '40px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--primary-color)', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+                            <div style={{ width: '40px', height: '40px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--primary)', border: '1px solid var(--border)' }}>
                                 {product.sellerName ? product.sellerName.charAt(0).toUpperCase() : 'S'}
                             </div>
                             <div>
@@ -446,12 +446,12 @@ const ProductDetail = () => {
 
                         <div style={{ marginBottom: '2rem' }}>
                             <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Description</h3>
-                            <p style={{ color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: '1.7', fontSize: '1.0625rem' }}>{product.description}</p>
+                            <p style={{ color: 'var(--text)', whiteSpace: 'pre-wrap', lineHeight: '1.7', fontSize: '1.0625rem' }}>{product.description}</p>
                         </div>
 
                         <div style={{ marginBottom: '1.5rem', padding: '1.5rem', backgroundColor: 'rgba(37, 99, 235, 0.03)', borderRadius: 'var(--radius-xl)', border: '1px solid rgba(37, 99, 235, 0.1)', textAlign: 'center' }}>
                             <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Price</div>
-                            <div style={{ fontSize: '2.5rem', fontWeight: '900', color: 'var(--primary-color)', letterSpacing: '-0.03em' }}>
+                            <div style={{ fontSize: '2.5rem', fontWeight: '900', color: 'var(--primary)', letterSpacing: '-0.03em' }}>
                                 ₦{parseFloat(product.price).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                         </div>
@@ -477,8 +477,8 @@ const ProductDetail = () => {
                                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                     backgroundColor: isDone
                                         ? 'rgba(16, 185, 129, 0.1)'
-                                        : 'var(--primary-color)',
-                                    color: isDone ? 'var(--success-color)' : 'white',
+                                        : 'var(--primary)',
+                                    color: isDone ? 'var(--success)' : 'white',
                                     boxShadow: isDone ? 'none' : '0 10px 20px -5px rgba(37, 99, 235, 0.35)',
                                     border: isDone ? '1px solid rgba(16, 185, 129, 0.3)' : 'none',
                                 }}
@@ -498,7 +498,7 @@ const ProductDetail = () => {
                             <div style={{ marginTop: '1rem' }}>
                                 {!showFallback ? (
                                     <div style={{ textAlign: 'center' }}>
-                                        <p style={{ fontSize: '0.875rem', color: 'var(--success-color)', fontWeight: '600', margin: '0 0 0.75rem 0' }}>
+                                        <p style={{ fontSize: '0.875rem', color: 'var(--success)', fontWeight: '600', margin: '0 0 0.75rem 0' }}>
                                             The seller has been notified and will contact you soon 😊
                                         </p>
                                         {/* Visible countdown ring */}
@@ -510,11 +510,11 @@ const ProductDetail = () => {
                                                     height: '48px',
                                                 }}>
                                                     <svg width="48" height="48" style={{ transform: 'rotate(-90deg)' }}>
-                                                        <circle cx="24" cy="24" r="20" fill="none" stroke="var(--border-color)" strokeWidth="3" />
+                                                        <circle cx="24" cy="24" r="20" fill="none" stroke="var(--border)" strokeWidth="3" />
                                                         <circle
                                                             cx="24" cy="24" r="20"
                                                             fill="none"
-                                                            stroke="var(--primary-color)"
+                                                            stroke="var(--primary)"
                                                             strokeWidth="3"
                                                             strokeLinecap="round"
                                                             strokeDasharray={`${2 * Math.PI * 20}`}
@@ -530,7 +530,7 @@ const ProductDetail = () => {
                                                         justifyContent: 'center',
                                                         fontSize: '0.8125rem',
                                                         fontWeight: '800',
-                                                        color: 'var(--primary-color)',
+                                                        color: 'var(--primary)',
                                                     }}>{countdown}s</span>
                                                 </div>
                                                 <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', maxWidth: '160px', textAlign: 'left', lineHeight: '1.4' }}>
@@ -563,8 +563,8 @@ const ProductDetail = () => {
                                             color: 'var(--text-secondary)',
                                             lineHeight: '1.6',
                                         }}>
-                                            <div><span style={{ color: 'var(--text-secondary)' }}>Seller:</span> <strong style={{ color: 'var(--text-primary)' }}>{product.sellerName}</strong></div>
-                                            <div><span style={{ color: 'var(--text-secondary)' }}>Product:</span> <strong style={{ color: 'var(--text-primary)' }}>{product.title}</strong></div>
+                                            <div><span style={{ color: 'var(--text-secondary)' }}>Seller:</span> <strong style={{ color: 'var(--text)' }}>{product.sellerName}</strong></div>
+                                            <div><span style={{ color: 'var(--text-secondary)' }}>Product:</span> <strong style={{ color: 'var(--text)' }}>{product.title}</strong></div>
                                         </div>
                                         <a
                                             href={`https://wa.me/2347073544811?text=${encodeURIComponent(`Hi Support, I'm interested in a product but the seller hasn't responded yet.\n\nSeller: ${product.sellerName}\nProduct: ${product.title}\n\nPlease help me reach them. Thank you!`)}`}
@@ -611,7 +611,7 @@ const ProductDetail = () => {
                                     onClick={handleDelete}
                                     disabled={deleting}
                                     className="btn"
-                                    style={{ padding: '1rem', fontSize: '1rem', fontWeight: '600', justifyContent: 'center', backgroundColor: 'rgba(239, 68, 68, 0.05)', color: 'var(--danger-color)', border: '1px solid rgba(239, 68, 68, 0.1)' }}
+                                    style={{ padding: '1rem', fontSize: '1rem', fontWeight: '600', justifyContent: 'center', backgroundColor: 'rgba(239, 68, 68, 0.05)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.1)' }}
                                 >
                                     <Trash2 size={18} />
                                     {deleting ? 'Deleting...' : 'Delete'}

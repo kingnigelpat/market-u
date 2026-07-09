@@ -74,7 +74,7 @@ const SavedItems = () => {
                     backgroundColor: 'rgba(37, 99, 235, 0.1)',
                     borderRadius: '14px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--primary-color)',
+                    color: 'var(--primary)',
                 }}>
                     <Bookmark size={22} />
                 </div>
@@ -101,9 +101,9 @@ const SavedItems = () => {
                 <div style={{
                     textAlign: 'center',
                     padding: '4rem 2rem',
-                    backgroundColor: 'var(--surface-color)',
+                    backgroundColor: 'var(--surface)',
                     borderRadius: 'var(--radius-xl)',
-                    border: '1px solid var(--border-color)',
+                    border: '1px solid var(--border)',
                 }}>
                     <div style={{
                         width: '72px', height: '72px',
@@ -111,7 +111,7 @@ const SavedItems = () => {
                         borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         margin: '0 auto 1.25rem',
-                        color: 'var(--primary-color)',
+                        color: 'var(--primary)',
                     }}>
                         <ShoppingBag size={32} />
                     </div>
@@ -136,8 +136,8 @@ const SavedItems = () => {
                             className="animate-fade-in-up"
                             style={{
                                 animationDelay: `${idx * 0.04}s`,
-                                backgroundColor: 'var(--surface-color)',
-                                border: '1px solid var(--border-color)',
+                                backgroundColor: 'var(--surface)',
+                                border: '1px solid var(--border)',
                                 borderRadius: 'var(--radius-xl)',
                                 padding: '1rem',
                                 display: 'flex',
@@ -157,8 +157,8 @@ const SavedItems = () => {
                                     height: '76px',
                                     borderRadius: '12px',
                                     overflow: 'hidden',
-                                    backgroundColor: 'var(--bg-color)',
-                                    border: '1px solid var(--border-color)',
+                                    backgroundColor: 'var(--bg)',
+                                    border: '1px solid var(--border)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -185,7 +185,7 @@ const SavedItems = () => {
                                         fontWeight: '700',
                                         fontSize: '0.9375rem',
                                         margin: '0 0 0.25rem 0',
-                                        color: 'var(--text-primary)',
+                                        color: 'var(--text)',
                                         whiteSpace: 'nowrap',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
@@ -196,7 +196,7 @@ const SavedItems = () => {
                                 <p style={{
                                     fontSize: '1rem',
                                     fontWeight: '800',
-                                    color: 'var(--primary-color)',
+                                    color: 'var(--primary)',
                                     margin: '0 0 0.35rem 0',
                                 }}>
                                     ₦{parseFloat(item.productPrice || 0).toLocaleString('en-NG', { minimumFractionDigits: 2 })}
@@ -209,7 +209,7 @@ const SavedItems = () => {
                                     alignItems: 'center',
                                     gap: '0.3rem',
                                 }}>
-                                    Sold by <strong style={{ color: 'var(--text-primary)' }}>{item.sellerName}</strong>
+                                    Sold by <strong style={{ color: 'var(--text)' }}>{item.sellerName}</strong>
                                 </p>
                             </div>
 
@@ -221,15 +221,15 @@ const SavedItems = () => {
                                     style={{
                                         width: '36px', height: '36px',
                                         borderRadius: '10px',
-                                        border: '1.5px solid var(--border-color)',
-                                        backgroundColor: 'var(--bg-color)',
-                                        color: 'var(--primary-color)',
+                                        border: '1.5px solid var(--border)',
+                                        backgroundColor: 'var(--bg)',
+                                        color: 'var(--primary)',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         transition: 'all 0.2s',
                                         textDecoration: 'none',
                                     }}
                                     onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(37,99,235,0.08)'; e.currentTarget.style.borderColor = 'rgba(37,99,235,0.3)'; }}
-                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--bg-color)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--bg)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
                                 >
                                     <ExternalLink size={15} />
                                 </Link>
@@ -242,7 +242,7 @@ const SavedItems = () => {
                                         borderRadius: '10px',
                                         border: '1.5px solid rgba(239, 68, 68, 0.2)',
                                         backgroundColor: 'rgba(239, 68, 68, 0.04)',
-                                        color: 'var(--danger-color)',
+                                        color: 'var(--danger)',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         cursor: removing === item.docId ? 'not-allowed' : 'pointer',
                                         transition: 'all 0.2s',

@@ -2,10 +2,19 @@ import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
-import { Search, PackagePlus, ArrowRight } from 'lucide-react';
+import { Search, PackagePlus, ArrowRight, Sparkles, SlidersHorizontal, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import InstallGuideModal from '../components/InstallGuideModal';
+
+const CATEGORIES = [
+    { key: 'all', label: 'All', emoji: '🔥' },
+    { key: 'verified', label: 'Verified', emoji: '⭐' },
+    { key: 'Electronics', label: 'Tech', emoji: '💻' },
+    { key: 'Fashion', label: 'Fashion', emoji: '👕' },
+    { key: 'Services', label: 'Services', emoji: '🛠️' },
+    { key: 'Food & Groceries', label: 'Food', emoji: '🍕' },
+];
 
 const Home = () => {
     const { isAuthenticated, isSeller, currentUser, userName } = useAuth();
@@ -26,202 +35,137 @@ const Home = () => {
         localStorage.setItem('hideDownloadPrompt', 'true');
     };
 
-    const handleSearch = (term, category = null) => {
-        if (term !== null) setSearchTerm(term);
-        if (category !== null) setCategoryFilter(category);
-        
-        // Scroll down to products
-        setTimeout(() => {
-            if (productsRef.current) {
-                productsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }, 100);
+    const handleCategoryClick = (key) => {
+        if (key === 'verified') {
+            setCategoryFilter('all');
+            setVerifiedOnly(true);
+        } else {
+            setCategoryFilter(key);
+            setVerifiedOnly(false);
+        }
     };
 
     useEffect(() => {
         const fetchProducts = async () => {
             setLoading(true);
             try {
-                // Fetch Products - Limit to top 2000 for speed
                 const q = query(
-                    collection(db, 'products'), 
+                    collection(db, 'products'),
                     orderBy('createdAt', 'desc'),
                     limit(2000)
                 );
                 const querySnapshot = await getDocs(q);
-
-                let productsData = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
-                setProducts(productsData);
+                setProducts(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             } catch (error) {
                 console.error("Error fetching products:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchProducts();
     }, []);
 
     const filteredProducts = products.filter(product => {
-        const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                              (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase()));
+        const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase()));
         const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
         const matchesVerified = !verifiedOnly || Boolean(product.sellerVerified) === true;
         return matchesSearch && matchesCategory && matchesVerified;
     }).sort((a, b) => {
         if (a.sellerVerified === b.sellerVerified) {
-            const viewsA = a.views || 0;
-            const viewsB = b.views || 0;
-            return viewsB - viewsA;
+            return (b.views || 0) - (a.views || 0);
         }
         return a.sellerVerified ? -1 : 1;
     });
 
+    const firstName = (currentUser?.displayName || userName)?.split(' ')[0] || 'there';
+
     return (
-        <div className="market-container" style={{ backgroundColor: 'var(--bg-color)' }}>
-            {/* Minimal Active Dashboard Hero - Mobile First */}
-            <div className="dashboard-hero" style={{ 
-                backgroundColor: 'var(--surface-color)',
-                padding: '1.5rem 1rem',
-                borderBottom: '1px solid var(--border-color)',
-                marginBottom: '1.5rem',
-                position: 'sticky',
-                top: 0,
-                zIndex: 40,
-                boxShadow: '0 4px 20px -10px rgba(0,0,0,0.05)'
-            }}>
-                <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: 0 }}>
-                    {/* Header / Greeting */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <div className="market-page">
+            <div className="market-hero">
+                <div className="market-hero-inner container">
+                    <div className="market-hero-top">
                         <div>
-                            <h1 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>
-                                {isAuthenticated ? `Hi, ${(currentUser?.displayName || userName)?.split(' ')[0] || 'there'} 👋` : 'Campus Market 🚀'}
+                            <h1 className="market-greeting">
+                                {isAuthenticated ? `Hey, ${firstName}` : 'Campus Market'}
+                                <span className="market-wave">{isAuthenticated ? ' 👋' : ' 🚀'}</span>
                             </h1>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '0.25rem', margin: 0 }}>
-                                Find what you need instantly
-                            </p>
+                            <p className="market-subtitle">Find what you need, sell what you don&apos;t</p>
                         </div>
-                        {/* Active Indicator */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', backgroundColor: '#f0fdf4', padding: '0.375rem 0.75rem', borderRadius: '99px', border: '1px solid #bbf7d0' }}>
-                            <span style={{ width: '6px', height: '6px', backgroundColor: '#16a34a', borderRadius: '50%', boxShadow: '0 0 8px #16a34a', animation: 'pulse 2s infinite' }}></span>
-                            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#15803d' }}>Live</span>
+                        <div className="live-badge">
+                            <span className="live-badge-dot" />
+                            Live
                         </div>
                     </div>
 
-                    {/* Main Search Bar */}
-                    <div style={{ position: 'relative', marginBottom: '1.25rem', width: '100%' }}>
-                        <div style={{ position: 'absolute', top: '50%', left: '1.25rem', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>
-                            <Search size={20} />
-                        </div>
+                    <div className="market-search-wrap">
+                        <Search size={20} className="market-search-icon" />
                         <input
                             type="text"
-                            placeholder="Search campus items..."
+                            placeholder="Search laptops, books, fashion..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchTerm)}
-                            className="search-input-focus"
-                            style={{
-                                width: '100%',
-                                padding: '1rem 1rem 1rem 3.5rem',
-                                fontSize: '1rem',
-                                fontWeight: '500',
-                                backgroundColor: 'var(--bg-color)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: '1rem',
-                                color: 'var(--text-primary)',
-                                outline: 'none',
-                                transition: 'all 0.2s ease',
-                                boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-                            }}
+                            className="market-search-input search-input-focus"
                         />
+                        {searchTerm && (
+                            <button className="market-search-clear" onClick={() => setSearchTerm('')}>
+                                <X size={16} />
+                            </button>
+                        )}
                     </div>
 
-                    {/* Quick Category Chips */}
-                    <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', msOverflowStyle: 'none', scrollbarWidth: 'none' }} className="hide-scrollbar">
-                        <button onClick={() => { setCategoryFilter('all'); setVerifiedOnly(false) }} className={`filter-pill ${categoryFilter === 'all' && !verifiedOnly ? 'active' : ''}`}>🔥 All</button>
-                        <button onClick={() => { setCategoryFilter('all'); setVerifiedOnly(true) }} className={`filter-pill ${verifiedOnly ? 'active' : ''}`}>⭐ Verified</button>
-                        <button onClick={() => setCategoryFilter('Electronics')} className={`filter-pill ${categoryFilter === 'Electronics' ? 'active' : ''}`}>💻 Tech</button>
-                        <button onClick={() => setCategoryFilter('Fashion')} className={`filter-pill ${categoryFilter === 'Fashion' ? 'active' : ''}`}>👕 Fashion</button>
-                        <button onClick={() => setCategoryFilter('Services')} className={`filter-pill ${categoryFilter === 'Services' ? 'active' : ''}`}>🛠️ Services</button>
-                        <button onClick={() => setCategoryFilter('Food & Groceries')} className={`filter-pill ${categoryFilter === 'Food & Groceries' ? 'active' : ''}`}>🍕 Food</button>
+                    <div className="market-filters hide-scrollbar">
+                        {CATEGORIES.map(({ key, label, emoji }) => {
+                            const isActive = key === 'verified' ? verifiedOnly : categoryFilter === key && !verifiedOnly;
+                            return (
+                                <button
+                                    key={key}
+                                    onClick={() => handleCategoryClick(key)}
+                                    className={`filter-chip ${isActive ? 'filter-chip--active' : ''}`}
+                                >
+                                    <span>{emoji}</span> {label}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
 
-            <div className="container" ref={productsRef}>
-                {/* Download App Prompt Banner */}
+            <div className="container market-body" ref={productsRef}>
                 {showDownloadPrompt && (
-                    <div className="animate-fade-in-up" style={{ 
-                        marginBottom: '2.5rem', 
-                        padding: '1.5rem', 
-                        background: isSeller 
-                            ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.02) 100%)' 
-                            : 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.02) 100%)',
-                        borderRadius: 'var(--radius-xl)',
-                        border: isSeller ? '1px solid rgba(245, 158, 11, 0.15)' : '1px solid rgba(37, 99, 235, 0.15)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        textAlign: 'center',
-                        gap: '1rem',
-                        position: 'relative'
-                    }}>
-                        <button 
-                            onClick={dismissDownloadPrompt}
-                            style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '0.25rem' }}
-                            aria-label="Dismiss"
-                        >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <div className="download-banner animate-fade-in-up">
+                        <button onClick={dismissDownloadPrompt} className="download-banner-close" aria-label="Dismiss">
+                            <X size={18} />
                         </button>
-                        <div>
-                            {isSeller ? (
-                                <>
-                                    <h3 style={{ fontSize: '1.125rem', fontWeight: '800', marginBottom: '0.25rem', color: '#d97706' }}>⭐️ Premium Seller Access</h3>
-                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Download our app to manage your store, track views, and reply to customers faster!</p>
-                                </>
-                            ) : (
-                                <>
-                                    <h3 style={{ fontSize: '1.125rem', fontWeight: '800', marginBottom: '0.25rem' }}>Get the Market-U App</h3>
-                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Experience faster browsing and get instant notifications when items drop.</p>
-                                </>
-                            )}
+                        <div className="download-banner-icon">
+                            <Sparkles size={22} />
                         </div>
-                        <button 
-                            className="btn btn-primary" 
-                            onClick={() => setShowInstallGuide(true)}
-                            style={{ padding: '0.625rem 1.5rem', borderRadius: 'var(--radius-lg)', fontSize: '0.875rem', backgroundColor: isSeller ? '#d97706' : 'var(--primary-color)', color: 'white', border: 'none' }}
-                        >
-                            Download App
+                        <div className="download-banner-text">
+                            <h3>{isSeller ? 'Manage your store on the go' : 'Get the MarketU app'}</h3>
+                            <p>{isSeller ? 'Track views, reply faster, and never miss a buyer.' : 'Faster browsing and instant drop notifications.'}</p>
+                        </div>
+                        <button className="btn btn-primary download-banner-btn" onClick={() => setShowInstallGuide(true)}>
+                            Install App
                         </button>
                     </div>
                 )}
 
-                <div style={{ marginBottom: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            {categoryFilter === 'all' && !searchTerm ? '🔥 Trending & Just Added' : categoryFilter === 'all' ? 'Search Results' : categoryFilter}
-                            <span style={{ marginLeft: '0.75rem', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-secondary)', backgroundColor: 'var(--surface-color)', padding: '0.25rem 0.75rem', borderRadius: '99px' }}>
-                                {filteredProducts.length} items
-                            </span>
-                        </h2>
-                    </div>
+                <div className="market-section-header">
+                    <h2 className="market-section-title">
+                        {categoryFilter === 'all' && !searchTerm ? 'Trending now' : categoryFilter === 'all' ? 'Search results' : categoryFilter}
+                    </h2>
+                    <span className="market-count">{filteredProducts.length} items</span>
                 </div>
 
-                {/* Product Feed */}
                 {loading ? (
                     <div className="grid grid-cols-4">
                         {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                            <div key={n} className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0' }}>
-                                <div className="skeleton" style={{ paddingTop: '100%', width: '100%', borderRadius: '0' }}></div>
-                                <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div key={n} className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                <div className="skeleton" style={{ paddingTop: '100%', width: '100%', borderRadius: 0 }}></div>
+                                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                     <div className="skeleton" style={{ height: '1.25rem', width: '80%' }}></div>
                                     <div className="skeleton" style={{ height: '1rem', width: '50%' }}></div>
-                                    <div className="skeleton" style={{ height: '1.5rem', width: '40%', marginTop: 'auto' }}></div>
-                                    <div className="skeleton" style={{ height: '2.5rem', width: '100%', borderRadius: '1rem', marginTop: '0.5rem' }}></div>
+                                    <div className="skeleton" style={{ height: '2.5rem', width: '100%', borderRadius: '99px', marginTop: '0.5rem' }}></div>
                                 </div>
                             </div>
                         ))}
@@ -233,196 +177,362 @@ const Home = () => {
                         ))}
                     </div>
                 ) : (
-                    <div className="card" style={{ padding: '5rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', borderStyle: 'dashed', backgroundColor: 'transparent' }}>
-                        <div style={{ backgroundColor: 'var(--surface-color)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                            <PackagePlus size={40} color="var(--text-secondary)" />
+                    <div className="empty-state">
+                        <div className="empty-state-icon">
+                            <PackagePlus size={36} />
                         </div>
-                        <h3 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.75rem' }}>No items found</h3>
-                        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', maxWidth: '400px' }}>Try different keywords or check all categories to see what else is available.</p>
-                        <button onClick={() => { setSearchTerm(''); setCategoryFilter('all'); setVerifiedOnly(false) }} className="btn btn-primary" style={{ padding: '0.875rem 2.5rem', borderRadius: '1rem' }}>
-                            Clear all filters
+                        <h3>Nothing here yet</h3>
+                        <p>Try different keywords or browse all categories to see what&apos;s available on campus.</p>
+                        <button onClick={() => { setSearchTerm(''); setCategoryFilter('all'); setVerifiedOnly(false); }} className="btn btn-primary">
+                            Clear filters
                         </button>
                     </div>
                 )}
 
-                {/* Guest CTA Sticky Bar */}
                 {!isAuthenticated && (
-                    <div style={{
-                        position: 'fixed',
-                        bottom: '2.5rem',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        zIndex: 100,
-                        width: 'calc(100% - 2rem)',
-                        maxWidth: '550px'
-                    }}>
-                        <Link to="/register" style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            backgroundColor: '#1e293b',
-                            color: 'white',
-                            padding: '1.25rem 2rem',
-                            borderRadius: '2rem',
-                            textDecoration: 'none',
-                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            backdropFilter: 'blur(10px)'
-                        }} className="guest-cta-bar">
-                            <div>
-                                <p style={{ margin: 0, fontWeight: '800', fontSize: '1.05rem' }}>Unlock the full experience</p>
-                                <p style={{ margin: 0, fontSize: '0.875rem', opacity: 0.7 }}>Join 500+ students buying and selling daily</p>
+                    <div className="guest-cta">
+                        <Link to="/register" className="guest-cta-inner">
+                            <div className="guest-cta-content">
+                                <p className="guest-cta-title">Join 500+ students on MarketU</p>
+                                <p className="guest-cta-sub">Buy, sell, and connect on campus</p>
                             </div>
-                            <div style={{ 
-                                backgroundColor: 'var(--primary-color)', 
-                                padding: '0.75rem', 
-                                borderRadius: '50%', 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center',
-                                boxShadow: '0 0 20px rgba(37, 99, 235, 0.4)'
-                            }}>
-                                <ArrowRight size={22} />
+                            <div className="guest-cta-arrow">
+                                <ArrowRight size={20} />
                             </div>
                         </Link>
                     </div>
                 )}
             </div>
 
-            <InstallGuideModal 
-                isOpen={showInstallGuide} 
-                onClose={() => setShowInstallGuide(false)} 
-            />
+            <InstallGuideModal isOpen={showInstallGuide} onClose={() => setShowInstallGuide(false)} />
 
             <style>{`
-                .hero-orb {
-                    position: absolute;
-                    border-radius: 50%;
-                    filter: blur(80px);
-                    animation: float-orb 20s infinite alternate ease-in-out;
-                    will-change: transform;
-                }
-                .orb-1 { width: 450px; height: 450px; background: rgba(56, 189, 248, 0.5); top: -150px; left: -100px; }
-                .orb-2 { width: 350px; height: 350px; background: rgba(139, 92, 246, 0.5); bottom: -50px; right: -50px; animation-delay: -5s; }
-                .orb-3 { width: 300px; height: 300px; background: rgba(236, 72, 153, 0.4); top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -10s; }
-
-                @keyframes float-orb {
-                    0% { transform: translate(0, 0) scale(1); }
-                    100% { transform: translate(30px, 50px) scale(1.1); }
+                .market-page {
+                    background: var(--bg);
+                    min-height: 100vh;
                 }
 
-                .hero-search-input {
-                    width: 100%;
-                    padding: 1.25rem 8rem 1.25rem 3.5rem;
-                    font-size: 1.125rem;
-                    border-radius: 1rem;
-                    border: 1px solid rgba(255,255,255,0.15);
-                    background-color: rgba(255,255,255,0.05);
-                    color: white;
-                    outline: none;
-                    backdrop-filter: blur(16px);
-                    transition: all 0.3s ease;
-                    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+                .market-hero {
+                    position: sticky;
+                    top: 0;
+                    z-index: 40;
+                    background: var(--nav-bg);
+                    backdrop-filter: blur(20px);
+                    -webkit-backdrop-filter: blur(20px);
+                    border-bottom: 1px solid var(--border);
+                    padding: 1.5rem 0 1.25rem;
                 }
-                .hero-search-input::placeholder {
-                    color: #64748b;
-                }
-                .hero-search-input:focus {
-                    background-color: rgba(255,255,255,0.08);
-                    border-color: rgba(56, 189, 248, 0.6);
-                    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
-                }
-                .hero-search-btn {
-                    position: absolute;
-                    top: 0.4rem;
-                    right: 0.4rem;
-                    bottom: 0.4rem;
-                    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-                    color: white;
-                    border: none;
-                    border-radius: 0.75rem;
+
+                .market-hero-inner {
                     padding: 0 1.5rem;
-                    font-weight: 600;
-                    font-size: 0.95rem;
-                    cursor: pointer;
-                    transition: transform 0.2s, box-shadow 0.2s;
-                    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
-                }
-                .hero-search-btn:hover {
-                    transform: scale(1.02);
                 }
 
-                .hero-tag {
-                    color: #cbd5e1;
-                    background: rgba(255,255,255,0.05);
-                    border: 1px solid rgba(255,255,255,0.1);
-                    padding: 0.3rem 0.8rem;
-                    border-radius: 1rem;
+                .market-hero-top {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 1.25rem;
+                }
+
+                .market-greeting {
+                    font-family: var(--font-display);
+                    font-size: 1.5rem;
+                    font-weight: 800;
+                    letter-spacing: -0.03em;
+                    margin: 0;
+                    color: var(--text);
+                }
+
+                .market-subtitle {
+                    color: var(--text-secondary);
                     font-size: 0.875rem;
-                    cursor: pointer;
+                    margin: 0.25rem 0 0;
+                    font-weight: 500;
+                }
+
+                .live-badge {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.375rem;
+                    background: rgba(16, 185, 129, 0.1);
+                    padding: 0.375rem 0.75rem;
+                    border-radius: var(--radius-full);
+                    border: 1px solid rgba(16, 185, 129, 0.2);
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    color: var(--secondary);
+                    flex-shrink: 0;
+                }
+
+                .live-badge-dot {
+                    width: 6px; height: 6px;
+                    background: var(--secondary);
+                    border-radius: 50%;
+                    animation: pulse-live 2s ease-in-out infinite;
+                }
+
+                @keyframes pulse-live {
+                    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+                    50% { box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
+                }
+
+                .market-search-wrap {
+                    position: relative;
+                    margin-bottom: 1rem;
+                }
+
+                .market-search-icon {
+                    position: absolute;
+                    top: 50%;
+                    left: 1.125rem;
+                    transform: translateY(-50%);
+                    color: var(--text-tertiary);
+                    pointer-events: none;
+                }
+
+                .market-search-input {
+                    width: 100%;
+                    padding: 0.9375rem 1rem 0.9375rem 3.25rem;
+                    font-size: 0.9375rem;
+                    font-weight: 500;
+                    background: var(--surface-elevated);
+                    border: 1.5px solid var(--border);
+                    border-radius: var(--radius-full);
+                    color: var(--text);
+                    outline: none;
                     transition: all 0.2s ease;
                 }
-                .hero-tag:hover {
-                    background: rgba(255,255,255,0.15);
-                    color: white;
-                    border-color: rgba(255,255,255,0.3);
+
+                .market-search-clear {
+                    position: absolute;
+                    top: 50%;
+                    right: 1.125rem;
+                    transform: translateY(-50%);
+                    color: var(--text-tertiary);
+                    padding: 0.25rem;
+                    border-radius: 50%;
+                    transition: all 0.2s;
                 }
 
-                .filter-pill {
-                    padding: 0.625rem 1.25rem;
-                    border-radius: 99px;
-                    border: 1px solid var(--border-color);
-                    background-color: var(--surface-color);
-                    color: var(--text-primary);
+                .market-search-clear:hover {
+                    color: var(--text);
+                    background: var(--surface);
+                }
+
+                .market-filters {
+                    display: flex;
+                    gap: 0.5rem;
+                    overflow-x: auto;
+                    padding-bottom: 0.25rem;
+                }
+
+                .filter-chip {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.375rem;
+                    padding: 0.5rem 1rem;
+                    border-radius: var(--radius-full);
+                    border: 1.5px solid var(--border);
+                    background: var(--surface-elevated);
+                    color: var(--text);
                     font-weight: 600;
-                    font-size: 0.875rem;
+                    font-size: 0.8125rem;
                     white-space: nowrap;
                     transition: all 0.2s ease;
                     cursor: pointer;
                 }
-                .filter-pill:hover {
-                    border-color: var(--primary-color);
-                    color: var(--primary-color);
-                    transform: translateY(-1px);
+
+                .filter-chip:hover {
+                    border-color: var(--primary);
+                    color: var(--primary);
                 }
-                .filter-pill.active {
-                    background-color: var(--primary-color);
-                    border-color: var(--primary-color);
+
+                .filter-chip--active {
+                    background: var(--gradient-primary);
+                    border-color: transparent;
                     color: white;
-                    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+                    box-shadow: 0 4px 12px var(--primary-glow);
                 }
-                .market-search-input:focus {
-                    transform: scale(1.02);
-                    box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15) !important;
+
+                .market-body {
+                    padding: 1.5rem 1.5rem 6rem;
                 }
-                .guest-cta-bar:hover {
+
+                .download-banner {
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                    padding: 1.25rem 1.5rem;
+                    background: var(--surface-elevated);
+                    border: 1px solid var(--border);
+                    border-radius: var(--radius-xl);
+                    margin-bottom: 2rem;
+                    position: relative;
+                    flex-wrap: wrap;
+                }
+
+                .download-banner-close {
+                    position: absolute;
+                    top: 0.75rem;
+                    right: 0.75rem;
+                    color: var(--text-tertiary);
+                    padding: 0.25rem;
+                    opacity: 0.6;
+                    transition: opacity 0.2s;
+                }
+                .download-banner-close:hover { opacity: 1; }
+
+                .download-banner-icon {
+                    width: 44px; height: 44px;
+                    border-radius: 12px;
+                    background: var(--primary-light);
+                    color: var(--primary);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                }
+
+                .download-banner-text h3 {
+                    font-weight: 700;
+                    font-size: 0.9375rem;
+                    margin: 0 0 0.125rem;
+                }
+
+                .download-banner-text p {
+                    color: var(--text-secondary);
+                    font-size: 0.8125rem;
+                    margin: 0;
+                }
+
+                .download-banner-btn {
+                    margin-left: auto;
+                    font-size: 0.8125rem;
+                    padding: 0.5rem 1.25rem;
+                }
+
+                .market-section-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 1.25rem;
+                }
+
+                .market-section-title {
+                    font-family: var(--font-display);
+                    font-size: 1.25rem;
+                    font-weight: 800;
+                    letter-spacing: -0.02em;
+                    margin: 0;
+                }
+
+                .market-count {
+                    font-size: 0.8125rem;
+                    font-weight: 600;
+                    color: var(--text-tertiary);
+                    background: var(--surface);
+                    padding: 0.3rem 0.75rem;
+                    border-radius: var(--radius-full);
+                }
+
+                .empty-state {
+                    text-align: center;
+                    padding: 4rem 2rem;
+                    border: 2px dashed var(--border);
+                    border-radius: var(--radius-2xl);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+
+                .empty-state-icon {
+                    width: 72px; height: 72px;
+                    border-radius: 50%;
+                    background: var(--surface);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--text-secondary);
+                    margin-bottom: 1.25rem;
+                }
+
+                .empty-state h3 {
+                    font-family: var(--font-display);
+                    font-size: 1.25rem;
+                    font-weight: 800;
+                    margin-bottom: 0.5rem;
+                }
+
+                .empty-state p {
+                    color: var(--text-secondary);
+                    margin-bottom: 1.5rem;
+                    max-width: 360px;
+                    font-size: 0.9375rem;
+                }
+
+                .guest-cta {
+                    position: fixed;
+                    bottom: 1.5rem;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    z-index: 100;
+                    width: calc(100% - 2rem);
+                    max-width: 480px;
+                }
+
+                .guest-cta-inner {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    background: var(--text);
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: var(--radius-full);
+                    text-decoration: none;
+                    box-shadow: var(--shadow-xl);
+                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                [data-theme="dark"] .guest-cta-inner {
+                    background: var(--surface-elevated);
+                    border: 1px solid var(--border);
+                }
+
+                .guest-cta-inner:hover {
                     transform: translateY(-2px);
-                    background-color: #0f172a !important;
+                    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.25);
                 }
-                
+
+                .guest-cta-title {
+                    margin: 0;
+                    font-weight: 700;
+                    font-size: 0.9375rem;
+                }
+
+                .guest-cta-sub {
+                    margin: 0;
+                    font-size: 0.8125rem;
+                    opacity: 0.65;
+                }
+
+                .guest-cta-arrow {
+                    width: 40px; height: 40px;
+                    border-radius: 50%;
+                    background: var(--gradient-primary);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                }
+
                 @media (max-width: 640px) {
-                    .market-hero {
-                        padding: 4rem 1rem 3rem 1rem;
-                        border-radius: 1.5rem;
-                        margin: 0.5rem;
+                    .download-banner {
+                        flex-direction: column;
+                        text-align: center;
+                        padding-top: 2rem;
                     }
-                    .hero-title {
-                        font-size: 2.5rem !important;
-                    }
-                    .hide-mobile {
-                        display: none;
-                    }
-                    .hero-search-input {
-                        padding: 1rem 5.5rem 1rem 2.5rem;
-                        font-size: 1rem;
-                    }
-                    .hero-search-btn {
-                        padding: 0 1rem;
-                        font-size: 0.875rem;
-                    }
-                    .hero-search-icon {
-                        left: 0.75rem !important;
-                    }
+                    .download-banner-btn { margin-left: 0; }
+                    .download-banner-text { text-align: center; }
                 }
             `}</style>
         </div>

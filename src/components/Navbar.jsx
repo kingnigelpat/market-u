@@ -1,26 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Sparkles } from 'lucide-react';
 
 const Navbar = () => {
     const { isAuthenticated, isSeller, userRole, currentUser } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
     const [menuOpen, setMenuOpen] = useState(false);
     const [unseenCount, setUnseenCount] = useState(0);
     const [savedCount, setSavedCount] = useState(0);
     const menuRef = useRef(null);
 
+    const isLanding = location.pathname === '/';
+
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
     }, [theme]);
 
-    // Close dropdown on outside click
     useEffect(() => {
         const handler = (e) => {
             if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -31,38 +33,25 @@ const Navbar = () => {
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    // Real-time unseen interest count for sellers
     useEffect(() => {
-        if (!isSeller || !currentUser) {
-            setUnseenCount(0);
-            return;
-        }
-
+        if (!isSeller || !currentUser) { setUnseenCount(0); return; }
         const q = query(
             collection(db, 'interests'),
             where('sellerId', '==', currentUser.uid),
             where('seen', '==', false)
         );
-
-        const unsub = onSnapshot(q, (snap) => {
-            setUnseenCount(snap.size);
-        }, (err) => {
-            console.warn('Notification count error:', err);
-        });
-
+        const unsub = onSnapshot(q, (snap) => setUnseenCount(snap.size), () => {});
         return () => unsub();
     }, [isSeller, currentUser]);
 
-    // Live saved-items count for buyers
     useEffect(() => {
         if (!isAuthenticated || !currentUser) { setSavedCount(0); return; }
-        const q = query(
-            collection(db, 'savedItems'),
-            where('buyerId', '==', currentUser.uid)
-        );
+        const q = query(collection(db, 'savedItems'), where('buyerId', '==', currentUser.uid));
         const unsub = onSnapshot(q, snap => setSavedCount(snap.size), () => {});
         return () => unsub();
     }, [isAuthenticated, currentUser]);
+
+    if (isLanding) return null;
 
     const toggleTheme = () => {
         setTheme(prev => prev === 'light' ? 'dark' : 'light');
@@ -80,442 +69,117 @@ const Navbar = () => {
     };
 
     return (
-        <nav style={{
-            backgroundColor: 'var(--surface-color)',
-            borderBottom: '1px solid var(--border-color)',
-            padding: '0.75rem 0',
-            position: 'sticky',
-            top: 0,
-            zIndex: 1000,
-            backdropFilter: 'blur(10px)',
-            background: 'var(--nav-bg)'
-        }}>
-            <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {/* Logo */}
-                <Link to={isAuthenticated ? '/market' : '/'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '900', fontFamily: '"Outfit", sans-serif', fontSize: '1.25rem', color: 'var(--primary-color)' }}>
-                    <img src="/icon.png" alt="Market-U Icon" style={{ height: '28px', width: 'auto' }} />
-                    <span className="hide-on-mobile">MARKET-U</span>
+        <nav className="app-navbar">
+            <div className="container app-navbar-inner">
+                <Link to={isAuthenticated ? '/market' : '/'} className="app-navbar-logo">
+                    <div className="nav-logo-mark">M</div>
+                    <span className="hide-on-mobile nav-logo-text">arketU</span>
                 </Link>
 
-                {/* Right side */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    {/* Role-Specific Primary Navigation */}
+                <div className="app-navbar-actions">
                     {isAuthenticated && isSeller && (
-                        <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginRight: '0.5rem' }}>
-                            <Link to="/add-product" style={{ fontSize: '0.8125rem', fontWeight: '800', color: 'white', display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.4rem 0.875rem', backgroundColor: 'var(--primary-color)', borderRadius: '99px', boxShadow: '0 2px 4px rgba(37,99,235,0.2)' }}>
-                                <PlusCircle size={14} color="white" /> Post Product
+                        <div className="hide-on-mobile app-navbar-seller-links">
+                            <Link to="/add-product" className="nav-post-btn">
+                                <PlusCircle size={14} /> Post
                             </Link>
-                            <Link to="/dashboard" style={{ fontSize: '0.875rem', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                <Store size={16} /> Dashboard
+                            <Link to="/dashboard" className="nav-link">
+                                <LayoutDashboard size={16} /> Dashboard
                             </Link>
-                            <div style={{ width: '1px', height: '16px', backgroundColor: 'var(--border-color)' }}></div>
-                            <Link to="/market" style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                <Compass size={16} /> Browse Market
+                            <Link to="/market" className="nav-link nav-link--muted">
+                                <Compass size={16} /> Browse
                             </Link>
                         </div>
                     )}
 
                     {!isAuthenticated ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Link to="/login" style={{ fontSize: '0.8125rem', fontWeight: '700', color: 'var(--text-secondary)' }}>Log in</Link>
-                            <Link to="/register" className="btn btn-primary" style={{ fontSize: '0.8125rem', padding: '0.4rem 0.75rem', borderRadius: 'var(--radius-md)' }}>Sign up</Link>
+                        <div className="app-navbar-auth">
+                            <Link to="/login" className="nav-login-link">Log in</Link>
+                            <Link to="/register" className="btn btn-primary nav-signup-btn">Sign up <Sparkles size={12} /></Link>
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-
-                            {/* 🔔 Notification Bell — Sellers Only */}
+                        <div className="app-navbar-user">
                             {isSeller && (
-                                <Link
-                                    to="/notifications"
-                                    id="notification-bell"
-                                    title="Notifications"
-                                    style={{
-                                        position: 'relative',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        width: '38px',
-                                        height: '38px',
-                                        borderRadius: '50%',
-                                        backgroundColor: unseenCount > 0 ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
-                                        border: `1.5px solid ${unseenCount > 0 ? 'rgba(37, 99, 235, 0.3)' : 'var(--border-color)'}`,
-                                        color: unseenCount > 0 ? 'var(--primary-color)' : 'var(--text-secondary)',
-                                        transition: 'all 0.2s ease',
-                                        textDecoration: 'none',
-                                    }}
-                                    onMouseEnter={e => {
-                                        e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.1)';
-                                        e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.3)';
-                                        e.currentTarget.style.color = 'var(--primary-color)';
-                                    }}
-                                    onMouseLeave={e => {
-                                        if (unseenCount === 0) {
-                                            e.currentTarget.style.backgroundColor = 'transparent';
-                                            e.currentTarget.style.borderColor = 'var(--border-color)';
-                                            e.currentTarget.style.color = 'var(--text-secondary)';
-                                        }
-                                    }}
-                                >
-                                    <Bell size={18} style={{
-                                        animation: unseenCount > 0 ? 'bellRing 2s ease-in-out infinite' : 'none',
-                                    }} />
-                                    {unseenCount > 0 && (
-                                        <span style={{
-                                            position: 'absolute',
-                                            top: '-4px',
-                                            right: '-4px',
-                                            minWidth: '18px',
-                                            height: '18px',
-                                            backgroundColor: '#EF4444',
-                                            color: 'white',
-                                            borderRadius: '99px',
-                                            fontSize: '0.65rem',
-                                            fontWeight: '800',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            padding: '0 4px',
-                                            border: '2px solid var(--nav-bg)',
-                                            lineHeight: 1,
-                                            animation: 'badgePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                                        }}>
-                                            {unseenCount > 99 ? '99+' : unseenCount}
-                                        </span>
-                                    )}
+                                <Link to="/notifications" className={`nav-icon-btn ${unseenCount > 0 ? 'nav-icon-btn--active' : ''}`} title="Notifications">
+                                    <Bell size={18} className={unseenCount > 0 ? 'bell-ring' : ''} />
+                                    {unseenCount > 0 && <span className="nav-badge nav-badge--danger">{unseenCount > 99 ? '99+' : unseenCount}</span>}
                                 </Link>
                             )}
 
-                            {/* 🔖 Saved Items — Buyers (desktop) */}
                             {isAuthenticated && !isSeller && (
-                                <Link
-                                    to="/saved"
-                                    id="saved-items-btn"
-                                    title="Saved Items"
-                                    style={{
-                                        position: 'relative',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        width: '38px',
-                                        height: '38px',
-                                        borderRadius: '50%',
-                                        backgroundColor: savedCount > 0 ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
-                                        border: `1.5px solid ${savedCount > 0 ? 'rgba(37, 99, 235, 0.3)' : 'var(--border-color)'}`,
-                                        color: savedCount > 0 ? 'var(--primary-color)' : 'var(--text-secondary)',
-                                        transition: 'all 0.2s ease',
-                                        textDecoration: 'none',
-                                    }}
-                                    onMouseEnter={e => {
-                                        e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.1)';
-                                        e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.3)';
-                                        e.currentTarget.style.color = 'var(--primary-color)';
-                                    }}
-                                    onMouseLeave={e => {
-                                        if (savedCount === 0) {
-                                            e.currentTarget.style.backgroundColor = 'transparent';
-                                            e.currentTarget.style.borderColor = 'var(--border-color)';
-                                            e.currentTarget.style.color = 'var(--text-secondary)';
-                                        }
-                                    }}
-                                >
+                                <Link to="/saved" className={`nav-icon-btn ${savedCount > 0 ? 'nav-icon-btn--active' : ''}`} title="Saved Items">
                                     <Bookmark size={18} />
-                                    {savedCount > 0 && (
-                                        <span style={{
-                                            position: 'absolute',
-                                            top: '-4px',
-                                            right: '-4px',
-                                            minWidth: '18px',
-                                            height: '18px',
-                                            backgroundColor: 'var(--primary-color)',
-                                            color: 'white',
-                                            borderRadius: '99px',
-                                            fontSize: '0.65rem',
-                                            fontWeight: '800',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            padding: '0 4px',
-                                            border: '2px solid var(--nav-bg)',
-                                            lineHeight: 1,
-                                        }}>
-                                            {savedCount > 99 ? '99+' : savedCount}
-                                        </span>
-                                    )}
+                                    {savedCount > 0 && <span className="nav-badge">{savedCount > 99 ? '99+' : savedCount}</span>}
                                 </Link>
                             )}
 
-                            <div style={{ position: 'relative' }} ref={menuRef}>
-                                {/* Avatar / Menu trigger */}
-                            <button
-                                onClick={() => setMenuOpen(prev => !prev)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem',
-                                    padding: '0.4rem 0.75rem',
-                                    borderRadius: '99px',
-                                    border: '1.5px solid var(--border-color)',
-                                    backgroundColor: 'var(--surface-color)',
-                                    cursor: 'pointer',
-                                    color: 'var(--text-primary)',
-                                    fontWeight: '700',
-                                    fontSize: '0.8125rem',
-                                    transition: 'all 0.2s ease',
-                                    boxShadow: menuOpen ? '0 0 0 3px rgba(37, 99, 235, 0.15)' : 'none',
-                                    borderColor: menuOpen ? 'var(--primary-color)' : 'var(--border-color)',
-                                }}
-                                title="Account menu"
-                            >
-                                <div style={{
-                                    width: '26px', height: '26px',
-                                    borderRadius: '50%',
-                                    backgroundColor: isSeller ? 'var(--primary-color)' : 'rgba(148,163,184,0.2)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    color: isSeller ? 'white' : 'var(--text-secondary)',
-                                }}>
-                                    {isSeller ? <Store size={14} /> : <User size={14} />}
-                                </div>
-                                <span className="hide-on-mobile" style={{ textTransform: 'capitalize' }}>{userRole || 'Account'}</span>
-                                <ChevronDown size={14} style={{ transition: 'transform 0.2s', transform: menuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
-                            </button>
-
-                            {/* Dropdown */}
-                            {menuOpen && (
-                                <div style={{
-                                    position: 'absolute',
-                                    top: 'calc(100% + 0.6rem)',
-                                    right: 0,
-                                    width: '220px',
-                                    backgroundColor: 'var(--surface-color)',
-                                    border: '1px solid var(--border-color)',
-                                    borderRadius: 'var(--radius-xl)',
-                                    boxShadow: '0 20px 40px -8px rgba(0,0,0,0.18)',
-                                    overflow: 'hidden',
-                                    animation: 'dropdownSlide 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
-                                    zIndex: 1001,
-                                }}>
-                                    {/* Role badge */}
-                                    <div style={{
-                                        padding: '0.875rem 1rem 0.75rem',
-                                        borderBottom: '1px solid var(--border-color)',
-                                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                    }}>
-                                        <div style={{
-                                            width: '32px', height: '32px', borderRadius: '50%',
-                                            backgroundColor: isSeller ? 'rgba(37,99,235,0.12)' : 'rgba(148,163,184,0.12)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: isSeller ? 'var(--primary-color)' : 'var(--text-secondary)',
-                                        }}>
-                                            {isSeller ? <Store size={16} /> : <User size={16} />}
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: '0.8125rem', fontWeight: '700', color: 'var(--text-primary)', textTransform: 'capitalize' }}>{userRole}</div>
-                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Signed in</div>
-                                        </div>
+                            <div className="nav-menu-wrap" ref={menuRef}>
+                                <button onClick={() => setMenuOpen(prev => !prev)} className={`nav-menu-trigger ${menuOpen ? 'nav-menu-trigger--open' : ''}`}>
+                                    <div className={`nav-avatar ${isSeller ? 'nav-avatar--seller' : ''}`}>
+                                        {isSeller ? <Store size={14} /> : <User size={14} />}
                                     </div>
+                                    <span className="hide-on-mobile nav-role">{userRole || 'Account'}</span>
+                                    <ChevronDown size={14} className={`nav-chevron ${menuOpen ? 'nav-chevron--open' : ''}`} />
+                                </button>
 
-                                    {/* Theme toggle */}
-                                    <button
-                                        onClick={toggleTheme}
-                                        style={{
-                                            width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                            padding: '0.8rem 1rem', background: 'none', border: 'none',
-                                            color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.875rem',
-                                            fontWeight: '600', textAlign: 'left',
-                                            transition: 'background 0.15s',
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-color)'}
-                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                    >
-                                        {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-                                        {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-                                        <span style={{
-                                            marginLeft: 'auto', fontSize: '0.7rem', fontWeight: '700',
-                                            padding: '0.15rem 0.5rem', borderRadius: '99px',
-                                            backgroundColor: theme === 'dark' ? 'var(--primary-color)' : 'rgba(148,163,184,0.2)',
-                                            color: theme === 'dark' ? 'white' : 'var(--text-secondary)',
-                                        }}>
-                                            {theme === 'dark' ? 'ON' : 'OFF'}
-                                        </span>
-                                    </button>
+                                {menuOpen && (
+                                    <div className="nav-dropdown">
+                                        <div className="nav-dropdown-header">
+                                            <div className={`nav-avatar nav-avatar--lg ${isSeller ? 'nav-avatar--seller' : ''}`}>
+                                                {isSeller ? <Store size={16} /> : <User size={16} />}
+                                            </div>
+                                            <div>
+                                                <div className="nav-dropdown-role">{userRole}</div>
+                                                <div className="nav-dropdown-status">Signed in</div>
+                                            </div>
+                                        </div>
 
-                                    {/* Become a Seller (only for buyers) */}
-                                    {!isSeller && (
-                                        <Link
-                                            to="/dashboard"
-                                            onClick={() => setMenuOpen(false)}
-                                            style={{
-                                                width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                                padding: '0.8rem 1rem', background: 'none', border: 'none',
-                                                color: 'var(--primary-color)', cursor: 'pointer', fontSize: '0.875rem',
-                                                fontWeight: '700', textDecoration: 'none',
-                                                transition: 'background 0.15s',
-                                            }}
-                                            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(37,99,235,0.06)'}
-                                            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                        >
-                                            <ShieldCheck size={16} />
-                                            Become a Seller
-                                            <span style={{
-                                                marginLeft: 'auto', fontSize: '0.65rem', fontWeight: '800',
-                                                padding: '0.15rem 0.5rem', borderRadius: '99px',
-                                                backgroundColor: 'rgba(37,99,235,0.12)', color: 'var(--primary-color)',
-                                            }}>
-                                                FREE
+                                        <button onClick={toggleTheme} className="nav-dropdown-item">
+                                            {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+                                            {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                                            <span className={`nav-theme-pill ${theme === 'dark' ? 'nav-theme-pill--on' : ''}`}>
+                                                {theme === 'dark' ? 'ON' : 'OFF'}
                                             </span>
-                                        </Link>
-                                    )}
+                                        </button>
 
-                                    {/* Mobile Only: Seller navigation */}
-                                    {isSeller && (
-                                        <>
-                                            {/* Notifications link in dropdown */}
-                                            <Link
-                                                to="/notifications"
-                                                onClick={() => setMenuOpen(false)}
-                                                style={{
-                                                    width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                                    padding: '0.8rem 1rem', background: 'none', border: 'none',
-                                                    color: unseenCount > 0 ? 'var(--primary-color)' : 'var(--text-primary)',
-                                                    cursor: 'pointer', fontSize: '0.875rem',
-                                                    fontWeight: unseenCount > 0 ? '700' : '600', textDecoration: 'none',
-                                                    transition: 'background 0.15s',
-                                                }}
-                                                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(37,99,235,0.06)'}
-                                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                            >
-                                                <Bell size={16} />
-                                                Notifications
-                                                {unseenCount > 0 && (
-                                                    <span style={{
-                                                        marginLeft: 'auto', minWidth: '20px', height: '20px',
-                                                        backgroundColor: '#EF4444', color: 'white',
-                                                        borderRadius: '99px', fontSize: '0.65rem', fontWeight: '800',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px',
-                                                    }}>
-                                                        {unseenCount > 99 ? '99+' : unseenCount}
-                                                    </span>
-                                                )}
+                                        {!isSeller && (
+                                            <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="nav-dropdown-item nav-dropdown-item--highlight">
+                                                <ShieldCheck size={16} /> Become a Seller
+                                                <span className="nav-free-badge">FREE</span>
                                             </Link>
-                                            <Link
-                                                to="/add-product"
-                                                onClick={() => setMenuOpen(false)}
-                                                style={{
-                                                    width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                                    padding: '0.8rem 1rem', background: 'none', border: 'none',
-                                                    color: 'var(--primary-color)', cursor: 'pointer', fontSize: '0.875rem',
-                                                    fontWeight: '700', textDecoration: 'none',
-                                                    transition: 'background 0.15s',
-                                                }}
-                                                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(37,99,235,0.06)'}
-                                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                            >
-                                                <PlusCircle size={16} />
-                                                Post Product
-                                            </Link>
-                                            <Link
-                                                to="/dashboard"
-                                                onClick={() => setMenuOpen(false)}
-                                                style={{
-                                                    width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                                    padding: '0.8rem 1rem', background: 'none', border: 'none',
-                                                    color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.875rem',
-                                                    fontWeight: '600', textDecoration: 'none',
-                                                    transition: 'background 0.15s',
-                                                }}
-                                                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-color)'}
-                                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                            >
-                                                <Store size={16} />
-                                                My Dashboard
-                                            </Link>
-                                            <Link
-                                                to="/market"
-                                                className="mobile-only"
-                                                onClick={() => setMenuOpen(false)}
-                                                style={{
-                                                    width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                                    padding: '0.8rem 1rem', background: 'none', border: 'none',
-                                                    color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.875rem',
-                                                    fontWeight: '600', textDecoration: 'none',
-                                                    transition: 'background 0.15s',
-                                                }}
-                                                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-color)'}
-                                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                            >
-                                                <Compass size={16} />
-                                                Browse Market
-                                            </Link>
-                                        </>
-                                    )}
-
-                                    {/* Account Settings — all users */}
-                                    <Link
-                                        to="/profile"
-                                        onClick={() => setMenuOpen(false)}
-                                        style={{
-                                            width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                            padding: '0.8rem 1rem', background: 'none', border: 'none',
-                                            color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.875rem',
-                                            fontWeight: '600', textDecoration: 'none',
-                                            transition: 'background 0.15s',
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-color)'}
-                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                    >
-                                        <Settings size={16} />
-                                        Account Settings
-                                    </Link>
-
-                                    {/* Saved Items — all authenticated users */}
-                                    <Link
-                                        to="/saved"
-                                        onClick={() => setMenuOpen(false)}
-                                        style={{
-                                            width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                            padding: '0.8rem 1rem', background: 'none', border: 'none',
-                                            color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.875rem',
-                                            fontWeight: '600', textDecoration: 'none',
-                                            transition: 'background 0.15s',
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-color)'}
-                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                    >
-                                        <Bookmark size={16} />
-                                        Saved Items
-                                        {savedCount > 0 && (
-                                            <span style={{
-                                                marginLeft: 'auto', minWidth: '20px', height: '20px',
-                                                backgroundColor: 'rgba(37,99,235,0.12)', color: 'var(--primary-color)',
-                                                borderRadius: '99px', fontSize: '0.65rem', fontWeight: '800',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px',
-                                            }}>
-                                                {savedCount > 99 ? '99+' : savedCount}
-                                            </span>
                                         )}
-                                    </Link>
 
-                                    {/* Divider */}
-                                    <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '0.25rem 0' }} />
+                                        {isSeller && (
+                                            <>
+                                                <Link to="/notifications" onClick={() => setMenuOpen(false)} className={`nav-dropdown-item ${unseenCount > 0 ? 'nav-dropdown-item--highlight' : ''}`}>
+                                                    <Bell size={16} /> Notifications
+                                                    {unseenCount > 0 && <span className="nav-badge nav-badge--danger nav-badge--inline">{unseenCount > 99 ? '99+' : unseenCount}</span>}
+                                                </Link>
+                                                <Link to="/add-product" onClick={() => setMenuOpen(false)} className="nav-dropdown-item nav-dropdown-item--highlight">
+                                                    <PlusCircle size={16} /> Post Product
+                                                </Link>
+                                                <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <LayoutDashboard size={16} /> My Dashboard
+                                                </Link>
+                                                <Link to="/market" className="mobile-only nav-dropdown-item" onClick={() => setMenuOpen(false)}>
+                                                    <Compass size={16} /> Browse Market
+                                                </Link>
+                                            </>
+                                        )}
 
-                                    {/* Log Out */}
-                                    <button
-                                        onClick={handleLogout}
-                                        style={{
-                                            width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                            padding: '0.8rem 1rem', background: 'none', border: 'none',
-                                            color: 'var(--danger-color)', cursor: 'pointer', fontSize: '0.875rem',
-                                            fontWeight: '600', textAlign: 'left',
-                                            transition: 'background 0.15s',
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.06)'}
-                                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                                    >
-                                        <LogOut size={16} />
-                                        Log Out
-                                    </button>
-                                </div>
-                            )}
+                                        <Link to="/profile" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                            <Settings size={16} /> Account Settings
+                                        </Link>
+                                        <Link to="/saved" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                            <Bookmark size={16} /> Saved Items
+                                            {savedCount > 0 && <span className="nav-badge nav-badge--inline">{savedCount > 99 ? '99+' : savedCount}</span>}
+                                        </Link>
+
+                                        <div className="nav-dropdown-divider" />
+                                        <button onClick={handleLogout} className="nav-dropdown-item nav-dropdown-item--danger">
+                                            <LogOut size={16} /> Log Out
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -523,21 +187,307 @@ const Navbar = () => {
             </div>
 
             <style>{`
+                .app-navbar {
+                    position: sticky;
+                    top: 0;
+                    z-index: 1000;
+                    padding: 0.625rem 0;
+                    background: var(--nav-bg);
+                    backdrop-filter: blur(20px);
+                    -webkit-backdrop-filter: blur(20px);
+                    border-bottom: 1px solid var(--border);
+                }
+
+                .app-navbar-inner {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+
+                .app-navbar-logo {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    text-decoration: none;
+                }
+
+                .nav-logo-mark {
+                    width: 32px;
+                    height: 32px;
+                    background: var(--gradient-primary);
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: var(--font-display);
+                    font-weight: 800;
+                    font-size: 1rem;
+                    color: white;
+                }
+
+                .nav-logo-text {
+                    font-family: var(--font-display);
+                    font-weight: 800;
+                    font-size: 1.125rem;
+                    letter-spacing: -0.02em;
+                    background: var(--gradient-primary);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                }
+
+                .app-navbar-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                }
+
+                .app-navbar-seller-links {
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                    margin-right: 0.25rem;
+                }
+
+                .nav-post-btn {
+                    font-size: 0.8125rem;
+                    font-weight: 700;
+                    color: white;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    padding: 0.4rem 0.875rem;
+                    background: var(--gradient-primary);
+                    border-radius: var(--radius-full);
+                    box-shadow: 0 2px 8px var(--primary-glow);
+                    transition: all 0.2s;
+                    text-decoration: none;
+                }
+                .nav-post-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px var(--primary-glow); }
+
+                .nav-link {
+                    font-size: 0.875rem;
+                    font-weight: 600;
+                    color: var(--text);
+                    display: flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    transition: color 0.2s;
+                    text-decoration: none;
+                }
+                .nav-link:hover { color: var(--primary); }
+                .nav-link--muted { color: var(--text-secondary); }
+
+                .app-navbar-auth {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.625rem;
+                }
+
+                .nav-login-link {
+                    font-size: 0.8125rem;
+                    font-weight: 600;
+                    color: var(--text-secondary);
+                    transition: color 0.2s;
+                    text-decoration: none;
+                }
+                .nav-login-link:hover { color: var(--text); }
+
+                .nav-signup-btn {
+                    font-size: 0.8125rem;
+                    padding: 0.4rem 0.875rem;
+                }
+
+                .app-navbar-user {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                }
+
+                .nav-icon-btn {
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 36px; height: 36px;
+                    border-radius: 10px;
+                    border: 1.5px solid var(--border);
+                    color: var(--text-secondary);
+                    transition: all 0.2s;
+                    text-decoration: none;
+                    background: var(--surface-elevated);
+                }
+                .nav-icon-btn:hover, .nav-icon-btn--active {
+                    background: var(--primary-light);
+                    border-color: var(--primary-light);
+                    color: var(--primary);
+                }
+
+                .nav-badge {
+                    position: absolute;
+                    top: -4px; right: -4px;
+                    min-width: 18px; height: 18px;
+                    background: var(--primary);
+                    color: white;
+                    border-radius: var(--radius-full);
+                    font-size: 0.625rem;
+                    font-weight: 800;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0 4px;
+                    border: 2px solid var(--nav-bg);
+                    line-height: 1;
+                }
+                .nav-badge--danger { background: var(--danger); }
+                .nav-badge--inline {
+                    position: static;
+                    margin-left: auto;
+                    border: none;
+                    min-width: 20px; height: 20px;
+                }
+
+                .nav-menu-wrap { position: relative; }
+
+                .nav-menu-trigger {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.4rem;
+                    padding: 0.3rem 0.75rem 0.3rem 0.3rem;
+                    border-radius: var(--radius-full);
+                    border: 1.5px solid var(--border);
+                    background: var(--surface-elevated);
+                    cursor: pointer;
+                    color: var(--text);
+                    font-weight: 600;
+                    font-size: 0.8125rem;
+                    transition: all 0.2s;
+                }
+                .nav-menu-trigger:hover {
+                    border-color: var(--primary-light);
+                }
+                .nav-menu-trigger--open {
+                    border-color: var(--primary);
+                    box-shadow: 0 0 0 3px var(--primary-light);
+                }
+
+                .nav-avatar {
+                    width: 28px; height: 28px;
+                    border-radius: 8px;
+                    background: var(--surface);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--text-secondary);
+                }
+                .nav-avatar--lg { width: 34px; height: 34px; border-radius: 10px; }
+                .nav-avatar--seller {
+                    background: var(--gradient-primary);
+                    color: white;
+                }
+
+                .nav-role { text-transform: capitalize; }
+
+                .nav-chevron { transition: transform 0.2s; }
+                .nav-chevron--open { transform: rotate(180deg); }
+
+                .nav-dropdown {
+                    position: absolute;
+                    top: calc(100% + 0.5rem);
+                    right: 0;
+                    width: 230px;
+                    background: var(--surface-elevated);
+                    border: 1px solid var(--border);
+                    border-radius: var(--radius-xl);
+                    box-shadow: var(--shadow-xl);
+                    overflow: hidden;
+                    animation: dropdownSlide 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+                    z-index: 1001;
+                }
+
+                .nav-dropdown-header {
+                    padding: 0.875rem 1rem;
+                    border-bottom: 1px solid var(--border);
+                    display: flex;
+                    align-items: center;
+                    gap: 0.625rem;
+                }
+
+                .nav-dropdown-role {
+                    font-size: 0.8125rem;
+                    font-weight: 700;
+                    text-transform: capitalize;
+                }
+                .nav-dropdown-status {
+                    font-size: 0.7rem;
+                    color: var(--text-secondary);
+                }
+
+                .nav-dropdown-item {
+                    width: 100%;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    padding: 0.75rem 1rem;
+                    background: none;
+                    border: none;
+                    color: var(--text);
+                    cursor: pointer;
+                    font-size: 0.875rem;
+                    font-weight: 600;
+                    text-align: left;
+                    text-decoration: none;
+                    transition: background 0.15s;
+                    font-family: inherit;
+                }
+                .nav-dropdown-item:hover { background: var(--surface); }
+                .nav-dropdown-item--highlight { color: var(--primary); font-weight: 700; }
+                .nav-dropdown-item--danger { color: var(--danger); }
+                .nav-dropdown-item--danger:hover { background: rgba(239, 68, 68, 0.06); }
+
+                .nav-theme-pill {
+                    margin-left: auto;
+                    font-size: 0.65rem;
+                    font-weight: 700;
+                    padding: 0.15rem 0.5rem;
+                    border-radius: var(--radius-full);
+                    background: var(--surface);
+                    color: var(--text-secondary);
+                }
+                .nav-theme-pill--on {
+                    background: var(--primary);
+                    color: white;
+                }
+
+                .nav-free-badge {
+                    margin-left: auto;
+                    font-size: 0.625rem;
+                    font-weight: 800;
+                    padding: 0.15rem 0.5rem;
+                    border-radius: var(--radius-full);
+                    background: var(--primary-light);
+                    color: var(--primary);
+                }
+
+                .nav-dropdown-divider {
+                    height: 1px;
+                    background: var(--border);
+                    margin: 0.25rem 0;
+                }
+
+                .bell-ring { animation: bellRing 2s ease-in-out infinite; }
+
                 @keyframes dropdownSlide {
                     from { opacity: 0; transform: translateY(-8px) scale(0.97); }
-                    to   { opacity: 1; transform: translateY(0)   scale(1);    }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
                 }
                 @keyframes bellRing {
                     0%, 100% { transform: rotate(0deg); }
-                    10%      { transform: rotate(12deg); }
-                    20%      { transform: rotate(-10deg); }
-                    30%      { transform: rotate(8deg); }
-                    40%      { transform: rotate(-6deg); }
-                    50%      { transform: rotate(0deg); }
-                }
-                @keyframes badgePop {
-                    from { transform: scale(0); }
-                    to   { transform: scale(1); }
+                    10% { transform: rotate(12deg); }
+                    20% { transform: rotate(-10deg); }
+                    30% { transform: rotate(8deg); }
+                    40% { transform: rotate(-6deg); }
+                    50% { transform: rotate(0deg); }
                 }
             `}</style>
         </nav>

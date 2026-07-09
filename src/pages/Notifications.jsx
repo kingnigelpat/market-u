@@ -95,7 +95,7 @@ const Notifications = () => {
                     backgroundColor: 'rgba(37, 99, 235, 0.1)',
                     borderRadius: '14px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--primary-color)',
+                    color: 'var(--primary)',
                 }}>
                     <Bell size={24} />
                 </div>
@@ -122,9 +122,9 @@ const Notifications = () => {
                 <div style={{
                     textAlign: 'center',
                     padding: '4rem 2rem',
-                    backgroundColor: 'var(--surface-color)',
+                    backgroundColor: 'var(--surface)',
                     borderRadius: 'var(--radius-xl)',
-                    border: '1px solid var(--border-color)',
+                    border: '1px solid var(--border)',
                 }}>
                     <div style={{
                         width: '72px', height: '72px',
@@ -132,7 +132,7 @@ const Notifications = () => {
                         borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         margin: '0 auto 1.25rem',
-                        color: 'var(--primary-color)',
+                        color: 'var(--primary)',
                     }}>
                         <ShoppingBag size={32} />
                     </div>
@@ -157,8 +157,8 @@ const Notifications = () => {
                                     animationDelay: `${idx * 0.04}s`,
                                     backgroundColor: isNew
                                         ? 'rgba(37, 99, 235, 0.04)'
-                                        : 'var(--bg-color)',
-                                    border: `1px solid ${isNew ? 'rgba(37, 99, 235, 0.2)' : 'var(--border-color)'}`,
+                                        : 'var(--bg)',
+                                    border: `1px solid ${isNew ? 'rgba(37, 99, 235, 0.2)' : 'var(--border)'}`,
                                     borderRadius: 'var(--radius-xl)',
                                     padding: '1.25rem',
                                     transition: 'all 0.3s ease',
@@ -174,7 +174,7 @@ const Notifications = () => {
                                         right: '1rem',
                                         width: '8px', height: '8px',
                                         borderRadius: '50%',
-                                        backgroundColor: 'var(--primary-color)',
+                                        backgroundColor: 'var(--primary)',
                                     }} />
                                 )}
 
@@ -186,7 +186,7 @@ const Notifications = () => {
                                         backgroundColor: 'rgba(37, 99, 235, 0.12)',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         fontWeight: '800',
-                                        color: 'var(--primary-color)',
+                                        color: 'var(--primary)',
                                         fontSize: '1.125rem',
                                         flexShrink: 0,
                                     }}>
@@ -195,8 +195,8 @@ const Notifications = () => {
 
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         {/* Main text */}
-                                        <p style={{ margin: '0 0 0.2rem', fontWeight: '700', fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
-                                            🔔 <span style={{ color: 'var(--primary-color)' }}>{item.buyerName}</span> is interested in your product
+                                        <p style={{ margin: '0 0 0.2rem', fontWeight: '700', fontSize: '0.9375rem', color: 'var(--text)' }}>
+                                            🔔 <span style={{ color: 'var(--primary)' }}>{item.buyerName}</span> is interested in your product
                                         </p>
 
                                         {/* Product name */}

@@ -47,7 +47,7 @@ const ReadOnlyRating = ({ sellerId }) => {
     return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.85em', color: 'var(--text-secondary)' }}>
             <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center' }}>⭐</span>
-            <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{averageRating}</span>
+            <span style={{ fontWeight: '700', color: 'var(--text)' }}>{averageRating}</span>
             <span>({rating.count})</span>
         </span>
     );

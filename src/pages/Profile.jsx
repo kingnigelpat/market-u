@@ -28,7 +28,7 @@ function Alert({ type, message }) {
             borderRadius: 'var(--radius-lg)',
             backgroundColor: isError ? 'rgba(239,68,68,0.08)' : 'rgba(16,185,129,0.08)',
             border: `1px solid ${isError ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.25)'}`,
-            color: isError ? 'var(--danger-color)' : 'var(--success-color)',
+            color: isError ? 'var(--danger)' : 'var(--success)',
             fontSize: '0.875rem', fontWeight: '600',
             marginBottom: '1rem',
             animation: 'fadeInUp 0.3s ease',
@@ -43,8 +43,8 @@ function Alert({ type, message }) {
 function Section({ icon, title, subtitle, children, danger }) {
     return (
         <div style={{
-            backgroundColor: 'var(--surface-color)',
-            border: `1px solid ${danger ? 'rgba(239,68,68,0.2)' : 'var(--border-color)'}`,
+            backgroundColor: 'var(--surface)',
+            border: `1px solid ${danger ? 'rgba(239,68,68,0.2)' : 'var(--border)'}`,
             borderRadius: 'var(--radius-xl)',
             overflow: 'hidden',
             marginBottom: '1.25rem',
@@ -53,20 +53,20 @@ function Section({ icon, title, subtitle, children, danger }) {
             <div style={{
                 display: 'flex', alignItems: 'center', gap: '0.75rem',
                 padding: '1.25rem 1.5rem',
-                borderBottom: `1px solid ${danger ? 'rgba(239,68,68,0.15)' : 'var(--border-color)'}`,
+                borderBottom: `1px solid ${danger ? 'rgba(239,68,68,0.15)' : 'var(--border)'}`,
                 backgroundColor: danger ? 'rgba(239,68,68,0.03)' : 'transparent',
             }}>
                 <div style={{
                     width: '36px', height: '36px', borderRadius: '10px',
                     backgroundColor: danger ? 'rgba(239,68,68,0.1)' : 'rgba(37,99,235,0.1)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: danger ? 'var(--danger-color)' : 'var(--primary-color)',
+                    color: danger ? 'var(--danger)' : 'var(--primary)',
                     flexShrink: 0,
                 }}>
                     {icon}
                 </div>
                 <div>
-                    <div style={{ fontWeight: '800', fontSize: '0.9375rem', color: danger ? 'var(--danger-color)' : 'var(--text-primary)' }}>
+                    <div style={{ fontWeight: '800', fontSize: '0.9375rem', color: danger ? 'var(--danger)' : 'var(--text)' }}>
                         {title}
                     </div>
                     {subtitle && (
@@ -98,18 +98,18 @@ function PasswordInput({ id, value, onChange, placeholder }) {
                 style={{
                     width: '100%', padding: '0.875rem 3rem 0.875rem 1rem',
                     fontSize: '0.9375rem', borderRadius: 'var(--radius-lg)',
-                    border: '1.5px solid var(--border-color)',
-                    backgroundColor: 'var(--bg-color)',
-                    color: 'var(--text-primary)',
+                    border: '1.5px solid var(--border)',
+                    backgroundColor: 'var(--bg)',
+                    color: 'var(--text)',
                     outline: 'none',
                     transition: 'border-color 0.2s, box-shadow 0.2s',
                 }}
                 onFocus={e => {
-                    e.target.style.borderColor = 'var(--primary-color)';
+                    e.target.style.borderColor = 'var(--primary)';
                     e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.1)';
                 }}
                 onBlur={e => {
-                    e.target.style.borderColor = 'var(--border-color)';
+                    e.target.style.borderColor = 'var(--border)';
                     e.target.style.boxShadow = 'none';
                 }}
             />
@@ -397,18 +397,18 @@ const Profile = () => {
     const inputStyle = {
         width: '100%', padding: '0.875rem 1rem',
         fontSize: '0.9375rem', borderRadius: 'var(--radius-lg)',
-        border: '1.5px solid var(--border-color)',
-        backgroundColor: 'var(--bg-color)',
-        color: 'var(--text-primary)',
+        border: '1.5px solid var(--border)',
+        backgroundColor: 'var(--bg)',
+        color: 'var(--text)',
         outline: 'none',
         transition: 'border-color 0.2s, box-shadow 0.2s',
     };
     const inputFocus = (e) => {
-        e.target.style.borderColor = 'var(--primary-color)';
+        e.target.style.borderColor = 'var(--primary)';
         e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.1)';
     };
     const inputBlur = (e) => {
-        e.target.style.borderColor = 'var(--border-color)';
+        e.target.style.borderColor = 'var(--border)';
         e.target.style.boxShadow = 'none';
     };
 
@@ -429,7 +429,7 @@ const Profile = () => {
                 {/* Avatar */}
                 <div style={{
                     width: '64px', height: '64px', borderRadius: '18px',
-                    background: 'linear-gradient(135deg, var(--primary-color), #6366F1)',
+                    background: 'linear-gradient(135deg, var(--primary), #6366F1)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     marginBottom: '1rem',
                     boxShadow: '0 8px 24px -4px rgba(37,99,235,0.35)',
@@ -446,7 +446,7 @@ const Profile = () => {
                         fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase',
                         letterSpacing: '0.06em', padding: '0.15rem 0.5rem',
                         borderRadius: '99px',
-                        backgroundColor: 'rgba(37,99,235,0.1)', color: 'var(--primary-color)',
+                        backgroundColor: 'rgba(37,99,235,0.1)', color: 'var(--primary)',
                     }}>
                         {userRole}
                     </span>
@@ -543,18 +543,18 @@ const Profile = () => {
                             backgroundColor: 'rgba(37,99,235,0.03)',
                             padding: '1rem',
                             borderRadius: 'var(--radius-lg)',
-                            border: '1px solid var(--border-color)',
+                            border: '1px solid var(--border)',
                             marginBottom: '1.25rem',
                         }}>
                             <div>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Permission Status</span>
                                 {notifPermission === 'granted' && (
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.625rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', backgroundColor: 'rgba(16,185,129,0.1)', color: 'var(--success-color)' }}>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.625rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', backgroundColor: 'rgba(16,185,129,0.1)', color: 'var(--success)' }}>
                                         Active ✅
                                     </span>
                                 )}
                                 {notifPermission === 'denied' && (
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.625rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', backgroundColor: 'rgba(239,68,68,0.1)', color: 'var(--danger-color)' }}>
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.625rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', backgroundColor: 'rgba(239,68,68,0.1)', color: 'var(--danger)' }}>
                                         Blocked ❌
                                     </span>
                                 )}
@@ -572,7 +572,7 @@ const Profile = () => {
                             
                             <div>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Device Connection</span>
-                                <span style={{ fontWeight: '700', fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                                <span style={{ fontWeight: '700', fontSize: '0.875rem', color: 'var(--text)' }}>
                                     {notifPermission === 'granted' && fcmTokenActive ? 'Registered 📱' : notifPermission === 'granted' ? 'Syncing...' : 'Disconnected'}
                                 </span>
                             </div>
@@ -605,7 +605,7 @@ const Profile = () => {
                                 {/* Permission denied: Show browser reset instructions */}
                                 {notifPermission === 'denied' && (
                                     <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                                        <p style={{ color: 'var(--danger-color)', fontWeight: '700', margin: '0 0 0.5rem 0' }}>
+                                        <p style={{ color: 'var(--danger)', fontWeight: '700', margin: '0 0 0.5rem 0' }}>
                                             Notifications are blocked by your browser settings.
                                         </p>
                                         <p style={{ margin: '0 0 1rem 0' }}>
@@ -664,7 +664,7 @@ const Profile = () => {
                                                 width: '100%', 
                                                 justifyContent: 'center', 
                                                 padding: '0.875rem',
-                                                backgroundColor: testNotifCountdown !== null ? '#D97706' : 'var(--primary-color)'
+                                                backgroundColor: testNotifCountdown !== null ? '#D97706' : 'var(--primary)'
                                             }}
                                         >
                                             {testNotifCountdown !== null ? (
@@ -746,7 +746,7 @@ const Profile = () => {
                 danger
             >
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.6 }}>
-                    Deleting your account will permanently remove your profile, all your listings, and all your data from Market-U. <strong style={{ color: 'var(--danger-color)' }}>This cannot be undone.</strong>
+                    Deleting your account will permanently remove your profile, all your listings, and all your data from Market-U. <strong style={{ color: 'var(--danger)' }}>This cannot be undone.</strong>
                 </p>
                 <button
                     id="open-delete-modal"
@@ -773,7 +773,7 @@ const Profile = () => {
                     }}
                 >
                     <div style={{
-                        backgroundColor: 'var(--bg-color)',
+                        backgroundColor: 'var(--bg)',
                         borderRadius: 'var(--radius-xl)',
                         padding: '2rem',
                         width: '100%', maxWidth: '440px',
@@ -787,12 +787,12 @@ const Profile = () => {
                                 width: '42px', height: '42px', borderRadius: '12px',
                                 backgroundColor: 'rgba(239,68,68,0.1)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: 'var(--danger-color)', flexShrink: 0,
+                                color: 'var(--danger)', flexShrink: 0,
                             }}>
                                 <Trash2 size={20} />
                             </div>
                             <div>
-                                <div style={{ fontWeight: '900', fontSize: '1rem', color: 'var(--danger-color)' }}>Delete Account</div>
+                                <div style={{ fontWeight: '900', fontSize: '1rem', color: 'var(--danger)' }}>Delete Account</div>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>This action cannot be undone</div>
                             </div>
                         </div>
@@ -802,7 +802,7 @@ const Profile = () => {
                         <form onSubmit={handleDeleteAccount}>
                             <div style={{ marginBottom: '0.875rem' }}>
                                 <label htmlFor="delete-confirm-text" style={{ display: 'block', fontWeight: '600', fontSize: '0.8125rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
-                                    Type <strong style={{ color: 'var(--danger-color)' }}>DELETE</strong> to confirm
+                                    Type <strong style={{ color: 'var(--danger)' }}>DELETE</strong> to confirm
                                 </label>
                                 <input
                                     id="delete-confirm-text"
@@ -810,7 +810,7 @@ const Profile = () => {
                                     value={deleteConfirmText}
                                     onChange={e => setDeleteConfirmText(e.target.value)}
                                     placeholder="DELETE"
-                                    style={{ ...inputStyle, borderColor: deleteConfirmText === 'DELETE' ? 'var(--danger-color)' : 'var(--border-color)' }}
+                                    style={{ ...inputStyle, borderColor: deleteConfirmText === 'DELETE' ? 'var(--danger)' : 'var(--border)' }}
                                     onFocus={inputFocus}
                                     onBlur={inputBlur}
                                     autoComplete="off"
