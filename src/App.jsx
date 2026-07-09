@@ -10,6 +10,7 @@ import IOSInstallBanner from './components/IOSInstallBanner.jsx';
 import WhatsAppGroupModal from './components/WhatsAppGroupModal.jsx';
 
 const Landing = lazy(() => import('./pages/Landing.jsx'));
+const About = lazy(() => import('./pages/About.jsx'));
 const Home = lazy(() => import('./pages/Home.jsx'));
 const Login = lazy(() => import('./pages/Login.jsx'));
 const Register = lazy(() => import('./pages/Register.jsx'));
@@ -61,6 +62,7 @@ const AppContent = () => {
                 }>
                     <Routes>
                         <Route path="/" element={<Landing />} />
+                        <Route path="/about" element={<About />} />
                         <Route path="/market" element={<Home />} />
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
