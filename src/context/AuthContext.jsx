@@ -106,12 +106,13 @@ export function AuthProvider({ children }) {
         setJoinedGroupChat,
         isAuthenticated: !!currentUser,
         isSeller: userRole === 'seller' || userRole === 'admin',
-        isAdmin: userRole === 'admin'
+        isAdmin: userRole === 'admin',
+        loading
     };
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {children}
         </AuthContext.Provider>
     );
 }

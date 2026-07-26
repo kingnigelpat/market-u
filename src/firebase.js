@@ -14,6 +14,16 @@ const firebaseConfig = {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
+if (!firebaseConfig.apiKey) {
+    document.body.innerHTML = `
+    <div style="padding: 2rem; text-align: center; font-family: sans-serif; background: #fff; min-height: 100vh; color: #333;">
+      <h1 style="color: #ef4444; margin-bottom: 1rem;">Configuration Missing</h1>
+      <p>Please add your Environment Variables (Firebase/Cloudinary) to the project settings (.env) and restart the dev server.</p>
+    </div>
+    `;
+    throw new Error("Missing Firebase API Key. Please configure your .env file.");
+}
+
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);

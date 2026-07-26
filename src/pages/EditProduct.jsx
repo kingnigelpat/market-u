@@ -67,8 +67,14 @@ const EditProduct = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.title || !formData.price || !formData.description) {
-            setError("Please fill in all text fields.");
+        if (!formData.title.trim() || !formData.description.trim()) {
+            setError('Please fill in all text fields.');
+            return;
+        }
+
+        const numericPrice = parseFloat(formData.price);
+        if (isNaN(numericPrice) || numericPrice <= 0) {
+            setError('Please enter a valid price greater than zero.');
             return;
         }
 
@@ -78,9 +84,9 @@ const EditProduct = () => {
         try {
             const docRef = doc(db, 'products', id);
             await updateDoc(docRef, {
-                title: formData.title,
-                description: formData.description,
-                price: parseFloat(formData.price),
+                title: formData.title.trim(),
+                description: formData.description.trim(),
+                price: numericPrice,
                 category: formData.category,
                 sellerVerified: sellerVerified, // Always sync with live seller status
             });
@@ -89,7 +95,7 @@ const EditProduct = () => {
             navigate(`/product/${id}`);
         } catch (err) {
             console.error(err);
-            setError("Error updating product. Please try again.");
+            setError('Error updating product. Please try again.');
         } finally {
             setSaving(false);
         }

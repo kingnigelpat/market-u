@@ -48,9 +48,9 @@ const ProductDetail = () => {
                     // Increment real views (only if not the owner viewing their own product)
                     if (!currentUser || currentUser.uid !== productData.sellerId) {
                         try {
-                            updateDoc(docRef, { views: increment(1) });
+                            await updateDoc(docRef, { views: increment(1) });
                             productData.views = (productData.views || 0) + 1;
-                        } catch(e) { console.error("Error incrementing views", e); }
+                        } catch(e) { console.error('Error incrementing views', e); }
                     }
 
                     try {
@@ -307,8 +307,9 @@ const ProductDetail = () => {
                         style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
                     />
                     <button 
-                        style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', color: 'white', fontSize: '2rem' }}
+                        style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', color: 'white', fontSize: '2rem', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 }}
                         onClick={() => setSelectedImage(null)}
+                        aria-label="Close image"
                     >
                         ×
                     </button>

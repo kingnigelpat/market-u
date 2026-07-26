@@ -1,360 +1,181 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import '../styles/landing.css';
-import { Search, ShoppingBag, Tag, CheckCircle2, Smartphone, Zap, Shield, ArrowRight, Star, Users, Package, Sparkles, Building2, Globe, GraduationCap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import AuthPromptModal from '../components/AuthPromptModal';
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { db } from '../firebase';
+import { ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import ProductCard from '../components/ProductCard';
 
-const MARQUEE_ITEMS = [
-  'MacBook Air M1 — ₦900k',
-  'Nike Dunks — ₦80k',
-  'Intro to Psych — ₦5k',
-  'AirPods Pro — ₦120k',
-  'iPhone 13 Pro — ₦850k',
-  'Graphic Design — ₦15k',
-  'Dorm Mini Fridge — ₦45k',
-  'Calculus Textbook — ₦8k',
-];
+const parseQuery = (text) => {
+  const lowerText = text.toLowerCase();
+  let budget = null;
+  let keyword = lowerText;
 
-const FloatingShape = ({ delay, size, pos, color }) => (
-  <div
-    className="floating-shape"
-    style={{
-      width: size,
-      height: size,
-      top: pos.top,
-      left: pos.left,
-      background: color,
-      animationDelay: `${delay}s`,
-    }}
-  />
-);
+  // Catch phrases like "under 50k", "< 50000", "below 10000"
+  const budgetMatch = lowerText.match(/(?:under|below|<)\s*(?:ngn|₦)?\s*(\d+(?:k|m)?)/);
+  if (budgetMatch) {
+    const rawVal = budgetMatch[1];
+    if (rawVal.includes('k')) budget = parseFloat(rawVal) * 1000;
+    else if (rawVal.includes('m')) budget = parseFloat(rawVal) * 1000000;
+    else budget = parseFloat(rawVal);
+    
+    keyword = lowerText.replace(/(?:under|below|<)\s*(?:ngn|₦)?\s*(\d+(?:k|m)?)/, '').trim();
+  } else {
+    // catch numbers at the end
+    const numMatch = lowerText.match(/(\d+(?:k|m)?)$/);
+    if(numMatch) {
+      const rawVal = numMatch[1];
+      if (rawVal.includes('k')) budget = parseFloat(rawVal) * 1000;
+      else if (rawVal.includes('m')) budget = parseFloat(rawVal) * 1000000;
+      else budget = parseFloat(rawVal);
+      keyword = lowerText.replace(/(\d+(?:k|m)?)$/, '').trim();
+    }
+  }
+
+  // clean up extra spaces
+  keyword = keyword.replace(/\s+/g, ' ').trim();
+  return { keyword, budget };
+};
 
 const Landing = () => {
-  const { currentUser, loading } = useAuth();
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const statsRef = useRef(null);
-  const [counts, setCounts] = useState({ students: 0, items: 0, verified: 0 });
+  const { currentUser, loading: authLoading } = useAuth();
+  const [searchInput, setSearchInput] = useState('');
+  const [hasSearched, setHasSearched] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [results, setResults] = useState({ exact: [], alternatives: [] });
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  if (authLoading) return null;
 
-  useEffect(() => {
-    const target = { students: 500, items: 1200, verified: 100 };
-    const duration = 2000;
-    const steps = 30;
-    const stepTime = duration / steps;
-    let current = 0;
+  const handleSearchSubmit = async (e) => {
+    if (e.key === 'Enter' && searchInput.trim()) {
+      setIsSearching(true);
+      setHasSearched(true);
+      
+      const { keyword, budget } = parseQuery(searchInput);
+      
+      try {
+        const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(100));
+        const querySnapshot = await getDocs(q);
+        const products = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    const timer = setInterval(() => {
-      current++;
-      setCounts({
-        students: Math.min(Math.floor((target.students / steps) * current), target.students),
-        items: Math.min(Math.floor((target.items / steps) * current), target.items),
-        verified: Math.min(Math.floor((target.verified / steps) * current), target.verified),
-      });
-      if (current >= steps) clearInterval(timer);
-    }, stepTime);
+        const matchedProducts = products.filter(p => {
+          if (!keyword) return true;
+          const titleMatch = p.title.toLowerCase().includes(keyword);
+          const catMatch = p.category && p.category.toLowerCase().includes(keyword);
+          return titleMatch || catMatch;
+        });
 
-    return () => clearInterval(timer);
-  }, []);
-
-  if (loading) return null;
-  if (currentUser) return <Navigate to="/market" replace />;
+        if (budget) {
+          const exact = matchedProducts.filter(p => p.price <= budget);
+          const alternatives = matchedProducts.filter(p => p.price > budget);
+          
+          if (exact.length === 0 && alternatives.length === 0) {
+             const budgetAlts = products.filter(p => p.price <= budget).slice(0, 4);
+             // If there aren't even products in budget, just show latest 4
+             setResults({ exact: [], alternatives: budgetAlts.length > 0 ? budgetAlts : products.slice(0, 4) });
+          } else {
+             setResults({ exact, alternatives });
+          }
+        } else {
+          if (matchedProducts.length === 0) {
+             // Fallback to showing latest items instead of empty state
+             setResults({ exact: [], alternatives: products.slice(0, 4) });
+          } else {
+             setResults({ exact: matchedProducts, alternatives: [] });
+          }
+        }
+      } catch (error) {
+        console.error("Search error:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }
+  };
 
   return (
     <div className="landing-wrapper">
-      <div className="landing-bg-grid" />
-      <FloatingShape delay={0} size="320px" pos={{ top: '-5%', left: '-8%' }} color="rgba(124,58,237,0.08)" />
-      <FloatingShape delay={2} size="260px" pos={{ top: '30%', right: '-5%', left: 'auto' }} color="rgba(245,158,11,0.06)" />
-      <FloatingShape delay={4} size="200px" pos={{ top: '60%', left: '10%' }} color="rgba(16,185,129,0.06)" />
-
-      <nav className={`landing-nav ${scrolled ? 'scrolled' : ''}`}>
-        <div className="landing-nav-content">
-          <div className="landing-logo-text">
-            <span className="landing-logo-mark">M</span>
-            <span className="landing-logo-name">arketU</span>
+      <div className="landing-bg-glow" />
+      
+      <div className="landing-content">
+        {!hasSearched && (
+          <div className="landing-header-section animate-fade-in-up">
+            <h1 className="landing-title">What do you need?</h1>
+            <p className="landing-subtitle">Type naturally. e.g. "iPhone under 500k"</p>
           </div>
-          <div className="landing-nav-actions">
-            <button onClick={() => setShowAuthModal(true)} className="btn-nav-login">Log In</button>
-            <button onClick={() => setShowAuthModal(true)} className="btn-nav-signup hide-mobile">Get Started <ArrowRight size={14} /></button>
-          </div>
-        </div>
-      </nav>
+        )}
 
-      <main className="landing-main">
-        <section className="hero-section">
-          <div className="hero-content">
-            <div className="hero-badge animate-fade-in-up">
-              <span className="live-dot" />
-              <span className="hero-badge-text">Live on campus right now</span>
-              <span className="hero-badge-arrow">→</span>
-            </div>
-
-            <h1 className="hero-title animate-fade-in-up delay-100">
-              Your campus.<br />
-              <span className="text-gradient">Your marketplace.</span>
-            </h1>
-
-            <p className="hero-subtitle animate-fade-in-up delay-200">
-              Buy, sell, and connect with verified students — no more digging through endless WhatsApp groups.
-            </p>
-
-            <div className="hero-actions animate-fade-in-up delay-300">
-              <button onClick={() => setShowAuthModal(true)} className="btn-hero-primary">
-                <ShoppingBag size={20} /> Start Buying
-              </button>
-              <Link to="/register?role=seller" className="btn-hero-secondary">
-                <Tag size={20} /> Start Selling
-              </Link>
-            </div>
-
-            <div className="hero-stats animate-fade-in-up delay-400">
-              <div className="stat-item">
-                <Users size={18} className="stat-icon" />
-                <div>
-                  <div className="stat-number">{counts.students.toLocaleString()}+</div>
-                  <div className="stat-label">Active Students</div>
-                </div>
-              </div>
-              <div className="stat-divider" />
-              <div className="stat-item">
-                <Package size={18} className="stat-icon" />
-                <div>
-                  <div className="stat-number">{counts.items.toLocaleString()}+</div>
-                  <div className="stat-label">Items Listed</div>
-                </div>
-              </div>
-              <div className="stat-divider" />
-              <div className="stat-item">
-                <Shield size={18} className="stat-icon" />
-                <div>
-                  <div className="stat-number">{counts.verified}%</div>
-                  <div className="stat-label">Verified Sellers</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="hero-schools-badge animate-fade-in-up delay-450">
-              <GraduationCap size={14} />
-              <span>More schools joining soon</span>
-            </div>
-          </div>
-
-          <div className="hero-visual animate-fade-in-up delay-500">
-            <div className="hero-bento">
-              <div className="bento-card bento-card--large">
-                <div className="bento-card-glow" />
-                <span className="bento-emoji">💻</span>
-                <div className="bento-info">
-                  <h4>MacBook Air M1</h4>
-                  <div className="bento-price">₦900,000</div>
-                  <span className="bento-tag bento-tag--new">Just listed</span>
-                </div>
-              </div>
-              <div className="bento-card">
-                <span className="bento-emoji">👟</span>
-                <div className="bento-info">
-                  <h4>Nike Dunks</h4>
-                  <div className="bento-price">₦80,000</div>
-                </div>
-              </div>
-              <div className="bento-card">
-                <span className="bento-emoji">📚</span>
-                <div className="bento-info">
-                  <h4>Intro to Psych</h4>
-                  <div className="bento-price">₦5,000</div>
-                </div>
-              </div>
-              <div className="bento-card bento-card--accent">
-                <div className="bento-card-glow" />
-                <Star size={20} className="bento-accent-icon" />
-                <h4>Verified Sellers Only</h4>
-                <p>Every student is checked. Buy with confidence.</p>
-              </div>
-            </div>
-
-            <div className="hero-floating-card hero-floating-card--1">
-              <CheckCircle2 size={14} color="#10B981" />
-              <span>Safe & Secure</span>
-            </div>
-            <div className="hero-floating-card hero-floating-card--2">
-              <Zap size={14} color="#7C3AED" />
-              <span>Instant Chat</span>
-            </div>
-          </div>
-        </section>
-
-        <div className="marquee-section">
-          <div className="marquee-track">
-            {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
-              <span key={i} className="marquee-item">
-                <span className="marquee-dot" />
-                {item}
-              </span>
-            ))}
+        <div className={`circle-container ${hasSearched ? 'expanded' : ''}`}>
+          <div className="glimmer-circle" />
+          <div className="circle-inner">
+             {hasSearched && <Sparkles size={20} className="text-purple-400 mr-3 shrink-0" />}
+             <input 
+                type="text" 
+                className="smart-input"
+                placeholder={hasSearched ? "Ask anything..." : "Tell me..."}
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                onKeyDown={handleSearchSubmit}
+                autoFocus
+             />
           </div>
         </div>
 
-        <section className="features-section">
-          <div className="features-header">
-            <span className="features-eyebrow">Why MarketU</span>
-            <h2 className="features-title">Built different.<br />Built for you.</h2>
-            <p className="features-description">
-              We reimagined campus commerce from the ground up — making it safer, faster, and more social.
-            </p>
-          </div>
-          <div className="features-grid">
-            <div className="feature-card">
-              <div className="feature-card-bg" />
-              <div className="feature-icon-wrap feature-icon-wrap--purple">
-                <Search size={24} />
-              </div>
-              <h3>Smart Search</h3>
-              <p>Find exactly what you need in seconds — laptops, textbooks, fashion, services. No more scrolling endless group chats.</p>
-              <div className="feature-card-arrow">
-                <ArrowRight size={16} />
-              </div>
-            </div>
-            <div className="feature-card">
-              <div className="feature-card-bg" />
-              <div className="feature-icon-wrap feature-icon-wrap--green">
-                <Shield size={24} />
-              </div>
-              <h3>Verified Only</h3>
-              <p>Every seller is a real student. No scams, no fake profiles — just your campus community, trusted and verified.</p>
-              <div className="feature-card-arrow">
-                <ArrowRight size={16} />
-              </div>
-            </div>
-            <div className="feature-card">
-              <div className="feature-card-bg" />
-              <div className="feature-icon-wrap feature-icon-wrap--amber">
-                <Zap size={24} />
-              </div>
-              <h3>Instant Connection</h3>
-              <p>Chat directly with sellers and arrange safe meetups right on campus. Fast, simple, and local.</p>
-              <div className="feature-card-arrow">
-                <ArrowRight size={16} />
-              </div>
-            </div>
-          </div>
-        </section>
+        {isSearching && (
+          <div className="mt-8 text-purple-400">Searching campus...</div>
+        )}
 
-        <section className="install-section">
-          <div className="install-card">
-            <div className="install-card-glow" />
-            <div className="install-content">
-              <span className="install-badge">
-                <Sparkles size={14} /> PWA Ready
-              </span>
-              <h2>Get MarketU on your phone</h2>
-              <p>Install as a web app for a native experience — faster browsing, instant notifications, and zero storage wasted.</p>
-              <div className="install-steps">
-                <div className="install-step">
-                  <div className="step-number">1</div>
-                  <div className="step-content">
-                    <span className="step-title">Open in browser</span>
-                    <span className="step-desc">Visit marketu.store in Safari or Chrome</span>
-                  </div>
-                </div>
-                <div className="install-step">
-                  <div className="step-number">2</div>
-                  <div className="step-content">
-                    <span className="step-title">Tap share</span>
-                    <span className="step-desc">Share icon on iOS, menu on Android</span>
-                  </div>
-                </div>
-                <div className="install-step">
-                  <div className="step-number">3</div>
-                  <div className="step-content">
-                    <span className="step-title">Add to home screen</span>
-                    <span className="step-desc">Done — you&apos;re all set!</span>
-                  </div>
+        {hasSearched && !isSearching && (
+          <div className="results-container">
+            {results.exact.length > 0 && (
+              <div className="results-section">
+                <h3><Sparkles size={20} className="text-green-400" /> In Your Budget</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {results.exact.map(product => (
+                    <ProductCard key={product.id} product={product} index={0} />
+                  ))}
                 </div>
               </div>
-            </div>
-            <div className="install-visual">
-              <div className="install-phone-mockup">
-                <div className="install-phone-notch" />
-                <div className="install-phone-screen">
-                  <div className="install-phone-header">
-                    <span className="install-phone-dot" />
-                    <span className="install-phone-dot" />
-                    <span className="install-phone-dot" />
-                  </div>
-                  <div className="install-phone-icon">MU</div>
-                  <div className="install-phone-text">MarketU</div>
-                  <div className="install-phone-btn">Install</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+            )}
 
-        <section className="about-section">
-          <div className="about-card">
-            <div className="about-content">
-              <span className="about-eyebrow">About MarketU</span>
-              <h2 className="about-title">Built by students,<br />for students.</h2>
-              <p className="about-description">
-                MarketU is a campus marketplace platform <strong>created and owned by Rae Company</strong> — 
-                a digital innovation hub building tools that connect students and make campus life easier.
-              </p>
-              <p className="about-description">
-                We believe in safe, verified, and instant transactions between students. 
-                Every seller is verified, every item is local, and every transaction is designed 
-                to happen face-to-face on campus.
-              </p>
-              <div className="about-stats-row">
-                <div className="about-stat">
-                  <Building2 size={18} />
-                  <div>
-                    <div className="about-stat-num">1+</div>
-                    <div className="about-stat-label">School Active</div>
-                  </div>
-                </div>
-                <div className="about-stat">
-                  <Users size={18} />
-                  <div>
-                    <div className="about-stat-num">500+</div>
-                    <div className="about-stat-label">Students</div>
-                  </div>
-                </div>
-                <div className="about-stat">
-                  <Globe size={18} />
-                  <div>
-                    <div className="about-stat-num">1.2k+</div>
-                    <div className="about-stat-label">Items Listed</div>
-                  </div>
+            {results.alternatives.length > 0 && (
+              <div className="results-section">
+                <h3><AlertCircle size={20} className="text-yellow-400" /> {results.exact.length === 0 ? "You Might Like" : "Alternatives"}</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                   {results.exact.length === 0 
+                      ? "We couldn't find an exact match, but here are some top picks you might like."
+                      : "These match your keyword but might be outside the budget."}
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {results.alternatives.map(product => (
+                    <ProductCard key={product.id} product={product} index={0} />
+                  ))}
                 </div>
               </div>
-            </div>
-            <div className="about-brand">
-              <div className="about-brand-card">
-                <div className="about-brand-icon">
-                  <Building2 size={24} />
-                </div>
-                <h3>Rae Company</h3>
-                <p>Building the future of digital connectivity and campus tools.</p>
-                <a href="https://raehub.live/" target="_blank" rel="noopener noreferrer" className="about-brand-link">
-                  Visit Website <ArrowRight size={14} />
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
+            )}
 
-      <AuthPromptModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        message="Join MarketU to start exploring the campus marketplace!"
-      />
+            {results.exact.length === 0 && results.alternatives.length === 0 && (
+              <div className="text-center mt-12">
+                <p className="text-gray-400 mb-6">We couldn't find exactly what you're looking for.</p>
+              </div>
+            )}
+            
+             <div className="text-center mt-8 pt-8 border-t border-gray-800">
+               <Link to="/market" className="market-link-btn">
+                 Browse Full Market <ArrowRight size={18} />
+               </Link>
+             </div>
+          </div>
+        )}
+
+        {!hasSearched && (
+          <div className="mt-12 animate-fade-in-up delay-200">
+            <Link to="/market" className="market-link-btn">
+              Or View Full Market <ArrowRight size={18} />
+            </Link>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

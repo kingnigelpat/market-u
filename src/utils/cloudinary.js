@@ -1,10 +1,18 @@
 export const uploadImageToCloudinary = async (file) => {
     if (!file) return null;
 
-    const url = `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`;
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+    if (!cloudName || !uploadPreset) {
+        console.error('Cloudinary is not configured. Please check your .env file.');
+        throw new Error('Missing Cloudinary configuration.');
+    }
+
+    const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+    formData.append('upload_preset', uploadPreset);
 
     try {
         const response = await fetch(url, {

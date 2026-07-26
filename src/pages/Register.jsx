@@ -31,20 +31,36 @@ const Register = () => {
         setError('');
         setLoading(true);
 
+        // Sanitize inputs
+        const trimmedName = formData.name.trim();
+        const trimmedEmail = formData.email.trim().toLowerCase();
+        const trimmedPhone = formData.phone.trim();
+
+        if (!trimmedName) {
+            setError('Please enter your full name.');
+            setLoading(false);
+            return;
+        }
+        if (trimmedPhone.replace(/\D/g, '').length < 10) {
+            setError('Please enter a valid phone number (at least 10 digits).');
+            setLoading(false);
+            return;
+        }
+
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+            const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, formData.password);
             const user = userCredential.user;
 
             // Update Auth Profile
             await updateProfile(user, {
-                displayName: formData.name
+                displayName: trimmedName
             });
 
             // Save user details to Firestore
             await setDoc(doc(db, 'users', user.uid), {
-                name: formData.name,
-                email: formData.email,
-                phone: formData.phone,
+                name: trimmedName,
+                email: trimmedEmail,
+                phone: trimmedPhone,
                 role: formData.role,
                 createdAt: new Date(),
                 verified: false // Sellers start unverified

@@ -1,6 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Mail, Globe, ArrowRight, Smartphone, Share, Download, Sparkles, Shield, Zap } from 'lucide-react';
-import { FaWhatsapp } from 'react-icons/fa';
 
 const Footer = () => {
   const location = useLocation();
@@ -49,9 +48,6 @@ const Footer = () => {
               <div className="footer-feat"><Zap size={14} /> Instant Chat</div>
               <div className="footer-feat"><Smartphone size={14} /> PWA Ready</div>
             </div>
-            <a href="https://wa.me/2347073544811" target="_blank" rel="noopener noreferrer" className="footer-whatsapp">
-              <FaWhatsapp size={16} /> Contact Creator
-            </a>
           </div>
 
           <div>
