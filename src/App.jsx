@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import Navbar from './components/Navbar.jsx';
@@ -27,6 +27,15 @@ const AppContent = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const isLanding = location.pathname === '/';
+    const hasRedirected = useRef(false);
+
+    // Always show the landing page (circle search) on fresh app launch
+    useEffect(() => {
+        if (!loading && !hasRedirected.current && location.pathname !== '/') {
+            hasRedirected.current = true;
+            navigate('/', { replace: true });
+        }
+    }, [loading, location.pathname, navigate]);
 
     // Listen for NAVIGATE messages from the service worker (notification click)
     useEffect(() => {
