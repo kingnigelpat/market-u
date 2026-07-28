@@ -90,7 +90,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // ── Offline Caching (PWA Caches) ──────────────────────────────────────────────
-const CACHE_NAME = 'market-u-v3';
+const CACHE_NAME = 'market-u-v4';
 const ASSETS_TO_CACHE = ['/', '/index.html', '/icon.png', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -114,6 +114,21 @@ self.addEventListener('fetch', (event) => {
   // Only cache GET requests
   if (event.request.method !== 'GET') return;
   
+  // Navigation requests (HTML): cache-first, update in background
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        const fetchAndUpdate = fetch(event.request).then((res) => {
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, res.clone()));
+          return res;
+        }).catch(() => cached);
+        return cached || fetchAndUpdate;
+      })
+    );
+    return;
+  }
+  
+  // Other assets: network-first, fallback to cache
   event.respondWith(
     fetch(event.request).catch(() => caches.match(event.request))
   );
