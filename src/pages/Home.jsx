@@ -6,6 +6,8 @@ import { Search, PackagePlus, ArrowRight, Sparkles, SlidersHorizontal, X } from 
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import InstallGuideModal from '../components/InstallGuideModal';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 
 const CATEGORIES = [
     { key: 'all', label: 'All', emoji: '🔥' },
@@ -161,11 +163,13 @@ const Home = () => {
                     <div className="grid grid-cols-4">
                         {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
                             <div key={n} className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                                <div className="skeleton" style={{ paddingTop: '100%', width: '100%', borderRadius: 0 }}></div>
+                                <div style={{ paddingTop: '100%', width: '100%', position: 'relative' }}>
+                                    <Skeleton height="100%" width="100%" style={{ position: 'absolute', top: 0, left: 0, borderRadius: 0 }} />
+                                </div>
                                 <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                    <div className="skeleton" style={{ height: '1.25rem', width: '80%' }}></div>
-                                    <div className="skeleton" style={{ height: '1rem', width: '50%' }}></div>
-                                    <div className="skeleton" style={{ height: '2.5rem', width: '100%', borderRadius: '99px', marginTop: '0.5rem' }}></div>
+                                    <Skeleton height="1.25rem" width="80%" />
+                                    <Skeleton height="1rem" width="50%" />
+                                    <Skeleton height="2.5rem" borderRadius="99px" style={{ marginTop: '0.5rem' }} />
                                 </div>
                             </div>
                         ))}
