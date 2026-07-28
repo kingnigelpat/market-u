@@ -164,12 +164,12 @@ const Home = () => {
                         {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
                             <div key={n} className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                                 <div style={{ paddingTop: '100%', width: '100%', position: 'relative' }}>
-                                    <Skeleton height="100%" width="100%" style={{ position: 'absolute', top: 0, left: 0, borderRadius: 0 }} />
+                                    <Skeleton style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 0 }} />
                                 </div>
                                 <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                    <Skeleton height="1.25rem" width="80%" />
-                                    <Skeleton height="1rem" width="50%" />
-                                    <Skeleton height="2.5rem" borderRadius="99px" style={{ marginTop: '0.5rem' }} />
+                                    <Skeleton style={{ height: 20, width: '80%' }} />
+                                    <Skeleton style={{ height: 16, width: '50%' }} />
+                                    <Skeleton style={{ height: 40, borderRadius: 99, marginTop: 8 }} />
                                 </div>
                             </div>
                         ))}
