@@ -71,11 +71,11 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="footer-heading">Developed By</h3>
+            <h3 className="footer-heading">Developed by Rae</h3>
             <a href="https://raehub.live/" target="_blank" rel="noopener noreferrer" className="footer-partner">
               <div className="footer-partner-top">
-                <div className="footer-partner-icon"><Globe size={16} /></div>
-                <span>Rae Company</span>
+                <div className="footer-partner-icon"><img src="/rae-logo.png" alt="Rae logo" /></div>
+                <span>Rae</span>
               </div>
               <p>Building the future of digital connectivity and campus tools.</p>
               <div className="footer-partner-link">Visit Website <ArrowRight size={13} /></div>
@@ -333,11 +333,19 @@ const Footer = () => {
 
         .footer-partner-icon {
           width: 30px; height: 30px;
-          background: var(--gradient-primary);
+          background: rgba(255, 255, 255, 0.08);
           border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
+          overflow: hidden;
+          flex-shrink: 0;
+        }
+
+        .footer-partner-icon img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
 
         .footer-partner p {

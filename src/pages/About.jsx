@@ -1,4 +1,4 @@
-import { Building2, Users, Globe, ArrowRight, Shield, Zap, Smartphone, Sparkles, GraduationCap, ShoppingBag } from 'lucide-react';
+import { ArrowRight, Shield, Zap, Smartphone, Sparkles, GraduationCap, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const About = () => {
@@ -23,7 +23,7 @@ const About = () => {
             <span className="about-section-eyebrow">Our Story</span>
             <h2>Built by students,<br />for students.</h2>
             <p>
-              MarketU is a campus marketplace platform <strong>created and owned by Rae Company</strong> — 
+              MarketU is a campus marketplace platform <strong>created and owned by Rae</strong> — 
               a digital innovation hub building tools that connect students and make campus life easier.
             </p>
             <p>
@@ -59,9 +59,9 @@ const About = () => {
           <div className="about-sidebar">
             <div className="about-brand-card">
               <div className="about-brand-icon-wrap">
-                <Building2 size={28} />
+                <img src="/rae-logo.png" alt="Rae logo" />
               </div>
-              <h3>Rae Company</h3>
+              <h3>Rae</h3>
               <p>Building the future of digital connectivity and campus tools for African students.</p>
               <div className="about-brand-stats">
                 <div className="about-bs-item">
@@ -261,6 +261,12 @@ const About = () => {
           align-items: center;
           justify-content: center;
           margin: 0 auto 1.25rem;
+        }
+
+        .about-brand-icon-wrap img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
 
         .about-brand-card h3 {
