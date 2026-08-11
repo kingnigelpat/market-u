@@ -88,18 +88,16 @@ const Home = () => {
                 <div className="market-hero-inner container">
                     <div className="market-hero-top">
                         <div>
-                            <h1 className="market-greeting">
-                                {!isAuthenticated 
-                                    ? "Do you want to buy or sell?" 
-                                    : `Hey, ${firstName} ${isSeller ? '🏷️' : '👋'}`}
-                            </h1>
-                            <p className="market-subtitle">
-                                {!isAuthenticated 
-                                    ? "Buy and sell items quickly and safely on campus" 
-                                    : isSeller 
-                                    ? "Manage your store and reach more buyers" 
-                                    : "Find what you need, from laptops to fashion"}
-                            </p>
+                            {!isAuthenticated ? (
+                                <h1 className="market-greeting">Do you want to buy or sell?</h1>
+                            ) : isSeller ? (
+                                <h1 className="market-greeting">Seller Dashboard 🏷️</h1>
+                            ) : (
+                                <>
+                                    <h1 className="market-greeting">Hey, {firstName} 👋</h1>
+                                    <p className="market-subtitle">Find what you need, from laptops to fashion</p>
+                                </>
+                            )}
                         </div>
                         <div className="live-badge">
                             <span className="live-badge-dot" />
@@ -160,7 +158,7 @@ const Home = () => {
                         </div>
                     )}
 
-                    {(!isAuthenticated || !isSeller) && (
+                    {isAuthenticated && !isSeller && (
                         <div className="market-search-wrap">
                             <Search size={20} className="market-search-icon" />
                             <input
