@@ -157,16 +157,9 @@ const Home = () => {
                                 </div>
                             </Link>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                                <button onClick={() => {
-                                    if (productsRef.current) {
-                                        productsRef.current.scrollIntoView({ behavior: 'smooth' });
-                                    }
-                                }} className="btn btn-secondary" style={{ fontSize: '0.85rem' }}>
-                                    🏪 View Full Market
-                                </button>
-                                <Link to="/notifications" className="btn btn-secondary" style={{ fontSize: '0.85rem' }}>
-                                    🔔 Notifications
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <Link to="/notifications" className="btn btn-secondary" style={{ fontSize: '0.9rem', justifyContent: 'center' }}>
+                                    🔔 Check Notifications
                                 </Link>
                             </div>
                         </div>
