@@ -122,7 +122,7 @@ const Home = () => {
                     )}
 
                     {isAuthenticated && isSeller && (
-                        <div className="seller-main-action animate-fade-in-up" style={{ marginBottom: '1.5rem' }}>
+                        <div className="seller-dashboard-actions animate-fade-in-up" style={{ marginBottom: '1.5rem' }}>
                             <Link to="/add-product" style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -135,7 +135,8 @@ const Home = () => {
                                 textDecoration: 'none',
                                 boxShadow: '0 4px 16px var(--primary-glow)',
                                 transition: 'all 0.2s ease',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                marginBottom: '1rem'
                             }}
                             onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px var(--primary-glow)'; }}
                             onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px var(--primary-glow)'; }}
@@ -155,6 +156,19 @@ const Home = () => {
                                     <ArrowRight size={20} />
                                 </div>
                             </Link>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                <button onClick={() => {
+                                    if (productsRef.current) {
+                                        productsRef.current.scrollIntoView({ behavior: 'smooth' });
+                                    }
+                                }} className="btn btn-secondary" style={{ fontSize: '0.85rem' }}>
+                                    🏪 View Full Market
+                                </button>
+                                <Link to="/notifications" className="btn btn-secondary" style={{ fontSize: '0.85rem' }}>
+                                    🔔 Notifications
+                                </Link>
+                            </div>
                         </div>
                     )}
 
