@@ -90,7 +90,7 @@ const Home = () => {
                         <div>
                             <h1 className="market-greeting">
                                 {!isAuthenticated 
-                                    ? "Welcome to Campus Market ✨" 
+                                    ? "Do you want to buy or sell?" 
                                     : `Hey, ${firstName} ${isSeller ? '🏷️' : '👋'}`}
                             </h1>
                             <p className="market-subtitle">
