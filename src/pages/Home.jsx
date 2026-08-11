@@ -90,18 +90,15 @@ const Home = () => {
                         <div>
                             <h1 className="market-greeting">
                                 {!isAuthenticated 
-                                    ? "What do you want to do today?" 
-                                    : isSeller 
-                                    ? `What do you wanna sell, ${firstName}?` 
-                                    : `What do you want, ${firstName}?`}
-                                <span className="market-wave">{isAuthenticated ? (isSeller ? ' 🏷️' : ' 🛍️') : ' ✨'}</span>
+                                    ? "Welcome to Campus Market ✨" 
+                                    : `Hey, ${firstName} ${isSeller ? '🏷️' : '👋'}`}
                             </h1>
                             <p className="market-subtitle">
                                 {!isAuthenticated 
-                                    ? "Select an option below to start buying or selling on campus" 
+                                    ? "Buy and sell items quickly and safely on campus" 
                                     : isSeller 
-                                    ? "Post your item fast or check your orders & notifications" 
-                                    : "Search or ask our AI assistant to find anything on campus"}
+                                    ? "Manage your store and reach more buyers" 
+                                    : "Find what you need, from laptops to fashion"}
                             </p>
                         </div>
                         <div className="live-badge">
@@ -112,58 +109,74 @@ const Home = () => {
 
                     {!isAuthenticated && (
                         <div className="guest-startup-prompt animate-fade-in-up" style={{
-                            display: 'flex',
-                            gap: '0.75rem',
-                            marginBottom: '1.25rem',
-                            flexWrap: 'wrap'
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr',
+                            gap: '1rem',
+                            marginBottom: '1.5rem',
                         }}>
-                            <Link to="/register?role=buyer" className="btn btn-primary" style={{ flex: '1 1 140px', justifyContent: 'center' }}>
+                            <Link to="/register?role=buyer" className="btn btn-primary">
                                 🛍️ I want to Buy
                             </Link>
-                            <Link to="/register?role=seller" className="btn btn-outline" style={{ flex: '1 1 140px', justifyContent: 'center', borderColor: 'var(--primary)', color: 'var(--primary)' }}>
+                            <Link to="/register?role=seller" className="btn btn-secondary">
                                 🏷️ I want to Sell
                             </Link>
                         </div>
                     )}
 
                     {isAuthenticated && isSeller && (
-                        <div className="seller-quick-actions hide-scrollbar" style={{
-                            display: 'flex',
-                            gap: '0.75rem',
-                            marginBottom: '1.25rem',
-                            overflowX: 'auto'
-                        }}>
-                            <Link to="/add-product" className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
-                                <PackagePlus size={16} /> Sell an Item
-                            </Link>
-                            <button onClick={() => {
-                                if (productsRef.current) {
-                                    productsRef.current.scrollIntoView({ behavior: 'smooth' });
-                                }
-                            }} className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
-                                🏪 View Full Market
-                            </button>
-                            <Link to="/notifications" className="btn btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
-                                🔔 Check Notifications
+                        <div className="seller-main-action animate-fade-in-up" style={{ marginBottom: '1.5rem' }}>
+                            <Link to="/add-product" style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                background: 'var(--surface-elevated)',
+                                border: '2px solid var(--primary)',
+                                borderRadius: 'var(--radius-full)',
+                                padding: '0.75rem 1.25rem',
+                                color: 'var(--text)',
+                                textDecoration: 'none',
+                                boxShadow: '0 4px 16px var(--primary-glow)',
+                                transition: 'all 0.2s ease',
+                                cursor: 'pointer'
+                            }}
+                            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px var(--primary-glow)'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px var(--primary-glow)'; }}
+                            >
+                                <span style={{ fontSize: '1.05rem', fontWeight: '700' }}>What do you wanna sell?</span>
+                                <div style={{ 
+                                    background: 'var(--primary)', 
+                                    color: 'white', 
+                                    borderRadius: '50%', 
+                                    width: '36px', 
+                                    height: '36px', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    boxShadow: '0 2px 8px rgba(124, 58, 237, 0.4)'
+                                }}>
+                                    <ArrowRight size={20} />
+                                </div>
                             </Link>
                         </div>
                     )}
 
-                    <div className="market-search-wrap">
-                        <Search size={20} className="market-search-icon" />
-                        <input
-                            type="text"
-                            placeholder={isSeller ? "Search products in full market..." : "What do you want? (e.g. iPhone, sneakers, laptop)..."}
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="market-search-input search-input-focus"
-                        />
-                        {searchTerm && (
-                            <button className="market-search-clear" onClick={() => setSearchTerm('')}>
-                                <X size={16} />
-                            </button>
-                        )}
-                    </div>
+                    {(!isAuthenticated || !isSeller) && (
+                        <div className="market-search-wrap">
+                            <Search size={20} className="market-search-icon" />
+                            <input
+                                type="text"
+                                placeholder="What do you want? (e.g. iPhone, sneakers, laptop)..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="market-search-input search-input-focus"
+                            />
+                            {searchTerm && (
+                                <button className="market-search-clear" onClick={() => setSearchTerm('')}>
+                                    <X size={16} />
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                     <div className="market-filters hide-scrollbar">
                         {CATEGORIES.map(({ key, label, emoji }) => {
