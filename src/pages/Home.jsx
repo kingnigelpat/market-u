@@ -89,10 +89,20 @@ const Home = () => {
                     <div className="market-hero-top">
                         <div>
                             <h1 className="market-greeting">
-                                {isAuthenticated ? `Hey, ${firstName}` : 'Campus Market'}
-                                <span className="market-wave">{isAuthenticated ? ' 👋' : ' 🚀'}</span>
+                                {!isAuthenticated 
+                                    ? "What do you want to do today?" 
+                                    : isSeller 
+                                    ? `What do you wanna sell, ${firstName}?` 
+                                    : `What do you want, ${firstName}?`}
+                                <span className="market-wave">{isAuthenticated ? (isSeller ? ' 🏷️' : ' 🛍️') : ' ✨'}</span>
                             </h1>
-                            <p className="market-subtitle">Find what you need, sell what you don&apos;t</p>
+                            <p className="market-subtitle">
+                                {!isAuthenticated 
+                                    ? "Select an option below to start buying or selling on campus" 
+                                    : isSeller 
+                                    ? "Post your item fast or check your orders & notifications" 
+                                    : "Search or ask our AI assistant to find anything on campus"}
+                            </p>
                         </div>
                         <div className="live-badge">
                             <span className="live-badge-dot" />
@@ -100,11 +110,50 @@ const Home = () => {
                         </div>
                     </div>
 
+                    {!isAuthenticated && (
+                        <div className="guest-startup-prompt animate-fade-in-up" style={{
+                            display: 'flex',
+                            gap: '0.75rem',
+                            marginBottom: '1.25rem',
+                            flexWrap: 'wrap'
+                        }}>
+                            <Link to="/register?role=buyer" className="btn btn-primary" style={{ flex: '1 1 140px', justifyContent: 'center' }}>
+                                🛍️ I want to Buy
+                            </Link>
+                            <Link to="/register?role=seller" className="btn btn-outline" style={{ flex: '1 1 140px', justifyContent: 'center', borderColor: 'var(--primary)', color: 'var(--primary)' }}>
+                                🏷️ I want to Sell
+                            </Link>
+                        </div>
+                    )}
+
+                    {isAuthenticated && isSeller && (
+                        <div className="seller-quick-actions hide-scrollbar" style={{
+                            display: 'flex',
+                            gap: '0.75rem',
+                            marginBottom: '1.25rem',
+                            overflowX: 'auto'
+                        }}>
+                            <Link to="/add-product" className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                                <PackagePlus size={16} /> Sell an Item
+                            </Link>
+                            <button onClick={() => {
+                                if (productsRef.current) {
+                                    productsRef.current.scrollIntoView({ behavior: 'smooth' });
+                                }
+                            }} className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                                🏪 View Full Market
+                            </button>
+                            <Link to="/notifications" className="btn btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                                🔔 Check Notifications
+                            </Link>
+                        </div>
+                    )}
+
                     <div className="market-search-wrap">
                         <Search size={20} className="market-search-icon" />
                         <input
                             type="text"
-                            placeholder="Search laptops, books, fashion..."
+                            placeholder={isSeller ? "Search products in full market..." : "What do you want? (e.g. iPhone, sneakers, laptop)..."}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="market-search-input search-input-focus"

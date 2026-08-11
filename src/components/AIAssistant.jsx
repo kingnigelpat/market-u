@@ -14,6 +14,11 @@ const CATEGORY_KEYWORDS = {
 };
 
 const FAQ_RESPONSES = {
+  create_account: {
+    keywords: ['create account', 'make account', 'how to register', 'how to sign up', 'signup', 'create an account', 'register as buyer', 'register as seller'],
+    response: 'Here is how to create an account on MarketU step-by-step:\n\n1️⃣ Tap **Sign Up / Join** in the menu or on the homepage.\n2️⃣ Choose your account type:\n   • **Buyer** (to browse and buy items on campus)\n   • **Seller** (to list and sell items on campus)\n3️⃣ Enter your Full Name, Email, Phone Number, and Password.\n4️⃣ Tap **Create Account**.\n\nOnce created, sellers can immediately post items and buyers can contact sellers directly!',
+    action: { label: 'Create Account Now', path: '/register' },
+  },
   how_to_buy: {
     keywords: ['how to buy', 'how do i buy', 'how can i buy', 'how to purchase', 'how to order', 'buying'],
     response: 'To buy an item: 1) Browse the market or search for what you need. 2) Click on a product to view details. 3) Tap "I\'m Interested" to notify the seller. 4) The seller will contact you via WhatsApp within 45 seconds to arrange pickup on campus!',
@@ -335,6 +340,7 @@ const AIAssistant = () => {
   };
 
   const quickActions = [
+    { label: 'Create Account Guide', icon: <HelpCircle size={14} />, action: () => { setInput('How do I create an account?'); handleSend(); } },
     { label: 'Find Products', icon: <ShoppingBag size={14} />, action: () => { setInput('I want to find something'); handleSend(); } },
     { label: 'How to Buy', icon: <HelpCircle size={14} />, action: () => { setInput('How do I buy something?'); handleSend(); } },
     { label: 'Contact Support', icon: <AlertCircle size={14} />, action: () => { setInput('I need help, this is too much'); handleSend(); } },
