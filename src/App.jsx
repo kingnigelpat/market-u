@@ -26,16 +26,8 @@ const AppContent = () => {
     const { loading, isSeller, joinedGroupChat, setJoinedGroupChat } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-    const isLanding = location.pathname === '/';
+    const isLanding = location.pathname === '/search';
     const hasRedirected = useRef(false);
-
-    // Always show the landing page (circle search) on fresh app launch
-    useEffect(() => {
-        if (!loading && !hasRedirected.current && location.pathname !== '/') {
-            hasRedirected.current = true;
-            navigate('/', { replace: true });
-        }
-    }, [loading, location.pathname, navigate]);
 
     // Listen for NAVIGATE messages from the service worker (notification click)
     useEffect(() => {
@@ -68,7 +60,8 @@ const AppContent = () => {
                     </div>
                 }>
                     <Routes>
-                        <Route path="/" element={<Landing />} />
+                        <Route path="/" element={<Home />} />
+                        <Route path="/search" element={<Landing />} />
                         <Route path="/about" element={<About />} />
                         <Route path="/market" element={<Home />} />
                         <Route path="/login" element={<Login />} />
