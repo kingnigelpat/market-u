@@ -1,0 +1,190 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─────────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+
+    // ─────────────────────────────────────────────
+    // USERS
+    // ─────────────────────────────────────────────
+
+    match /users/{uid} {
+
+      // Keep profile access available to authenticated users,
+      // matching the existing application behavior.
+      allow read: if isSignedIn();
+
+      // User can create their own profile.
+      // They cannot create themselves as admin.
+      allow create: if isOwner(uid)
+        && request.resource.data.role in ['buyer', 'seller'];
+
+      // Users can update their own profile,
+      // but cannot change their role.
+      // Admins can update any profile.
+      allow update: if isAdmin()
+        || (
+          isOwner(uid)
+          && request.resource.data.role == resource.data.role
+        );
+
+      // Only admins can delete profiles.
+      allow delete: if isAdmin();
+    }
+
+
+    // ─────────────────────────────────────────────
+    // PRODUCTS
+    // ─────────────────────────────────────────────
+
+    match /products/{productId} {
+
+      // Marketplace browsing is public.
+      allow read: if true;
+
+      // Seller must own the product being created.
+      allow create: if isSignedIn()
+        && request.auth.uid == request.resource.data.sellerId;
+
+      // Only owner or admin can update.
+      allow update: if isSignedIn()
+        && (
+          request.auth.uid == resource.data.sellerId
+          || isAdmin()
+        );
+
+      // Only owner or admin can delete.
+      allow delete: if isSignedIn()
+        && (
+          request.auth.uid == resource.data.sellerId
+          || isAdmin()
+        );
+    }
+
+
+    // ─────────────────────────────────────────────
+    // VERIFICATION REQUESTS
+    // ─────────────────────────────────────────────
+
+    match /verification_requests/{reqId} {
+
+      // Authenticated users can submit a verification request.
+      allow create: if isSignedIn();
+
+      // Keep requests private.
+      allow read, update, delete: if isAdmin();
+    }
+
+
+    // ─────────────────────────────────────────────
+    // RATINGS
+    // ─────────────────────────────────────────────
+
+    match /ratings/{ratingId} {
+
+      // Authenticated users can view ratings.
+      allow read: if isSignedIn();
+
+      // Buyer must be authenticated and own the rating.
+      allow create: if isSignedIn()
+        && request.resource.data.buyerId == request.auth.uid;
+
+      // Only the buyer who created the rating or an admin
+      // can modify/delete it.
+      allow update, delete: if isSignedIn()
+        && (
+          resource.data.buyerId == request.auth.uid
+          || isAdmin()
+        );
+    }
+
+
+    // ─────────────────────────────────────────────
+    // SAVED ITEMS
+    // ─────────────────────────────────────────────
+
+    match /savedItems/{docId} {
+
+      // User can read their own saved items.
+      allow read: if isSignedIn()
+        && resource.data.buyerId == request.auth.uid;
+
+      // User can create only their own saved item.
+      allow create: if isSignedIn()
+        && request.resource.data.buyerId == request.auth.uid;
+
+      // User can update/delete only their own saved item.
+      allow update, delete: if isSignedIn()
+        && resource.data.buyerId == request.auth.uid;
+    }
+
+
+    // ─────────────────────────────────────────────
+    // INTERESTS
+    // ─────────────────────────────────────────────
+
+    match /interests/{interestId} {
+
+      // Buyer creates their own interest request.
+      allow create: if isSignedIn()
+        && request.resource.data.buyerId == request.auth.uid;
+
+      // Buyer can read their own interest.
+      // Seller can read interests for their products.
+      allow read: if isSignedIn()
+        && (
+          resource.data.buyerId == request.auth.uid
+          || resource.data.sellerId == request.auth.uid
+          || isAdmin()
+        );
+
+      // Seller can only update the "seen" field.
+      // Buyer/admin can update their own/admin records as needed.
+      allow update: if isSignedIn()
+        && (
+          isAdmin()
+          || (
+            resource.data.sellerId == request.auth.uid
+            && request.resource.data.diff(resource.data)
+              .affectedKeys()
+              .hasOnly(['seen'])
+          )
+          || resource.data.buyerId == request.auth.uid
+        );
+
+      // Buyer or admin can delete an interest.
+      allow delete: if isSignedIn()
+        && (
+          resource.data.buyerId == request.auth.uid
+          || isAdmin()
+        );
+    }
+
+
+    // ─────────────────────────────────────────────
+    // DENY EVERYTHING ELSE
+    // ─────────────────────────────────────────────
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

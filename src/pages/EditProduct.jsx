@@ -7,7 +7,7 @@ import { Save, ArrowLeft } from 'lucide-react';
 
 const EditProduct = () => {
     const { id } = useParams();
-    const { currentUser } = useAuth();
+    const { currentUser, userRole } = useAuth();
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
@@ -82,7 +82,21 @@ const EditProduct = () => {
         setError('');
 
         try {
+            // Re-verify ownership from the database before writing
             const docRef = doc(db, 'products', id);
+            const freshSnap = await getDoc(docRef);
+            if (!freshSnap.exists()) {
+                setError('Product no longer exists.');
+                setSaving(false);
+                return;
+            }
+            const freshData = freshSnap.data();
+            if (freshData.sellerId !== currentUser.uid && userRole !== 'admin') {
+                setError("You don't have permission to edit this product.");
+                setSaving(false);
+                return;
+            }
+
             await updateDoc(docRef, {
                 title: formData.title.trim(),
                 description: formData.description.trim(),

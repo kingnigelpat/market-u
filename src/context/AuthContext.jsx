@@ -30,7 +30,7 @@ export function AuthProvider({ children }) {
             try {
                 // Create & immediately suspend a silent AudioContext to unlock future plays
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                ctx.resume().catch(() => {});
+                ctx.resume().then(() => ctx.close()).catch(() => {});
             } catch (_) {}
             document.removeEventListener('click', prime);
             document.removeEventListener('touchstart', prime);

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import Navbar from './components/Navbar.jsx';
@@ -27,14 +27,20 @@ const AppContent = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const isLanding = location.pathname === '/search';
-    const hasRedirected = useRef(false);
+
 
     // Listen for NAVIGATE messages from the service worker (notification click)
     useEffect(() => {
         if (!('serviceWorker' in navigator)) return;
         const handler = (event) => {
+            // Only accept messages from our own origin
+            if (event.origin && event.origin !== window.location.origin) return;
             if (event.data && event.data.type === 'NAVIGATE' && event.data.url) {
-                navigate(event.data.url);
+                const url = event.data.url;
+                // Only allow internal paths starting with '/'; block absolute URLs and protocol-relative URLs
+                if (typeof url === 'string' && url.startsWith('/') && !url.startsWith('//')) {
+                    navigate(url);
+                }
             }
         };
         navigator.serviceWorker.addEventListener('message', handler);
@@ -69,13 +75,13 @@ const AppContent = () => {
                         <Route path="/product/:id" element={<ProductDetail />} />
 
                         {/* Protected Routes */}
-                        <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
+                        <Route element={<ProtectedRoute allowedRoles={['seller', 'admin']} />}>
                             <Route path="/dashboard" element={<SellerDashboard />} />
                         </Route>
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin']} />}>
                             <Route path="/add-product" element={<AddProduct />} />
                         </Route>
-                        <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
+                        <Route element={<ProtectedRoute allowedRoles={['seller', 'admin']} />}>
                             <Route path="/edit-product/:id" element={<EditProduct />} />
                         </Route>
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin']} />}>

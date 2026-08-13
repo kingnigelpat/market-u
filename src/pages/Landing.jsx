@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import '../styles/landing.css';
 import { useAuth } from '../context/AuthContext';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
@@ -19,12 +19,12 @@ const parseQuery = (text) => {
     if (rawVal.includes('k')) budget = parseFloat(rawVal) * 1000;
     else if (rawVal.includes('m')) budget = parseFloat(rawVal) * 1000000;
     else budget = parseFloat(rawVal);
-    
+
     keyword = lowerText.replace(/(?:under|below|<)\s*(?:ngn|₦)?\s*(\d+(?:k|m)?)/, '').trim();
   } else {
     // catch numbers at the end
     const numMatch = lowerText.match(/(\d+(?:k|m)?)$/);
-    if(numMatch) {
+    if (numMatch) {
       const rawVal = numMatch[1];
       if (rawVal.includes('k')) budget = parseFloat(rawVal) * 1000;
       else if (rawVal.includes('m')) budget = parseFloat(rawVal) * 1000000;
@@ -51,9 +51,9 @@ const Landing = () => {
     if (e.key === 'Enter' && searchInput.trim()) {
       setIsSearching(true);
       setHasSearched(true);
-      
+
       const { keyword, budget } = parseQuery(searchInput);
-      
+
       try {
         const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(100));
         const querySnapshot = await getDocs(q);
@@ -69,20 +69,20 @@ const Landing = () => {
         if (budget) {
           const exact = matchedProducts.filter(p => p.price <= budget);
           const alternatives = matchedProducts.filter(p => p.price > budget);
-          
+
           if (exact.length === 0 && alternatives.length === 0) {
-             const budgetAlts = products.filter(p => p.price <= budget).slice(0, 4);
-             // If there aren't even products in budget, just show latest 4
-             setResults({ exact: [], alternatives: budgetAlts.length > 0 ? budgetAlts : products.slice(0, 4) });
+            const budgetAlts = products.filter(p => p.price <= budget).slice(0, 4);
+            // If there aren't even products in budget, just show latest 4
+            setResults({ exact: [], alternatives: budgetAlts.length > 0 ? budgetAlts : products.slice(0, 4) });
           } else {
-             setResults({ exact, alternatives });
+            setResults({ exact, alternatives });
           }
         } else {
           if (matchedProducts.length === 0) {
-             // Fallback to showing latest items instead of empty state
-             setResults({ exact: [], alternatives: products.slice(0, 4) });
+            // Fallback to showing latest items instead of empty state
+            setResults({ exact: [], alternatives: products.slice(0, 4) });
           } else {
-             setResults({ exact: matchedProducts, alternatives: [] });
+            setResults({ exact: matchedProducts, alternatives: [] });
           }
         }
       } catch (error) {
@@ -96,7 +96,7 @@ const Landing = () => {
   return (
     <div className="landing-wrapper">
       <div className="landing-bg-glow" />
-      
+
       <div className="landing-content">
         {!hasSearched && (
           <div className="landing-header-section animate-fade-in-up">
@@ -108,16 +108,16 @@ const Landing = () => {
         <div className={`circle-container ${hasSearched ? 'expanded' : ''}`}>
           <div className="glimmer-circle" />
           <div className="circle-inner">
-             {hasSearched && <Sparkles size={20} className="text-purple-400 mr-3 shrink-0" />}
-             <input 
-                type="text" 
-                className="smart-input"
-                placeholder={hasSearched ? "Ask anything..." : "Tell me..."}
-                value={searchInput}
-                onChange={e => setSearchInput(e.target.value)}
-                onKeyDown={handleSearchSubmit}
-                autoFocus
-             />
+            {hasSearched && <Sparkles size={20} className="text-purple-400 mr-3 shrink-0" />}
+            <input
+              type="text"
+              className="smart-input"
+              placeholder={hasSearched ? "Ask anything..." : "Tell me..."}
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
+              onKeyDown={handleSearchSubmit}
+              autoFocus
+            />
           </div>
         </div>
 
@@ -142,9 +142,9 @@ const Landing = () => {
               <div className="results-section">
                 <h3><AlertCircle size={20} className="text-yellow-400" /> {results.exact.length === 0 ? "You Might Like" : "Alternatives"}</h3>
                 <p className="text-sm text-gray-400 mb-4">
-                   {results.exact.length === 0 
-                      ? "We couldn't find an exact match, but here are some top picks you might like."
-                      : "These match your keyword but might be outside the budget."}
+                  {results.exact.length === 0
+                    ? "We couldn't find an exact match, but here are some top picks you might like."
+                    : "These match your keyword but might be outside the budget."}
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {results.alternatives.map(product => (
@@ -159,12 +159,12 @@ const Landing = () => {
                 <p className="text-gray-400 mb-6">We couldn't find exactly what you're looking for.</p>
               </div>
             )}
-            
-             <div className="text-center mt-8 pt-8 border-t border-gray-800">
-               <Link to="/market" className="market-link-btn">
-                 Browse Full Market <ArrowRight size={18} />
-               </Link>
-             </div>
+
+            <div className="text-center mt-8 pt-8 border-t border-gray-800">
+              <Link to="/market" className="market-link-btn">
+                Browse Full Market <ArrowRight size={18} />
+              </Link>
+            </div>
           </div>
         )}
 
