@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, deleteDoc, updateDoc, increment, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ArrowLeft, Trash2, Edit, Heart, CheckCircle, Loader, Clock, AlertCircle, Bookmark, BookmarkCheck } from 'lucide-react';
+import { ArrowLeft, Trash2, Edit, Heart, CheckCircle, Loader, AlertCircle, Bookmark, BookmarkCheck } from 'lucide-react';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SellerRating from '../components/SellerRating';
 import { useAuth } from '../context/AuthContext';
@@ -26,9 +26,6 @@ const ProductDetail = () => {
     const [interestLoading, setInterestLoading] = useState(false);
     const [alreadyInterested, setAlreadyInterested] = useState(false);
     const [interestSuccess, setInterestSuccess] = useState(false);
-    const [showFallback, setShowFallback] = useState(false);
-    const [countdown, setCountdown] = useState(null); // null = not started
-    const countdownRef = useRef(null);
 
     // Save for Later state
     const [saved, setSaved] = useState(false);
@@ -106,60 +103,6 @@ const ProductDetail = () => {
         fetchProduct();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
-
-    // On mount: check localStorage to resume any in-progress countdown for this product
-    useEffect(() => {
-        const key = `interest_ts_${id}`;
-        const saved = localStorage.getItem(key);
-        if (saved) {
-            const elapsed = Math.floor((Date.now() - parseInt(saved, 10)) / 1000);
-            const remaining = 45 - elapsed;
-            if (remaining <= 0) {
-                // Already expired — show fallback immediately, clean up
-                localStorage.removeItem(key);
-                setInterestSuccess(true);
-                setAlreadyInterested(true);
-                setCountdown(0);
-                setShowFallback(true);
-            } else {
-                // Resume mid-countdown
-                setInterestSuccess(true);
-                setAlreadyInterested(true);
-                setCountdown(remaining);
-            }
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
-
-    // When interest is first expressed, save timestamp to localStorage
-    useEffect(() => {
-        if (interestSuccess && countdown === null) {
-            const key = `interest_ts_${id}`;
-            // Only write if not already set (avoid overwriting on re-mount)
-            if (!localStorage.getItem(key)) {
-                localStorage.setItem(key, Date.now().toString());
-            }
-            setCountdown(45);
-        }
-        return () => {
-            if (countdownRef.current) clearTimeout(countdownRef.current);
-        };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [interestSuccess]);
-
-    // Tick the countdown every second
-    useEffect(() => {
-        if (countdown === null) return;
-        if (countdown <= 0) {
-            localStorage.removeItem(`interest_ts_${id}`);
-            setShowFallback(true);
-            return;
-        }
-        countdownRef.current = setTimeout(() => {
-            setCountdown(prev => (prev !== null ? prev - 1 : null));
-        }, 1000);
-        return () => clearTimeout(countdownRef.current);
-    }, [countdown, id]);
 
     if (loading) {
         return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}>Loading product details...</div>;
@@ -440,10 +383,30 @@ const ProductDetail = () => {
                                     {product.sellerVerified && <VerifiedBadge size={16} />}
                                     <ReadOnlyRating sellerId={product.sellerId} />
                                 </div>
-                                <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>Verified Campus Seller</span>
+                                <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                                    {product.sellerVerified ? 'Verified Campus Seller' : 'Campus Seller'}
+                                </span>
                                 <SellerRating sellerId={product.sellerId} hideAverage={true} />
                             </div>
                         </div>
+
+                        {!isOwner && !product.sellerVerified && (
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: '0.625rem',
+                                padding: '0.875rem 1rem',
+                                marginBottom: '1.5rem',
+                                backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                                border: '1px solid rgba(245, 158, 11, 0.25)',
+                                borderRadius: 'var(--radius-lg)',
+                            }}>
+                                <AlertCircle size={16} color="#d97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+                                <span style={{ fontSize: '0.875rem', color: 'var(--text)', lineHeight: '1.5' }}>
+                                    This seller is not verified. Please proceed with caution. 🫡
+                                </span>
+                            </div>
+                        )}
 
                         <div style={{ marginBottom: '2rem' }}>
                             <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Description</h3>
@@ -494,107 +457,12 @@ const ProductDetail = () => {
                             </button>
                         )}
 
-                        {/* Success sub-text + countdown + fallback */}
-                        {interestSuccess && (
-                            <div style={{ marginTop: '1rem' }}>
-                                {!showFallback ? (
-                                    <div style={{ textAlign: 'center' }}>
-                                        <p style={{ fontSize: '0.875rem', color: 'var(--success)', fontWeight: '600', margin: '0 0 0.75rem 0' }}>
-                                            The seller has been notified and will contact you soon 😊
-                                        </p>
-                                        {/* Visible countdown ring */}
-                                        {countdown !== null && countdown > 0 && (
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem' }}>
-                                                <div style={{
-                                                    position: 'relative',
-                                                    width: '48px',
-                                                    height: '48px',
-                                                }}>
-                                                    <svg width="48" height="48" style={{ transform: 'rotate(-90deg)' }}>
-                                                        <circle cx="24" cy="24" r="20" fill="none" stroke="var(--border)" strokeWidth="3" />
-                                                        <circle
-                                                            cx="24" cy="24" r="20"
-                                                            fill="none"
-                                                            stroke="var(--primary)"
-                                                            strokeWidth="3"
-                                                            strokeLinecap="round"
-                                                            strokeDasharray={`${2 * Math.PI * 20}`}
-                                                            strokeDashoffset={`${2 * Math.PI * 20 * (1 - countdown / 45)}`}
-                                                            style={{ transition: 'stroke-dashoffset 0.9s linear' }}
-                                                        />
-                                                    </svg>
-                                                    <span style={{
-                                                        position: 'absolute',
-                                                        inset: 0,
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        fontSize: '0.8125rem',
-                                                        fontWeight: '800',
-                                                        color: 'var(--primary)',
-                                                    }}>{countdown}s</span>
-                                                </div>
-                                                <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', maxWidth: '160px', textAlign: 'left', lineHeight: '1.4' }}>
-                                                    Waiting for seller response…
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div style={{
-                                        backgroundColor: 'rgba(245, 158, 11, 0.07)',
-                                        border: '1px solid rgba(245, 158, 11, 0.25)',
-                                        borderRadius: '14px',
-                                        padding: '1.125rem 1.25rem',
-                                        textAlign: 'left',
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.625rem' }}>
-                                            <Clock size={16} color="#d97706" />
-                                            <span style={{ fontWeight: '700', fontSize: '0.9375rem', color: '#d97706' }}>Seller seems busy right now</span>
-                                        </div>
-                                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '0 0 1rem 0', lineHeight: '1.55' }}>
-                                            If this is urgent, contact our support team directly and they will update the seller manually.
-                                        </p>
-                                        <div style={{
-                                            backgroundColor: 'rgba(245, 158, 11, 0.08)',
-                                            borderRadius: '10px',
-                                            padding: '0.75rem 1rem',
-                                            marginBottom: '1rem',
-                                            fontSize: '0.8125rem',
-                                            color: 'var(--text-secondary)',
-                                            lineHeight: '1.6',
-                                        }}>
-                                            <div><span style={{ color: 'var(--text-secondary)' }}>Seller:</span> <strong style={{ color: 'var(--text)' }}>{product.sellerName}</strong></div>
-                                            <div><span style={{ color: 'var(--text-secondary)' }}>Product:</span> <strong style={{ color: 'var(--text)' }}>{product.title}</strong></div>
-                                        </div>
-                                        <a
-                                            href={`https://wa.me/2347073544811?text=${encodeURIComponent(`Hi Support, I'm interested in a product but the seller hasn't responded yet.\n\nSeller: ${product.sellerName}\nProduct: ${product.title}\n\nPlease help me reach them. Thank you!`)}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            style={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: '0.5rem',
-                                                padding: '0.625rem 1.125rem',
-                                                backgroundColor: '#25D366',
-                                                color: 'white',
-                                                borderRadius: '99px',
-                                                fontWeight: '700',
-                                                fontSize: '0.875rem',
-                                                textDecoration: 'none',
-                                                boxShadow: '0 4px 12px -2px rgba(37, 211, 102, 0.35)',
-                                                transition: 'all 0.2s ease',
-                                                width: '100%',
-                                                justifyContent: 'center',
-                                            }}
-                                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1DA851'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#25D366'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                                        >
-                                            <AlertCircle size={15} />
-                                            Contact Support on WhatsApp
-                                        </a>
-                                    </div>
-                                )}
+                        {/* Success sub-text */}
+                        {isDone && !isOwner && (
+                            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                                <p style={{ fontSize: '0.875rem', color: 'var(--success)', fontWeight: '700', margin: '0' }}>
+                                    The seller has been notified and will contact you on WhatsApp soon 😊
+                                </p>
                             </div>
                         )}
 

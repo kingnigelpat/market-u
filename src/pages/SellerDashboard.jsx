@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Link } from 'react-router-dom';
-import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap, Star } from 'lucide-react';
+import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap, Star, MessageCircle } from 'lucide-react';
 
 const SellerDashboard = () => {
     const { currentUser, userRole } = useAuth();
@@ -17,11 +17,6 @@ const SellerDashboard = () => {
     const [sellType, setSellType] = useState(null);
     useEffect(() => {
         const fetchDashboardData = async () => {
-            if (userRole === 'buyer') {
-                setLoading(false);
-                return;
-            }
-
             setLoading(true);
             try {
                 // Fetch seller details
@@ -92,15 +87,20 @@ const SellerDashboard = () => {
         }
     }, [currentUser, userRole]);
 
-    const handleBecomeSeller = async () => {
+    const handleRequestSellerAccess = async () => {
         setIsUpgrading(true);
         try {
             const userRef = doc(db, 'users', currentUser.uid);
-            await updateDoc(userRef, { role: 'seller' });
-            window.location.reload(); // Hard refresh to update auth context
+            await updateDoc(userRef, { sellerRequestStatus: 'pending' });
+            setSellerData({ ...sellerData, sellerRequestStatus: 'pending' });
+            const supportPhone = '2347073544811';
+            const message = encodeURIComponent(
+                `Hi, I'm ${currentUser.displayName || 'a new Market-U user'} and I'd like to become a seller on Market-U. Please review and approve my seller access. (User ID: ${currentUser.uid})`
+            );
+            window.open(`https://wa.me/${supportPhone}?text=${message}`, '_blank');
         } catch (error) {
-            console.error("Error upgrading to seller:", error);
-            alert("Failed to upgrade. Please try again.");
+            console.error("Error requesting seller access:", error);
+            alert("Could not send your request. Please try again or contact admin on WhatsApp.");
         } finally {
             setIsUpgrading(false);
         }
@@ -157,27 +157,52 @@ const SellerDashboard = () => {
     }
 
     if (userRole === 'buyer') {
+        const sellerRequestPending = sellerData?.sellerRequestStatus === 'pending';
         return (
             <div className="container" style={{ paddingTop: '3rem', maxWidth: '600px' }}>
                 <div className="card animate-fade-in-up" style={{ padding: '4rem 2.5rem', textAlign: 'center' }}>
-                    <div style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem auto' }}>
-                        <Store size={40} color="var(--primary)" />
+                    <div style={{ backgroundColor: sellerRequestPending ? 'rgba(16, 185, 129, 0.1)' : 'rgba(37, 99, 235, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem auto' }}>
+                        {sellerRequestPending ? <UserCheck size={40} color="var(--success)" /> : <Store size={40} color="var(--primary)" />}
                     </div>
-                    <h1 style={{ fontSize: '2.25rem', fontWeight: '900', marginBottom: '1rem', letterSpacing: '-0.03em' }}>Ready to start selling?</h1>
-                    <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '1.125rem', lineHeight: '1.6' }}>
-                        Join the Market-U seller community and reach hundreds of students on campus today.
-                    </p>
-                    <button 
-                        onClick={handleBecomeSeller} 
-                        disabled={isUpgrading}
-                        className="btn btn-primary" 
-                        style={{ width: '100%', padding: '1rem', borderRadius: 'var(--radius-lg)', fontSize: '1.125rem' }}
-                    >
-                        {isUpgrading ? 'Setting up your shop...' : 'Become a Seller Today'}
-                    </button>
-                    <p style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                        By continuing, you agree to our seller terms and conditions.
-                    </p>
+
+                    {sellerRequestPending ? (
+                        <>
+                            <h1 style={{ fontSize: '2.25rem', fontWeight: '900', marginBottom: '1rem', letterSpacing: '-0.03em' }}>Request Sent! 🎉</h1>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '1.125rem', lineHeight: '1.6' }}>
+                                Your seller access request has been submitted. Our admin will review it and approve your account so you can start selling.
+                            </p>
+                            <a
+                                href={`https://wa.me/2347073544811?text=${encodeURIComponent(`Hi, I requested seller access on Market-U (User ID: ${currentUser.uid}). Please confirm my approval status.`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-primary"
+                                style={{ width: '100%', padding: '1rem', borderRadius: 'var(--radius-lg)', fontSize: '1.125rem' }}
+                            >
+                                <MessageCircle size={18} /> Follow Up on WhatsApp
+                            </a>
+                            <p style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                You&apos;ll be able to post products once your seller access is approved.
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <h1 style={{ fontSize: '2.25rem', fontWeight: '900', marginBottom: '1rem', letterSpacing: '-0.03em' }}>Ready to start selling?</h1>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '1.125rem', lineHeight: '1.6' }}>
+                                Join the Market-U seller community and reach hundreds of students on campus today.
+                            </p>
+                            <button
+                                onClick={handleRequestSellerAccess}
+                                disabled={isUpgrading}
+                                className="btn btn-primary"
+                                style={{ width: '100%', padding: '1rem', borderRadius: 'var(--radius-lg)', fontSize: '1.125rem' }}
+                            >
+                                {isUpgrading ? 'Sending request...' : 'Request Seller Access'}
+                            </button>
+                            <p style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                Your request will be reviewed by the admin before you can start selling.
+                            </p>
+                        </>
+                    )}
                 </div>
             </div>
         );

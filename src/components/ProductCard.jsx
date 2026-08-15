@@ -64,6 +64,11 @@ const ProductCard = ({ product, index = 0 }) => {
                         {product.sellerName || 'Seller'}
                     </span>
                     {product.sellerVerified && <VerifiedBadge size={14} />}
+                    {!product.sellerVerified && (
+                        <span style={{ color: 'var(--text-tertiary)', fontSize: '0.6875rem', fontWeight: '600' }}>
+                            ⚠️ Unverified
+                        </span>
+                    )}
                     <ReadOnlyRating sellerId={product.sellerId} />
                 </div>
 

@@ -74,10 +74,7 @@ const Home = () => {
         const matchesVerified = !verifiedOnly || Boolean(product.sellerVerified) === true;
         return matchesSearch && matchesCategory && matchesVerified;
     }).sort((a, b) => {
-        if (a.sellerVerified === b.sellerVerified) {
-            return (b.views || 0) - (a.views || 0);
-        }
-        return a.sellerVerified ? -1 : 1;
+        return (b.views || 0) - (a.views || 0);
     });
 
     const firstName = (currentUser?.displayName || userName)?.split(' ')[0] || 'there';
@@ -165,7 +162,7 @@ const Home = () => {
                         </div>
                     )}
 
-                    {isAuthenticated && !isSeller && (
+                    {isAuthenticated && (
                         <div className="market-search-wrap">
                             <Search size={20} className="market-search-icon" />
                             <input
