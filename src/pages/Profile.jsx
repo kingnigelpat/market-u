@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { requestNotificationPermission } from '../utils/notifications';
 import { getToken } from 'firebase/messaging';
+import PhoneNumberField from '../components/PhoneNumberField';
 
 // ── Tiny reusable alert ────────────────────────────────────────────────────────
 function Alert({ type, message }) {
@@ -330,6 +331,9 @@ const Profile = () => {
         e.preventDefault();
         const cleaned = phone.trim();
         if (!cleaned) return setPhoneStatus({ type: 'error', msg: 'Phone cannot be empty.' });
+        if (!cleaned.startsWith('+') || cleaned.replace(/\D/g, '').length < 8) {
+            return setPhoneStatus({ type: 'error', msg: 'Please enter a valid phone number with your country code.' });
+        }
         if (cleaned === userPhone) return setPhoneStatus({ type: 'error', msg: 'This is already your phone number.' });
         setSavingPhone(true);
         setPhoneStatus({ type: '', msg: '' });
@@ -492,13 +496,12 @@ const Profile = () => {
                         <label htmlFor="profile-phone" style={{ display: 'block', fontWeight: '600', fontSize: '0.8125rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
                             Phone Number
                         </label>
-                        <input
+                        <PhoneNumberField
                             id="profile-phone"
-                            type="tel"
                             value={phone}
-                            onChange={e => setPhone(e.target.value)}
-                            placeholder="e.g. 08012345678"
-                            style={inputStyle}
+                            onChange={setPhone}
+                            placeholder="Your number without the country code"
+                            inputStyle={inputStyle}
                             onFocus={inputFocus}
                             onBlur={inputBlur}
                         />

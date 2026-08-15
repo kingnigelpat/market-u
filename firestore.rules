@@ -183,8 +183,31 @@ service cloud.firestore {
     // DENY EVERYTHING ELSE
     // ─────────────────────────────────────────────
 
+match /waitlist/{waitlistId} {
+
+      // Authenticated users can create waitlist submissions.
+      // Unauthenticated users can view but not create.
+      allow create: if request.auth != null;
+
+      // Authenticated users can read their own waitlist submissions.
+      // Admins can read all waitlist submissions.
+      allow read: if isSignedIn()
+        && (request.auth.uid == resource.data.buyerId
+          || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+
+      // Only admins can update waitlist submissions.
+      allow update: if isAdmin();
+
+      // Only admins can delete waitlist submissions.
+      allow delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────
+    // DENY EVERYTHING ELSE
+    // ─────────────────────────────────────────────
+
     match /{document=**} {
       allow read, write: if false;
     }
-  }
+}
 }

@@ -4,6 +4,7 @@ import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { UserPlus } from 'lucide-react';
+import PhoneNumberField from '../components/PhoneNumberField';
 
 const Register = () => {
     const location = useLocation();
@@ -41,8 +42,8 @@ const Register = () => {
             setLoading(false);
             return;
         }
-        if (trimmedPhone.replace(/\D/g, '').length < 10) {
-            setError('Please enter a valid phone number (at least 10 digits).');
+        if (!trimmedPhone.startsWith('+') || trimmedPhone.replace(/\D/g, '').length < 8) {
+            setError('Please enter a valid phone number with your country code.');
             setLoading(false);
             return;
         }
@@ -139,14 +140,11 @@ const Register = () => {
 
                     <div className="form-group">
                         <label htmlFor="phone">WhatsApp Number</label>
-                        <input 
-                            type="tel" 
-                            id="phone" 
-                            name="phone" 
-                            required 
-                            placeholder="e.g., +234... (Active WhatsApp number required)" 
-                            value={formData.phone} 
-                            onChange={handleChange} 
+                        <PhoneNumberField
+                            id="phone"
+                            value={formData.phone}
+                            onChange={(v) => setFormData({ ...formData, phone: v })}
+                            placeholder="e.g. 801 234 5678 (number after the country code)"
                         />
                     </div>
 

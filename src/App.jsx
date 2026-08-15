@@ -12,6 +12,7 @@ const About = lazy(() => import('./pages/About.jsx'));
 const Home = lazy(() => import('./pages/Home.jsx'));
 const Login = lazy(() => import('./pages/Login.jsx'));
 const Register = lazy(() => import('./pages/Register.jsx'));
+const Waitlist = lazy(() => import('./pages/Waitlist.jsx'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail.jsx'));
 const SellerDashboard = lazy(() => import('./pages/SellerDashboard.jsx'));
 const AddProduct = lazy(() => import('./pages/AddProduct.jsx'));
@@ -72,6 +73,7 @@ const AppContent = () => {
                         <Route path="/market" element={<Home />} />
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
+                        <Route path="/waitlist" element={<Waitlist />} />
                         <Route path="/product/:id" element={<ProductDetail />} />
 
                         {/* Protected Routes */}

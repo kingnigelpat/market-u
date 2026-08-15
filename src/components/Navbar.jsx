@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Sparkles } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Sparkles, UserCheck } from 'lucide-react';
 
 const Navbar = () => {
     const { isAuthenticated, isSeller, userRole, currentUser } = useAuth();
@@ -141,12 +141,18 @@ const Navbar = () => {
                                             </span>
                                         </button>
 
-                                        {!isSeller && (
+{!isSeller && (
+                                        <>
+                                            <div className="nav-dropdown-divider" />
+                                            <Link to="/waitlist" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                <UserCheck size={16} /> Join the Waitlist
+                                            </Link>
                                             <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="nav-dropdown-item nav-dropdown-item--highlight">
                                                 <ShieldCheck size={16} /> Become a Seller
                                                 <span className="nav-free-badge">FREE</span>
                                             </Link>
-                                        )}
+                                        </>
+                                    )}
 
                                         {isSeller && (
                                             <>

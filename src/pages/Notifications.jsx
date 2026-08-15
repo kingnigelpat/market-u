@@ -23,7 +23,7 @@ function timeAgo(timestamp) {
 function buildWhatsAppUrl(buyerPhone, buyerName, productName) {
     let phone = (buyerPhone || '').replace(/\D/g, '');
     if (phone.startsWith('0')) phone = '234' + phone.substring(1);
-    else if (phone && !phone.startsWith('234')) phone = '234' + phone;
+    else if (phone && !phone.startsWith('234') && phone.length < 11) phone = '234' + phone;
 
     const message = encodeURIComponent(
         `Hi ${buyerName}, I saw you're interested in my ${productName} on Market-U. Are you still interested? 😊`
