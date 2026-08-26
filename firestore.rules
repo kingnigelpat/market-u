@@ -186,19 +186,16 @@ service cloud.firestore {
 match /waitlist/{waitlistId} {
 
       // Authenticated users can create waitlist submissions.
-      // Unauthenticated users can view but not create.
       allow create: if request.auth != null;
 
-      // Authenticated users can read their own waitlist submissions.
+      // The user who submitted the entry can read their own record.
       // Admins can read all waitlist submissions.
       allow read: if isSignedIn()
-        && (request.auth.uid == resource.data.buyerId
-          || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+        && (request.auth.uid == resource.data.userId
+          || isAdmin());
 
-      // Only admins can update waitlist submissions.
+      // Only admins can update or delete waitlist submissions.
       allow update: if isAdmin();
-
-      // Only admins can delete waitlist submissions.
       allow delete: if isAdmin();
     }
 
