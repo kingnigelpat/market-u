@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import Navbar from './components/Navbar.jsx';
+import BottomNavigation from './components/BottomNavigation.jsx';
 import Footer from './components/Footer.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
@@ -60,6 +61,7 @@ const AppContent = () => {
     return (
         <div className="app-container">
             <Navbar />
+            <BottomNavigation />
             <main className={`main-content ${!isLanding ? 'main-content--with-padding' : ''}`}>
                 <Suspense fallback={
                     <div className="loading-overlay">

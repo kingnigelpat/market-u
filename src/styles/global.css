@@ -216,6 +216,12 @@ select:focus {
   padding: 2rem 0;
 }
 
+@media (max-width: 768px) {
+  .main-content--with-padding {
+    padding-bottom: 5.5rem;
+  }
+}
+
 .mobile-card-padding {
   padding: 1.5rem;
 }

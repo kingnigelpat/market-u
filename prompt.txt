@@ -1,0 +1,113 @@
+I want you to redesign the Market-U navigation.
+
+IMPORTANT:
+Do not blindly move the existing navbar from the top to the bottom.
+Think through the UX first, inspect the existing codebase, and then create the best mobile-first bottom navigation experience for a student marketplace.
+
+CURRENT GOAL:
+Replace the current top navigation bar with a modern mobile app-style bottom navigation bar.
+
+Before making changes:
+1. Inspect the current Navbar component.
+2. Inspect App.jsx and the current routing structure.
+3. Identify all existing navigation destinations.
+4. Check how authentication state and user roles are currently handled.
+5. Check the existing Market-U design system, icons, spacing, colors and responsive behavior.
+
+DESIGN DIRECTION:
+
+Create a fixed bottom navigation bar similar to a polished native mobile app.
+
+It should:
+- Stay fixed at the bottom of the screen.
+- Respect mobile safe areas.
+- Have a clean, modern appearance.
+- Work properly on Android and iPhone screen sizes.
+- Have clear active/inactive states.
+- Use the existing Market-U branding.
+- Use the existing icon library already installed in the project.
+- Avoid unnecessary text or clutter.
+- Feel like a real marketplace app, not a website navbar.
+
+Think carefully about the best navigation structure.
+
+Possible destinations include:
+- Home
+- Search
+- Notifications
+- Profile
+
+There should also be a prominent way to create/list a product for sellers.
+
+IMPORTANT:
+Do not automatically use these exact items if your inspection shows a better structure.
+Think about the actual existing Market-U features and determine the best navigation hierarchy.
+
+SELLER EXPERIENCE:
+If the logged-in user is a seller, make sure the navigation makes it easy to access:
+- Seller dashboard
+- Add/list product
+- Existing seller functionality
+
+BUYER EXPERIENCE:
+For buyers, make it easy to:
+- Browse products
+- Search
+- View notifications/interests
+- Access their profile
+
+Do not remove existing functionality.
+
+DESKTOP:
+Think carefully about responsive behavior.
+
+On mobile:
+→ Use the bottom app navigation.
+
+On larger screens:
+→ Use whichever navigation structure gives the best UX rather than forcing a huge bottom bar across desktop.
+
+IMPORTANT UX DETAILS:
+
+- Add enough bottom padding to pages so content isn't hidden behind the fixed navbar.
+- Make sure modals, dropdowns, product cards, forms and buttons aren't blocked by the navbar.
+- Ensure navigation works with React Router.
+- Preserve browser back/forward behavior.
+- Preserve existing routes.
+- Don't introduce duplicate navigation systems.
+- Don't break authentication.
+- Don't break seller/buyer functionality.
+- Don't modify unrelated components.
+
+VISUAL DIRECTION:
+
+Think:
+"modern student marketplace app"
+
+Not:
+"website navigation moved to the bottom."
+
+Use subtle elevation/blur if appropriate, rounded styling where it fits the existing design, strong active-state feedback, and excellent spacing.
+
+Also consider whether the "Add Product" action should be a visually emphasized central action for sellers, similar to the primary action in modern marketplace apps.
+
+Before implementation, briefly explain:
+1. What the current navigation does.
+2. What navigation structure you recommend.
+3. Why you recommend it.
+
+Then implement it.
+
+After implementation:
+- Run the project.
+- Check mobile responsiveness.
+- Check every navigation destination.
+- Check authenticated and unauthenticated states.
+- Check buyer and seller experiences.
+- Make sure there are no console errors.
+
+DO NOT hallucinate.
+DO NOT invent routes.
+DO NOT invent components.
+DO NOT rewrite unrelated code.
+Inspect the existing project and work with what is already there.

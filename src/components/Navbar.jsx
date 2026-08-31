@@ -495,6 +495,12 @@ const Navbar = () => {
                     40% { transform: rotate(-6deg); }
                     50% { transform: rotate(0deg); }
                 }
+
+                @media (max-width: 768px) {
+                    .app-navbar {
+                        display: none;
+                    }
+                }
             `}</style>
         </nav>
     );

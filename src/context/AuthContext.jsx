@@ -3,6 +3,7 @@ import { auth, db, messaging } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { requestNotificationPermission, listenForForegroundMessages } from '../utils/notifications';
+import { SUPPORTED_SCHOOL } from '../data/institutions';
 
 const AuthContext = createContext();
 
@@ -16,6 +17,7 @@ export function AuthProvider({ children }) {
     const [userRole, setUserRole] = useState(null); // 'buyer', 'seller', 'admin'
     const [userName, setUserName] = useState('');
     const [userPhone, setUserPhone] = useState('');
+    const [userSchoolName, setUserSchoolName] = useState('');
     const [joinedGroupChat, setJoinedGroupChat] = useState(false);
     const [loading, setLoading] = useState(true);
     const notifRequestedRef = useRef(false); // prevent multiple permission prompts per session
@@ -56,6 +58,9 @@ export function AuthProvider({ children }) {
                         setUserRole(role);
                         setUserName(data.name || '');
                         setUserPhone(data.phone || '');
+                        // schoolName — existing WDU users may not have this field yet;
+                        // treat absence as Western Delta University (the only launched school)
+                        setUserSchoolName(data.schoolName || SUPPORTED_SCHOOL);
                         setJoinedGroupChat(!!data.joinedGroupChat);
 
                         // Request FCM notification permission for sellers (once per session)
@@ -73,18 +78,21 @@ export function AuthProvider({ children }) {
                         setUserRole('buyer');
                         setUserName('');
                         setUserPhone('');
+                        setUserSchoolName('');
                     }
                 } catch (error) {
                     console.error("Error fetching user data:", error);
                     setUserRole('buyer');
                     setUserName('');
                     setUserPhone('');
+                    setUserSchoolName('');
                 }
             } else {
                 setCurrentUser(null);
                 setUserRole(null);
                 setUserName('');
                 setUserPhone('');
+                setUserSchoolName('');
                 setJoinedGroupChat(false);
                 notifRequestedRef.current = false;
             }
@@ -102,6 +110,10 @@ export function AuthProvider({ children }) {
         userRole,
         userName,
         userPhone,
+        userSchoolName,
+        // true only when the user's school is the supported one (WDU)
+        // also true for unauthenticated visitors (they can browse freely)
+        isSchoolSupported: !userSchoolName || userSchoolName === SUPPORTED_SCHOOL,
         joinedGroupChat,
         setJoinedGroupChat,
         isAuthenticated: !!currentUser,
