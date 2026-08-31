@@ -90,7 +90,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // ── Offline Caching (PWA Caches) ──────────────────────────────────────────────
-const CACHE_NAME = 'market-u-v4';
+const CACHE_NAME = 'market-u-v5';
 const ASSETS_TO_CACHE = ['/', '/index.html', '/icon.png', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -114,16 +114,18 @@ self.addEventListener('fetch', (event) => {
   // Only cache GET requests
   if (event.request.method !== 'GET') return;
   
-  // Navigation requests (HTML): cache-first, update in background
+  // Navigation requests (HTML): network-first, fallback to cache for offline support
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      caches.match(event.request).then((cached) => {
-        const fetchAndUpdate = fetch(event.request).then((res) => {
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, res.clone()));
+      fetch(event.request)
+        .then((res) => {
+          if (res.status === 200) {
+            const resClone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
+          }
           return res;
-        }).catch(() => cached);
-        return cached || fetchAndUpdate;
-      })
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/index.html')))
     );
     return;
   }
@@ -145,6 +147,7 @@ self.addEventListener('fetch', (event) => {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
+    base: '/',
     plugins: [react(), firebaseSwPlugin()],
   }
 })

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { auth, db, messaging } from '../firebase';
+import { auth, db, messagingReady } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { requestNotificationPermission, listenForForegroundMessages } from '../utils/notifications';
@@ -67,11 +67,13 @@ export function AuthProvider({ children }) {
                         if ((role === 'seller' || role === 'admin') && !notifRequestedRef.current) {
                             notifRequestedRef.current = true;
                             // Small delay so the UI settles before the browser prompt appears
-                            setTimeout(() => {
-                                requestNotificationPermission(user.uid, messaging);
+                            setTimeout(async () => {
+                                const msg = await messagingReady;
+                                if (!msg) return;
+                                requestNotificationPermission(user.uid, msg);
                                 // Set up foreground push listener (plays chime + shows notification)
                                 if (unlistenForegroundRef.current) unlistenForegroundRef.current();
-                                unlistenForegroundRef.current = listenForForegroundMessages(messaging, null);
+                                unlistenForegroundRef.current = listenForForegroundMessages(msg, null);
                             }, 2000);
                         }
                     } else {

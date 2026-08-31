@@ -39,7 +39,7 @@ try {
 
 // FCM Messaging — gracefully skip in unsupported environments (e.g. Safari without SW)
 let messaging = null;
-(async () => {
+const messagingReady = (async () => {
     try {
         const supported = await isSupported();
         if (supported) {
@@ -48,7 +48,8 @@ let messaging = null;
     } catch (e) {
         console.warn("Firebase Messaging not supported in this environment:", e);
     }
+    return messaging;
 })();
 
-export { analytics, messaging };
+export { analytics, messaging, messagingReady };
 export default app;
