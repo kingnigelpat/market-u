@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot, writeBatch, doc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, writeBatch, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Bell, MessageCircle, Clock, ShoppingBag, ArrowLeft, Heart, Eye, CheckCircle } from 'lucide-react';
+import { Bell, MessageCircle, Clock, ShoppingBag, ArrowLeft, Heart, Eye, CheckCircle, XCircle } from 'lucide-react';
 
 // Format relative time
 function timeAgo(timestamp) {
@@ -224,6 +224,20 @@ const SellerNotifications = ({ currentUser }) => {
 const BuyerActivity = ({ currentUser }) => {
     const [interests, setInterests] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [cancellingId, setCancellingId] = useState(null);
+
+    const handleCancelInterest = async (e, interestId) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (cancellingId) return;
+        setCancellingId(interestId);
+        try {
+            await deleteDoc(doc(db, 'interests', interestId));
+        } catch (err) {
+            console.error('Error cancelling interest:', err);
+            setCancellingId(null);
+        }
+    };
 
     useEffect(() => {
         const q = query(
@@ -301,40 +315,46 @@ const BuyerActivity = ({ currentUser }) => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
             {interests.map((item, idx) => (
-                <Link
+                <div
                     key={item.id}
-                    to={item.productId ? `/product/${item.productId}` : '#'}
                     className="animate-fade-in-up"
                     style={{
                         animationDelay: `${idx * 0.04}s`,
-                        backgroundColor: 'var(--bg)',
-                        border: '1px solid var(--border)',
+                        backgroundColor: cancellingId === item.id ? 'rgba(239, 68, 68, 0.04)' : 'var(--bg)',
+                        border: `1px solid ${cancellingId === item.id ? 'rgba(239, 68, 68, 0.2)' : 'var(--border)'}`,
                         borderRadius: 'var(--radius-xl)',
                         padding: '1.25rem',
                         transition: 'all 0.3s ease',
-                        textDecoration: 'none',
-                        color: 'inherit',
-                        display: 'block',
+                        opacity: cancellingId === item.id ? 0.6 : 1,
                     }}
                 >
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.875rem' }}>
                         {/* Icon */}
-                        <div style={{
-                            width: '44px', height: '44px',
-                            borderRadius: '50%',
-                            backgroundColor: item.seen ? 'rgba(34, 197, 94, 0.1)' : 'rgba(37, 99, 235, 0.12)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: item.seen ? '#22c55e' : 'var(--primary)',
-                            flexShrink: 0,
-                        }}>
+                        <Link
+                            to={item.productId ? `/product/${item.productId}` : '#'}
+                            style={{
+                                width: '44px', height: '44px',
+                                borderRadius: '50%',
+                                backgroundColor: item.seen ? 'rgba(34, 197, 94, 0.1)' : 'rgba(37, 99, 235, 0.12)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: item.seen ? '#22c55e' : 'var(--primary)',
+                                flexShrink: 0,
+                                textDecoration: 'none',
+                            }}
+                        >
                             {item.seen ? <Eye size={20} /> : <Heart size={20} />}
-                        </div>
+                        </Link>
 
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            {/* Product name */}
-                            <p style={{ margin: '0 0 0.35rem', fontWeight: '700', fontSize: '0.9375rem', color: 'var(--text)' }}>
-                                {item.productName || 'Product'}
-                            </p>
+                            {/* Product name — clickable */}
+                            <Link
+                                to={item.productId ? `/product/${item.productId}` : '#'}
+                                style={{ textDecoration: 'none', color: 'inherit' }}
+                            >
+                                <p style={{ margin: '0 0 0.35rem', fontWeight: '700', fontSize: '0.9375rem', color: 'var(--text)' }}>
+                                    {item.productName || 'Product'}
+                                </p>
+                            </Link>
 
                             {/* Status */}
                             <div style={{
@@ -360,16 +380,44 @@ const BuyerActivity = ({ currentUser }) => {
                                 </p>
                             )}
 
-                            {/* Time */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                <Clock size={12} style={{ color: 'var(--text-secondary)' }} />
-                                <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                                    {timeAgo(item.createdAt)}
-                                </span>
+                            {/* Time + Cancel */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.25rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                    <Clock size={12} style={{ color: 'var(--text-secondary)' }} />
+                                    <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                                        {timeAgo(item.createdAt)}
+                                    </span>
+                                </div>
+
+                                <button
+                                    onClick={(e) => handleCancelInterest(e, item.id)}
+                                    disabled={!!cancellingId}
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.35rem',
+                                        padding: '0.35rem 0.75rem',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: '99px',
+                                        background: 'none',
+                                        color: 'var(--danger, #ef4444)',
+                                        fontSize: '0.75rem',
+                                        fontWeight: '700',
+                                        cursor: cancellingId ? 'not-allowed' : 'pointer',
+                                        transition: 'all 0.2s',
+                                        fontFamily: 'inherit',
+                                        opacity: cancellingId && cancellingId !== item.id ? 0.5 : 1,
+                                    }}
+                                    onMouseEnter={e => { if (!cancellingId) { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.06)'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)'; } }}
+                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+                                >
+                                    <XCircle size={13} />
+                                    {cancellingId === item.id ? 'Cancelling...' : 'Cancel Interest'}
+                                </button>
                             </div>
                         </div>
                     </div>
-                </Link>
+                </div>
             ))}
         </div>
     );
