@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Sparkles, UserCheck } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Sparkles, UserCheck, Search } from 'lucide-react';
 
 const Navbar = () => {
     const { isAuthenticated, isSeller, userRole, currentUser } = useAuth();
@@ -77,6 +77,7 @@ const Navbar = () => {
                 </Link>
 
                 <div className="app-navbar-actions">
+                    {/* ── Seller quick links (desktop) ── */}
                     {isAuthenticated && isSeller && (
                         <div className="hide-on-mobile app-navbar-seller-links">
                             <Link to="/add-product" className="nav-post-btn">
@@ -91,6 +92,19 @@ const Navbar = () => {
                         </div>
                     )}
 
+                    {/* ── Buyer quick links (desktop) ── */}
+                    {isAuthenticated && !isSeller && (
+                        <div className="hide-on-mobile app-navbar-buyer-links">
+                            <Link to="/market" className="nav-link">
+                                <Compass size={16} /> Browse
+                            </Link>
+                            <Link to="/search" className="nav-link nav-link--muted">
+                                <Search size={16} /> Search
+                            </Link>
+                        </div>
+                    )}
+
+                    {/* ── Unauthenticated ── */}
                     {!isAuthenticated ? (
                         <div className="app-navbar-auth">
                             <Link to="/login" className="nav-login-link">Log in</Link>
@@ -98,6 +112,7 @@ const Navbar = () => {
                         </div>
                     ) : (
                         <div className="app-navbar-user">
+                            {/* Seller: bell icon */}
                             {isSeller && (
                                 <Link to="/notifications" className={`nav-icon-btn ${unseenCount > 0 ? 'nav-icon-btn--active' : ''}`} title="Notifications">
                                     <Bell size={18} className={unseenCount > 0 ? 'bell-ring' : ''} />
@@ -105,13 +120,15 @@ const Navbar = () => {
                                 </Link>
                             )}
 
-                            {isAuthenticated && !isSeller && (
+                            {/* Buyer: saved icon */}
+                            {!isSeller && (
                                 <Link to="/saved" className={`nav-icon-btn ${savedCount > 0 ? 'nav-icon-btn--active' : ''}`} title="Saved Items">
                                     <Bookmark size={18} />
                                     {savedCount > 0 && <span className="nav-badge">{savedCount > 99 ? '99+' : savedCount}</span>}
                                 </Link>
                             )}
 
+                            {/* ── User dropdown ── */}
                             <div className="nav-menu-wrap" ref={menuRef}>
                                 <button onClick={() => setMenuOpen(prev => !prev)} className={`nav-menu-trigger ${menuOpen ? 'nav-menu-trigger--open' : ''}`}>
                                     <div className={`nav-avatar ${isSeller ? 'nav-avatar--seller' : ''}`}>
@@ -141,19 +158,32 @@ const Navbar = () => {
                                             </span>
                                         </button>
 
-{!isSeller && (
-                                        <>
-                                            <div className="nav-dropdown-divider" />
-                                            <Link to="/waitlist" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
-                                                <UserCheck size={16} /> Join the Waitlist
-                                            </Link>
-                                            <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="nav-dropdown-item nav-dropdown-item--highlight">
-                                                <ShieldCheck size={16} /> Become a Seller
-                                                <span className="nav-free-badge">FREE</span>
-                                            </Link>
-                                        </>
-                                    )}
+                                        {/* ── Buyer dropdown items ── */}
+                                        {!isSeller && (
+                                            <>
+                                                <div className="nav-dropdown-divider" />
+                                                <Link to="/market" className="mobile-only nav-dropdown-item" onClick={() => setMenuOpen(false)}>
+                                                    <Compass size={16} /> Browse Market
+                                                </Link>
+                                                <Link to="/search" className="mobile-only nav-dropdown-item" onClick={() => setMenuOpen(false)}>
+                                                    <Search size={16} /> Search Products
+                                                </Link>
+                                                <Link to="/saved" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <Bookmark size={16} /> Saved Items
+                                                    {savedCount > 0 && <span className="nav-badge nav-badge--inline">{savedCount > 99 ? '99+' : savedCount}</span>}
+                                                </Link>
+                                                <div className="nav-dropdown-divider" />
+                                                <Link to="/waitlist" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <UserCheck size={16} /> Join the Waitlist
+                                                </Link>
+                                                <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="nav-dropdown-item nav-dropdown-item--highlight">
+                                                    <ShieldCheck size={16} /> Become a Seller
+                                                    <span className="nav-free-badge">FREE</span>
+                                                </Link>
+                                            </>
+                                        )}
 
+                                        {/* ── Seller dropdown items ── */}
                                         {isSeller && (
                                             <>
                                                 <Link to="/notifications" onClick={() => setMenuOpen(false)} className={`nav-dropdown-item ${unseenCount > 0 ? 'nav-dropdown-item--highlight' : ''}`}>
@@ -174,10 +204,6 @@ const Navbar = () => {
 
                                         <Link to="/profile" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
                                             <Settings size={16} /> Account Settings
-                                        </Link>
-                                        <Link to="/saved" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
-                                            <Bookmark size={16} /> Saved Items
-                                            {savedCount > 0 && <span className="nav-badge nav-badge--inline">{savedCount > 99 ? '99+' : savedCount}</span>}
                                         </Link>
 
                                         <div className="nav-dropdown-divider" />
@@ -248,7 +274,8 @@ const Navbar = () => {
                     gap: 0.75rem;
                 }
 
-                .app-navbar-seller-links {
+                .app-navbar-seller-links,
+                .app-navbar-buyer-links {
                     display: flex;
                     align-items: center;
                     gap: 1rem;
