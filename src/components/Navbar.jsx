@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Sparkles, UserCheck, Search } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Sparkles, UserCheck, Search, Heart } from 'lucide-react';
 
 const Navbar = () => {
     const { isAuthenticated, isSeller, userRole, currentUser } = useAuth();
@@ -167,6 +167,9 @@ const Navbar = () => {
                                                 </Link>
                                                 <Link to="/search" className="mobile-only nav-dropdown-item" onClick={() => setMenuOpen(false)}>
                                                     <Search size={16} /> Search Products
+                                                </Link>
+                                                <Link to="/notifications" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <Heart size={16} /> My Activity
                                                 </Link>
                                                 <Link to="/saved" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
                                                     <Bookmark size={16} /> Saved Items

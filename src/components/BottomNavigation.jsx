@@ -13,7 +13,8 @@ import {
     Bell, 
     Home,
     LogIn,
-    UserPlus
+    UserPlus,
+    Heart
 } from 'lucide-react';
 
 const BottomNavigation = () => {
@@ -100,6 +101,7 @@ const BottomNavigation = () => {
             <div className="bottom-nav-container">
                 <NavItem to="/market" icon={Compass} label="Market" />
                 <NavItem to="/search" icon={Search} label="Search" />
+                <NavItem to="/notifications" icon={Heart} label="Activity" />
                 <NavItem to="/saved" icon={Bookmark} label="Saved" badge={savedCount} />
                 <NavItem to="/profile" icon={User} label="Profile" />
             </div>

@@ -88,7 +88,7 @@ const AppContent = () => {
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin']} />}>
                             <Route path="/edit-product/:id" element={<EditProduct />} />
                         </Route>
-                        <Route element={<ProtectedRoute allowedRoles={['seller', 'admin']} />}>
+                        <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
                             <Route path="/notifications" element={<Notifications />} />
                         </Route>
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
