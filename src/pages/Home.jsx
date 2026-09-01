@@ -372,9 +372,6 @@ const Home = () => {
                 }
 
                 .market-hero {
-                    position: sticky;
-                    top: 0;
-                    z-index: 40;
                     background: var(--nav-bg);
                     backdrop-filter: blur(20px);
                     -webkit-backdrop-filter: blur(20px);
@@ -627,6 +624,7 @@ const Home = () => {
                 .swimlane-item {
                     flex: 0 0 calc(25% - 0.75rem);
                     scroll-snap-align: start;
+                    min-width: 0;
                 }
 
                 @media (max-width: 1024px) {
@@ -634,11 +632,11 @@ const Home = () => {
                 }
 
                 @media (max-width: 768px) {
-                    .swimlane-item { flex: 0 0 calc(50% - 0.5rem); }
+                    .swimlane-item { flex: 0 0 calc(48% - 0.5rem); }
                 }
 
                 @media (max-width: 480px) {
-                    .swimlane-item { flex: 0 0 calc(85% - 0.5rem); }
+                    .swimlane-item { flex: 0 0 calc(82% - 0.5rem); }
                 }
 
                 .empty-state {
