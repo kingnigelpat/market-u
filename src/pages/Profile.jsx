@@ -7,12 +7,13 @@ import {
     reauthenticateWithCredential,
     EmailAuthProvider,
     deleteUser,
+    signOut,
 } from 'firebase/auth';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import {
     User, Phone, Lock, Trash2, ArrowLeft,
     CheckCircle, AlertCircle, Eye, EyeOff, Save, ShieldAlert,
-    Bell, Send, Smartphone, RefreshCw,
+    Bell, Send, Smartphone, RefreshCw, LogOut
 } from 'lucide-react';
 import { requestNotificationPermission } from '../utils/notifications';
 import { getToken } from 'firebase/messaging';
@@ -152,8 +153,15 @@ const Profile = () => {
     const [pwStatus, setPwStatus] = useState({ type: '', msg: '' });
     const [savingPw, setSavingPw] = useState(false);
 
-    // Delete account
-    const [deletePw, setDeletePw] = useState('');
+    // Log Out
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            navigate('/');
+        } catch (err) {
+            console.error("Error logging out:", err);
+        }
+    };
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
     const [deleteStatus, setDeleteStatus] = useState({ type: '', msg: '' });
     const [deleting, setDeleting] = useState(false);
@@ -429,32 +437,57 @@ const Profile = () => {
             </button>
 
             {/* Page header */}
-            <div style={{ marginBottom: '2rem' }}>
-                {/* Avatar */}
-                <div style={{
-                    width: '64px', height: '64px', borderRadius: '18px',
-                    background: 'linear-gradient(135deg, var(--primary), #6366F1)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    marginBottom: '1rem',
-                    boxShadow: '0 8px 24px -4px rgba(37,99,235,0.35)',
-                }}>
-                    <User size={30} color="white" />
-                </div>
-                <h1 style={{ fontSize: '1.625rem', fontWeight: '900', letterSpacing: '-0.03em', marginBottom: '0.25rem' }}>
-                    Account Settings
-                </h1>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    {currentUser?.email} &nbsp;·&nbsp;
-                    <span style={{
-                        display: 'inline-block',
-                        fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase',
-                        letterSpacing: '0.06em', padding: '0.15rem 0.5rem',
-                        borderRadius: '99px',
-                        backgroundColor: 'rgba(37,99,235,0.1)', color: 'var(--primary)',
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                <div>
+                    {/* Avatar */}
+                    <div style={{
+                        width: '64px', height: '64px', borderRadius: '18px',
+                        background: 'linear-gradient(135deg, var(--primary), #6366F1)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: '1rem',
+                        boxShadow: '0 8px 24px -4px rgba(37,99,235,0.35)',
                     }}>
-                        {userRole}
-                    </span>
-                </p>
+                        <User size={30} color="white" />
+                    </div>
+                    <h1 style={{ fontSize: '1.625rem', fontWeight: '900', letterSpacing: '-0.03em', marginBottom: '0.25rem' }}>
+                        Account Settings
+                    </h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>
+                        {currentUser?.email} &nbsp;·&nbsp;
+                        <span style={{
+                            display: 'inline-block',
+                            fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase',
+                            letterSpacing: '0.06em', padding: '0.15rem 0.5rem',
+                            borderRadius: '99px',
+                            backgroundColor: 'rgba(37,99,235,0.1)', color: 'var(--primary)',
+                        }}>
+                            {userRole}
+                        </span>
+                    </p>
+                </div>
+
+                <button
+                    onClick={handleLogout}
+                    className="btn btn-secondary"
+                    id="profile-logout-btn"
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.625rem 1rem',
+                        fontSize: '0.875rem',
+                        fontWeight: '700',
+                        color: 'var(--danger)',
+                        borderColor: 'rgba(239, 68, 68, 0.25)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                        borderRadius: 'var(--radius-lg)',
+                        cursor: 'pointer',
+                        marginTop: '0.5rem',
+                    }}
+                >
+                    <LogOut size={16} />
+                    Log Out
+                </button>
             </div>
 
             {/* ── Edit Name ── */}
@@ -739,6 +772,32 @@ const Profile = () => {
                         {savingPw ? 'Updating…' : 'Change Password'}
                     </button>
                 </form>
+            </Section>
+
+            {/* ── Log Out Section ── */}
+            <Section icon={<LogOut size={18} />} title="Session" subtitle="Sign out of your Market-U account on this device">
+                <button
+                    onClick={handleLogout}
+                    className="btn btn-secondary"
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        width: '100%',
+                        justifyContent: 'center',
+                        padding: '0.875rem',
+                        fontWeight: '700',
+                        fontSize: '0.9375rem',
+                        color: 'var(--text)',
+                        border: '1.5px solid var(--border)',
+                        borderRadius: 'var(--radius-lg)',
+                        backgroundColor: 'var(--bg)',
+                        cursor: 'pointer',
+                    }}
+                >
+                    <LogOut size={18} />
+                    Log Out of Market-U
+                </button>
             </Section>
 
             {/* ── Danger Zone ── */}
