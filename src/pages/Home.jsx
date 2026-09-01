@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import InstallGuideModal from '../components/InstallGuideModal';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import { smartMatchesProduct } from '../utils/smartSearch';
 
 const CATEGORIES = [
     { key: 'all', label: 'All', emoji: '🔥' },
@@ -73,8 +74,7 @@ const Home = () => {
     }, []);
 
     const filteredProducts = products.filter(product => {
-        const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase()));
+        const matchesSearch = smartMatchesProduct(product, searchTerm);
         const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
         const matchesVerified = !verifiedOnly || Boolean(product.sellerVerified) === true;
         return matchesSearch && matchesCategory && matchesVerified;

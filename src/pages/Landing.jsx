@@ -6,6 +6,7 @@ import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
+import { smartMatchesProduct } from '../utils/smartSearch';
 
 const parseQuery = (text) => {
   const lowerText = text.toLowerCase();
@@ -59,12 +60,7 @@ const Landing = () => {
         const querySnapshot = await getDocs(q);
         const products = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        const matchedProducts = products.filter(p => {
-          if (!keyword) return true;
-          const titleMatch = p.title.toLowerCase().includes(keyword);
-          const catMatch = p.category && p.category.toLowerCase().includes(keyword);
-          return titleMatch || catMatch;
-        });
+        const matchedProducts = products.filter(p => smartMatchesProduct(p, searchInput));
 
         if (budget) {
           const exact = matchedProducts.filter(p => p.price <= budget);
