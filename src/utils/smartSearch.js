@@ -57,16 +57,19 @@ const SYNONYM_CLUSTERS = [
 export function parseQueryBudget(queryStr) {
   if (!queryStr) return null;
   const lower = queryStr.toLowerCase();
-  const match = lower.match(/(?:under|below|<|budget|less than|max|up to)?\s*(?:ngn|₦)?\s*(\d+(?:[kK]|000)?)/);
+  // Require explicit budget indicator (e.g. "under 50k", "₦50000", "50k", "50000 naira")
+  const match = lower.match(/(?:under|below|<|budget|less than|max|up to|\bngn\b|₦)\s*(\d+(?:[kK]|000)?)|(\d+)\s*(?:[kK]|naira)/);
   if (!match) return null;
 
-  const rawVal = match[1].toLowerCase();
+  const rawVal = (match[1] || match[2]).toLowerCase();
   if (rawVal.endsWith('k')) {
     return parseFloat(rawVal) * 1000;
   }
   const num = parseFloat(rawVal);
-  if (num < 1000 && num > 0) return num * 1000; // e.g. "under 50" -> 50,000
-  return num || null;
+  if (num < 1000 && num > 0 && (lower.includes('under') || lower.includes('below') || lower.includes('<') || lower.includes('max') || lower.includes('k'))) {
+    return num * 1000;
+  }
+  return num > 1000 ? num : null;
 }
 
 /**
