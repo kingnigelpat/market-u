@@ -14,8 +14,13 @@ const CATEGORIES = [
     { key: 'verified', label: 'Verified', emoji: '⭐' },
     { key: 'Electronics', label: 'Tech', emoji: '💻' },
     { key: 'Fashion', label: 'Fashion', emoji: '👕' },
-    { key: 'Services', label: 'Services', emoji: '🛠️' },
+    { key: 'Health & Beauty', label: 'Beauty', emoji: '💄' },
+    { key: 'Home & Kitchen', label: 'Home', emoji: '🏡' },
+    { key: 'Books & Stationery', label: 'Books', emoji: '📚' },
     { key: 'Food & Groceries', label: 'Food', emoji: '🍕' },
+    { key: 'Services', label: 'Services', emoji: '🛠️' },
+    { key: 'Hostels & Rooms', label: 'Housing', emoji: '🛏️' },
+    { key: 'Other', label: 'Other', emoji: '📦' },
 ];
 
 const Home = () => {
@@ -301,6 +306,30 @@ const Home = () => {
                                 </div>
                             );
                         })}
+
+                        {/* Unmapped / Other Products Catch-all */}
+                        {(() => {
+                            const knownKeys = CATEGORIES.map(c => c.key);
+                            const otherProducts = products.filter(p => !knownKeys.includes(p.category) && p.category !== 'verified').sort((a, b) => (b.views || 0) - (a.views || 0));
+                            if (otherProducts.length === 0) return null;
+                            return (
+                                <div className="market-section">
+                                    <div className="market-section-header">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>✨</span>
+                                            <h2 className="market-section-title">More Campus Discoveries</h2>
+                                        </div>
+                                    </div>
+                                    <div className="swimlane hide-scrollbar">
+                                        {otherProducts.slice(0, 8).map((product, index) => (
+                                            <div className="swimlane-item" key={product.id}>
+                                                <ProductCard product={product} index={index} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
                 ) : (
                     // Search / Filtered Grid View

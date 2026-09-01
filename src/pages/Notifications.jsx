@@ -147,10 +147,10 @@ const SellerNotifications = ({ currentUser }) => {
                             <div style={{
                                 width: '44px', height: '44px',
                                 borderRadius: '50%',
-                                backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                                backgroundColor: item.canceled ? 'rgba(239, 68, 68, 0.12)' : 'rgba(37, 99, 235, 0.12)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 fontWeight: '800',
-                                color: 'var(--primary)',
+                                color: item.canceled ? '#ef4444' : 'var(--primary)',
                                 fontSize: '1.125rem',
                                 flexShrink: 0,
                             }}>
@@ -159,57 +159,83 @@ const SellerNotifications = ({ currentUser }) => {
 
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 {/* Main text */}
-                                <p style={{ margin: '0 0 0.2rem', fontWeight: '700', fontSize: '0.9375rem', color: 'var(--text)' }}>
-                                    🔔 <span style={{ color: 'var(--primary)' }}>{item.buyerName}</span> is interested in your product
-                                </p>
+                                {item.canceled ? (
+                                    <p style={{ margin: '0 0 0.2rem', fontWeight: '700', fontSize: '0.9375rem', color: 'var(--text)' }}>
+                                        ❌ <span style={{ color: '#ef4444' }}>{item.buyerName}</span> canceled interest
+                                    </p>
+                                ) : (
+                                    <p style={{ margin: '0 0 0.2rem', fontWeight: '700', fontSize: '0.9375rem', color: 'var(--text)' }}>
+                                        🔔 <span style={{ color: 'var(--primary)' }}>{item.buyerName}</span> is interested in your product
+                                    </p>
+                                )}
 
                                 {/* Product name */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.75rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.5rem' }}>
                                     <ShoppingBag size={13} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
                                     <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                         {item.productName}
                                     </span>
                                 </div>
 
+                                {/* Status badge */}
+                                {item.canceled && (
+                                    <div style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.35rem',
+                                        padding: '0.2rem 0.6rem',
+                                        borderRadius: '99px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: '800',
+                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                        color: '#ef4444',
+                                        marginBottom: '0.5rem',
+                                    }}>
+                                        CANCELED BY BUYER
+                                    </div>
+                                )}
+
                                 {/* Time */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: item.canceled ? '0' : '1rem' }}>
                                     <Clock size={12} style={{ color: 'var(--text-secondary)' }} />
                                     <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
                                         {timeAgo(item.createdAt)}
                                     </span>
                                 </div>
 
-                                {/* WhatsApp contact button */}
-                                {waUrl ? (
-                                    <a
-                                        href={waUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        id={`contact-buyer-${item.id}`}
-                                        style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem',
-                                            padding: '0.625rem 1.125rem',
-                                            backgroundColor: '#25D366',
-                                            color: 'white',
-                                            borderRadius: '99px',
-                                            fontWeight: '700',
-                                            fontSize: '0.875rem',
-                                            textDecoration: 'none',
-                                            transition: 'all 0.2s ease',
-                                            boxShadow: '0 4px 12px -2px rgba(37, 211, 102, 0.35)',
-                                        }}
-                                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1DA851'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#25D366'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                                    >
-                                        <MessageCircle size={16} />
-                                        Contact Buyer on WhatsApp
-                                    </a>
-                                ) : (
-                                    <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                                        No phone number provided by buyer
-                                    </span>
+                                {/* WhatsApp contact button — hidden if canceled */}
+                                {!item.canceled && (
+                                    waUrl ? (
+                                        <a
+                                            href={waUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            id={`contact-buyer-${item.id}`}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem',
+                                                padding: '0.625rem 1.125rem',
+                                                backgroundColor: '#25D366',
+                                                color: 'white',
+                                                borderRadius: '99px',
+                                                fontWeight: '700',
+                                                fontSize: '0.875rem',
+                                                textDecoration: 'none',
+                                                transition: 'all 0.2s ease',
+                                                boxShadow: '0 4px 12px -2px rgba(37, 211, 102, 0.35)',
+                                            }}
+                                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1DA851'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#25D366'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                                        >
+                                            <MessageCircle size={16} />
+                                            Contact Buyer on WhatsApp
+                                        </a>
+                                    ) : (
+                                        <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                                            No phone number provided by buyer
+                                        </span>
+                                    )
                                 )}
                             </div>
                         </div>
@@ -226,15 +252,20 @@ const BuyerActivity = ({ currentUser }) => {
     const [loading, setLoading] = useState(true);
     const [cancellingId, setCancellingId] = useState(null);
 
-    const handleCancelInterest = async (e, interestId) => {
+    const handleCancelInterest = async (e, interestId, currentlyCanceled) => {
         e.preventDefault();
         e.stopPropagation();
         if (cancellingId) return;
         setCancellingId(interestId);
         try {
-            await deleteDoc(doc(db, 'interests', interestId));
+            if (currentlyCanceled) {
+                await deleteDoc(doc(db, 'interests', interestId));
+            } else {
+                await updateDoc(doc(db, 'interests', interestId), { canceled: true });
+            }
         } catch (err) {
-            console.error('Error cancelling interest:', err);
+            console.error('Error updating interest:', err);
+        } finally {
             setCancellingId(null);
         }
     };
@@ -365,12 +396,12 @@ const BuyerActivity = ({ currentUser }) => {
                                 borderRadius: '99px',
                                 fontSize: '0.75rem',
                                 fontWeight: '700',
-                                backgroundColor: item.seen ? 'rgba(34, 197, 94, 0.1)' : 'rgba(37, 99, 235, 0.08)',
-                                color: item.seen ? '#22c55e' : 'var(--primary)',
+                                backgroundColor: item.canceled ? 'rgba(239, 68, 68, 0.1)' : item.seen ? 'rgba(34, 197, 94, 0.1)' : 'rgba(37, 99, 235, 0.08)',
+                                color: item.canceled ? '#ef4444' : item.seen ? '#22c55e' : 'var(--primary)',
                                 marginBottom: '0.5rem',
                             }}>
-                                {item.seen ? <CheckCircle size={12} /> : <Clock size={12} />}
-                                {item.seen ? 'Seller has seen your interest' : 'Waiting for seller to see'}
+                                {item.canceled ? <XCircle size={12} /> : item.seen ? <CheckCircle size={12} /> : <Clock size={12} />}
+                                {item.canceled ? 'Interest Canceled' : item.seen ? 'Seller has seen your interest' : 'Waiting for seller to see'}
                             </div>
 
                             {/* Seller name if available */}
@@ -390,7 +421,7 @@ const BuyerActivity = ({ currentUser }) => {
                                 </div>
 
                                 <button
-                                    onClick={(e) => handleCancelInterest(e, item.id)}
+                                    onClick={(e) => handleCancelInterest(e, item.id, item.canceled)}
                                     disabled={!!cancellingId}
                                     style={{
                                         display: 'inline-flex',
@@ -400,7 +431,7 @@ const BuyerActivity = ({ currentUser }) => {
                                         border: '1px solid var(--border)',
                                         borderRadius: '99px',
                                         background: 'none',
-                                        color: 'var(--danger, #ef4444)',
+                                        color: item.canceled ? 'var(--text-tertiary)' : 'var(--danger, #ef4444)',
                                         fontSize: '0.75rem',
                                         fontWeight: '700',
                                         cursor: cancellingId ? 'not-allowed' : 'pointer',
@@ -408,11 +439,9 @@ const BuyerActivity = ({ currentUser }) => {
                                         fontFamily: 'inherit',
                                         opacity: cancellingId && cancellingId !== item.id ? 0.5 : 1,
                                     }}
-                                    onMouseEnter={e => { if (!cancellingId) { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.06)'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)'; } }}
-                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = 'var(--border)'; }}
                                 >
                                     <XCircle size={13} />
-                                    {cancellingId === item.id ? 'Cancelling...' : 'Cancel Interest'}
+                                    {cancellingId === item.id ? 'Updating...' : item.canceled ? 'Remove Record' : 'Cancel Interest'}
                                 </button>
                             </div>
                         </div>

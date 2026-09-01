@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, deleteDoc, updateDoc, increment, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ArrowLeft, Trash2, Edit, Heart, CheckCircle, Loader, AlertCircle, Bookmark, BookmarkCheck } from 'lucide-react';
+import { ArrowLeft, Trash2, Edit, Heart, CheckCircle, Loader, AlertCircle, Bookmark, BookmarkCheck, XCircle } from 'lucide-react';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SellerRating from '../components/SellerRating';
 import { useAuth } from '../context/AuthContext';
@@ -25,6 +25,8 @@ const ProductDetail = () => {
     // Interest state
     const [interestLoading, setInterestLoading] = useState(false);
     const [alreadyInterested, setAlreadyInterested] = useState(false);
+    const [isCanceled, setIsCanceled] = useState(false);
+    const [interestDocId, setInterestDocId] = useState(null);
     const [interestSuccess, setInterestSuccess] = useState(false);
 
     // Save for Later state
@@ -71,7 +73,17 @@ const ProductDetail = () => {
                                 where('productId', '==', id)
                             );
                             const snap = await getDocs(interestQuery);
-                            if (!snap.empty) setAlreadyInterested(true);
+                            if (!snap.empty) {
+                                const docData = snap.docs[0].data();
+                                setInterestDocId(snap.docs[0].id);
+                                if (!docData.canceled) {
+                                    setAlreadyInterested(true);
+                                    setIsCanceled(false);
+                                } else {
+                                    setAlreadyInterested(false);
+                                    setIsCanceled(true);
+                                }
+                            }
                         } catch (e) {
                             // If rules deny (e.g. seller viewing buyer interests), silently ignore
                         }
@@ -120,49 +132,62 @@ const ProductDetail = () => {
             return;
         }
 
-        if (isOwner) return; // Sellers can't be interested in their own product
-
-        if (alreadyInterested || interestSuccess) return;
+        if (isOwner) return;
 
         setInterestLoading(true);
         try {
-            const buyerName = userName || currentUser.displayName || 'A buyer';
-
-            await addDoc(collection(db, 'interests'), {
-                buyerId: currentUser.uid,
-                buyerName,
-                buyerPhone: userPhone || '',
-                sellerId: product.sellerId,
-                productId: id,
-                productName: product.title,
-                createdAt: serverTimestamp(),
-                seen: false,
-            });
-
-            setInterestSuccess(true);
-            setAlreadyInterested(true);
-
-            // Send real push notification to seller on ALL their devices
-            try {
-                const sellerDoc = await getDoc(doc(db, 'users', product.sellerId));
-                const sellerData = sellerDoc.data() || {};
-                // Support both new fcmTokens array AND old single fcmToken field
-                let fcmTokens = sellerData.fcmTokens || [];
-                if (fcmTokens.length === 0 && sellerData.fcmToken) {
-                    fcmTokens = [sellerData.fcmToken];
+            if (alreadyInterested && !isCanceled) {
+                // Cancel interest
+                if (interestDocId) {
+                    await updateDoc(doc(db, 'interests', interestDocId), { canceled: true });
                 }
-                console.log('[Notify] Seller FCM tokens found:', fcmTokens.length, fcmTokens.map(t => t.slice(0, 15) + '...'));
-                if (fcmTokens.length > 0) {
-                    const result = await sendPushNotification(fcmTokens, buyerName, product.title);
-                    console.log('[Notify] Push result:', result);
+                setAlreadyInterested(false);
+                setIsCanceled(true);
+                setInterestSuccess(false);
+            } else {
+                // Express interest (or re-express interest)
+                const buyerName = userName || currentUser.displayName || 'A buyer';
+                if (interestDocId) {
+                    await updateDoc(doc(db, 'interests', interestDocId), {
+                        canceled: false,
+                        createdAt: serverTimestamp(),
+                        seen: false
+                    });
                 } else {
-                    console.warn('[Notify] No FCM tokens on seller account — notification not sent');
+                    const ref = await addDoc(collection(db, 'interests'), {
+                        buyerId: currentUser.uid,
+                        buyerName,
+                        buyerPhone: userPhone || '',
+                        sellerId: product.sellerId,
+                        productId: id,
+                        productName: product.title,
+                        createdAt: serverTimestamp(),
+                        seen: false,
+                        canceled: false,
+                    });
+                    setInterestDocId(ref.id);
                 }
-            } catch (e) {
-                console.warn('Could not send push notification:', e);
+                setInterestSuccess(true);
+                setAlreadyInterested(true);
+                setIsCanceled(false);
+
+                // Send real push notification to seller
+                try {
+                    const sellerDoc = await getDoc(doc(db, 'users', product.sellerId));
+                    const sellerData = sellerDoc.data() || {};
+                    let fcmTokens = sellerData.fcmTokens || [];
+                    if (fcmTokens.length === 0 && sellerData.fcmToken) {
+                        fcmTokens = [sellerData.fcmToken];
+                    }
+                    if (fcmTokens.length > 0) {
+                        await sendPushNotification(fcmTokens, buyerName, product.title);
+                    }
+                } catch (e) {
+                    console.warn('Could not send push notification:', e);
+                }
             }
         } catch (error) {
-            console.error("Error saving interest:", error);
+            console.error("Error updating interest:", error);
             alert("Something went wrong. Please try again.");
         } finally {
             setInterestLoading(false);
@@ -420,45 +445,70 @@ const ProductDetail = () => {
                             </div>
                         </div>
 
-                        {/* I'm Interested Button — shown to everyone except the owner */}
+                        {/* Interest Button — shown to everyone except the owner */}
                         {!isOwner && (
-                            <button
-                                onClick={handleInterested}
-                                disabled={interestLoading || isDone}
-                                id="interested-btn"
-                                style={{
-                                    width: '100%',
-                                    padding: '1.25rem',
-                                    fontSize: '1.125rem',
-                                    fontWeight: '700',
-                                    borderRadius: 'var(--radius-lg)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '0.625rem',
-                                    border: 'none',
-                                    cursor: isDone ? 'default' : 'pointer',
-                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                    backgroundColor: isDone
-                                        ? 'rgba(16, 185, 129, 0.1)'
-                                        : 'var(--primary)',
-                                    color: isDone ? 'var(--success)' : 'white',
-                                    boxShadow: isDone ? 'none' : '0 10px 20px -5px rgba(37, 99, 235, 0.35)',
-                                    border: isDone ? '1px solid rgba(16, 185, 129, 0.3)' : 'none',
-                                }}
-                            >
-                                {interestLoading ? (
-                                    <><Loader size={22} style={{ animation: 'spin 0.8s linear infinite' }} /> Saving...</>
-                                ) : isDone ? (
-                                    <><CheckCircle size={22} /> Seller Notified! 🎉</>
-                                ) : (
-                                    <><Heart size={22} /> I&apos;m Interested</>
-                                )}
-                            </button>
+                            alreadyInterested && !isCanceled ? (
+                                <button
+                                    onClick={handleInterested}
+                                    disabled={interestLoading}
+                                    id="cancel-interest-btn"
+                                    style={{
+                                        width: '100%',
+                                        padding: '1.25rem',
+                                        fontSize: '1.125rem',
+                                        fontWeight: '700',
+                                        borderRadius: 'var(--radius-lg)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.625rem',
+                                        backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                                        color: '#ef4444',
+                                        border: '1.5px solid rgba(239, 68, 68, 0.3)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    }}
+                                >
+                                    {interestLoading ? (
+                                        <><Loader size={22} style={{ animation: 'spin 0.8s linear infinite' }} /> Updating...</>
+                                    ) : (
+                                        <><XCircle size={22} /> Cancel Interest</>
+                                    )}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleInterested}
+                                    disabled={interestLoading}
+                                    id="interested-btn"
+                                    style={{
+                                        width: '100%',
+                                        padding: '1.25rem',
+                                        fontSize: '1.125rem',
+                                        fontWeight: '700',
+                                        borderRadius: 'var(--radius-lg)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.625rem',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        backgroundColor: 'var(--primary)',
+                                        color: 'white',
+                                        boxShadow: '0 10px 20px -5px rgba(37, 99, 235, 0.35)',
+                                    }}
+                                >
+                                    {interestLoading ? (
+                                        <><Loader size={22} style={{ animation: 'spin 0.8s linear infinite' }} /> Saving...</>
+                                    ) : (
+                                        <><Heart size={22} /> I&apos;m Interested</>
+                                    )}
+                                </button>
+                            )
                         )}
 
                         {/* Success sub-text */}
-                        {isDone && !isOwner && (
+                        {alreadyInterested && !isCanceled && !isOwner && (
                             <div style={{ marginTop: '1rem', textAlign: 'center' }}>
                                 <p style={{ fontSize: '0.875rem', color: 'var(--success)', fontWeight: '700', margin: '0' }}>
                                     The seller has been notified and will contact you on WhatsApp soon 😊
