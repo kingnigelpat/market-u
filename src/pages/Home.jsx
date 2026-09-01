@@ -216,35 +216,27 @@ const Home = () => {
                     </div>
                 )}
 
-                <div className="market-section-header">
-                    <h2 className="market-section-title">
-                        {categoryFilter === 'all' && !searchTerm ? 'Trending now' : categoryFilter === 'all' ? 'Search results' : categoryFilter}
-                    </h2>
-                    <span className="market-count">{filteredProducts.length} items</span>
-                </div>
-
                 {loading ? (
-                    <div className="grid grid-cols-4">
-                        {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                            <div key={n} className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                                <div style={{ paddingTop: '100%', width: '100%', position: 'relative' }}>
-                                    <Skeleton style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 0 }} />
+                    <div className="market-section">
+                        <div className="market-section-header">
+                            <Skeleton style={{ height: 28, width: 200 }} />
+                        </div>
+                        <div className="grid grid-cols-4">
+                            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                                <div key={n} className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                    <div style={{ paddingTop: '100%', width: '100%', position: 'relative' }}>
+                                        <Skeleton style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 0 }} />
+                                    </div>
+                                    <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        <Skeleton style={{ height: 20, width: '80%' }} />
+                                        <Skeleton style={{ height: 16, width: '50%' }} />
+                                        <Skeleton style={{ height: 40, borderRadius: 99, marginTop: 8 }} />
+                                    </div>
                                 </div>
-                                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                    <Skeleton style={{ height: 20, width: '80%' }} />
-                                    <Skeleton style={{ height: 16, width: '50%' }} />
-                                    <Skeleton style={{ height: 40, borderRadius: 99, marginTop: 8 }} />
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
-                ) : filteredProducts.length > 0 ? (
-                    <div className="grid grid-cols-4">
-                        {filteredProducts.map((product, index) => (
-                            <ProductCard key={product.id} product={product} index={index} />
-                        ))}
-                    </div>
-                ) : (
+                ) : filteredProducts.length === 0 ? (
                     <div className="empty-state">
                         <div className="empty-state-icon">
                             <PackagePlus size={36} />
@@ -254,6 +246,76 @@ const Home = () => {
                         <button onClick={() => { setSearchTerm(''); setCategoryFilter('all'); setVerifiedOnly(false); }} className="btn btn-primary">
                             Clear filters
                         </button>
+                    </div>
+                ) : categoryFilter === 'all' && !searchTerm && !verifiedOnly ? (
+                    <div className="category-swimlanes">
+                        {/* Verified Sellers Swimlane */}
+                        {(() => {
+                            const verifiedProducts = products.filter(p => p.sellerVerified).sort((a, b) => (b.views || 0) - (a.views || 0));
+                            if (verifiedProducts.length === 0) return null;
+                            return (
+                                <div className="market-section">
+                                    <div className="market-section-header">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>⭐</span>
+                                            <h2 className="market-section-title">Verified Sellers</h2>
+                                        </div>
+                                        <button className="market-section-link" onClick={() => handleCategoryClick('verified')}>
+                                            View all <ArrowRight size={14} />
+                                        </button>
+                                    </div>
+                                    <div className="swimlane hide-scrollbar">
+                                        {verifiedProducts.slice(0, 8).map((product, index) => (
+                                            <div className="swimlane-item" key={product.id}>
+                                                <ProductCard product={product} index={index} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Standard Categories Swimlanes */}
+                        {CATEGORIES.filter(c => c.key !== 'all' && c.key !== 'verified').map(category => {
+                            const categoryProducts = products.filter(p => p.category === category.key).sort((a, b) => (b.views || 0) - (a.views || 0));
+                            if (categoryProducts.length === 0) return null;
+                            
+                            return (
+                                <div className="market-section" key={category.key}>
+                                    <div className="market-section-header">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>{category.emoji}</span>
+                                            <h2 className="market-section-title">{category.label}</h2>
+                                        </div>
+                                        <button className="market-section-link" onClick={() => handleCategoryClick(category.key)}>
+                                            View all <ArrowRight size={14} />
+                                        </button>
+                                    </div>
+                                    <div className="swimlane hide-scrollbar">
+                                        {categoryProducts.slice(0, 8).map((product, index) => (
+                                            <div className="swimlane-item" key={product.id}>
+                                                <ProductCard product={product} index={index} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    // Search / Filtered Grid View
+                    <div className="market-section">
+                        <div className="market-section-header">
+                            <h2 className="market-section-title">
+                                {categoryFilter === 'all' ? 'Search results' : (CATEGORIES.find(c => c.key === categoryFilter)?.label || categoryFilter)}
+                            </h2>
+                            <span className="market-count">{filteredProducts.length} items</span>
+                        </div>
+                        <div className="grid grid-cols-4">
+                            {filteredProducts.map((product, index) => (
+                                <ProductCard key={product.id} product={product} index={index} />
+                            ))}
+                        </div>
                     </div>
                 )}
 
@@ -479,6 +541,10 @@ const Home = () => {
                     padding: 0.5rem 1.25rem;
                 }
 
+                .market-section {
+                    margin-bottom: 2.5rem;
+                }
+
                 .market-section-header {
                     display: flex;
                     align-items: center;
@@ -494,6 +560,20 @@ const Home = () => {
                     margin: 0;
                 }
 
+                .market-section-link {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    background: none;
+                    border: none;
+                    color: var(--primary);
+                    font-weight: 700;
+                    font-size: 0.875rem;
+                    cursor: pointer;
+                    padding: 0.25rem 0;
+                }
+                .market-section-link:hover { text-decoration: underline; }
+
                 .market-count {
                     font-size: 0.8125rem;
                     font-weight: 600;
@@ -501,6 +581,35 @@ const Home = () => {
                     background: var(--surface);
                     padding: 0.3rem 0.75rem;
                     border-radius: var(--radius-full);
+                }
+
+                .swimlane {
+                    display: flex;
+                    gap: 1rem;
+                    overflow-x: auto;
+                    padding-bottom: 1rem;
+                    scroll-snap-type: x mandatory;
+                    scroll-padding-left: 1.5rem;
+                    /* Adjust negative margins to allow card shadows to render */
+                    margin: -0.5rem -1.5rem 0;
+                    padding: 0.5rem 1.5rem 1rem;
+                }
+
+                .swimlane-item {
+                    flex: 0 0 calc(25% - 0.75rem);
+                    scroll-snap-align: start;
+                }
+
+                @media (max-width: 1024px) {
+                    .swimlane-item { flex: 0 0 calc(33.333% - 0.666rem); }
+                }
+
+                @media (max-width: 768px) {
+                    .swimlane-item { flex: 0 0 calc(50% - 0.5rem); }
+                }
+
+                @media (max-width: 480px) {
+                    .swimlane-item { flex: 0 0 calc(85% - 0.5rem); }
                 }
 
                 .empty-state {
