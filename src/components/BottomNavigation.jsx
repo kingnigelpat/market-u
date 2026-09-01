@@ -23,7 +23,7 @@ const BottomNavigation = () => {
     const [unseenCount, setUnseenCount] = useState(0);
     const [savedCount, setSavedCount] = useState(0);
 
-    const isLanding = location.pathname === '/';
+
 
     useEffect(() => {
         if (!isSeller || !currentUser) { 
@@ -49,7 +49,7 @@ const BottomNavigation = () => {
         return () => unsub();
     }, [isAuthenticated, currentUser]);
 
-    if (isLanding) return null;
+
 
     const isActive = (path) => {
         if (path === '/market' && (location.pathname === '/' || location.pathname === '/market')) {
