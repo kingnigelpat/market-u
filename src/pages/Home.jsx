@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
-import { Search, PackagePlus, ArrowRight, Sparkles, SlidersHorizontal, X } from 'lucide-react';
+import { Search, PackagePlus, Sparkles, SlidersHorizontal, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import InstallGuideModal from '../components/InstallGuideModal';
@@ -93,7 +93,10 @@ const Home = () => {
                             {!isAuthenticated ? (
                                 <h1 className="market-greeting">Do you want to buy or sell?</h1>
                             ) : isSeller ? (
-                                <h1 className="market-greeting">Seller Dashboard 🏷️</h1>
+                                <>
+                                    <h1 className="market-greeting">Hey, {firstName} 👋</h1>
+                                    <p className="market-subtitle">Manage your store or browse the market</p>
+                                </>
                             ) : (
                                 <>
                                     <h1 className="market-greeting">Hey, {firstName} 👋</h1>
@@ -124,48 +127,19 @@ const Home = () => {
                     )}
 
                     {isAuthenticated && isSeller && (
-                        <div className="seller-dashboard-actions animate-fade-in-up" style={{ marginBottom: '1.5rem' }}>
-                            <Link to="/add-product" style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                background: 'var(--surface-elevated)',
-                                border: '2px solid var(--primary)',
-                                borderRadius: 'var(--radius-full)',
-                                padding: '0.75rem 1.25rem',
-                                color: 'var(--text)',
-                                textDecoration: 'none',
-                                boxShadow: '0 4px 16px var(--primary-glow)',
-                                transition: 'all 0.2s ease',
-                                cursor: 'pointer',
-                                marginBottom: '1rem'
-                            }}
-                            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px var(--primary-glow)'; }}
-                            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px var(--primary-glow)'; }}
-                            >
-                                <span style={{ fontSize: '1.05rem', fontWeight: '700' }}>What do you wanna sell?</span>
-                                <div style={{ 
-                                    background: 'var(--primary)', 
-                                    color: 'white', 
-                                    borderRadius: '50%', 
-                                    width: '36px', 
-                                    height: '36px', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center',
-                                    boxShadow: '0 2px 8px rgba(124, 58, 237, 0.4)'
-                                }}>
-                                    <ArrowRight size={20} />
-                                </div>
+                        <div className="animate-fade-in-up" style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+                            <Link to="/add-product" className="btn btn-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1.1rem', borderRadius: 'var(--radius-full)' }}>
+                                + Post Item
                             </Link>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                <Link to="/notifications" className="btn btn-secondary" style={{ fontSize: '0.9rem', justifyContent: 'center' }}>
-                                    🔔 Check Notifications
-                                </Link>
-                            </div>
+                            <Link to="/notifications" className="btn btn-secondary" style={{ fontSize: '0.875rem', padding: '0.5rem 1.1rem', borderRadius: 'var(--radius-full)' }}>
+                                🔔 Notifications
+                            </Link>
+                            <Link to="/dashboard" className="btn btn-secondary" style={{ fontSize: '0.875rem', padding: '0.5rem 1.1rem', borderRadius: 'var(--radius-full)' }}>
+                                📊 Dashboard
+                            </Link>
                         </div>
                     )}
+
 
                     {isAuthenticated && (
                         <div className="market-search-wrap">
