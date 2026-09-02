@@ -88,21 +88,44 @@ const Home = () => {
         <div className="market-page">
             <div className="market-hero">
                 <div className="market-hero-inner container">
+                    {/* ── Top row: greeting + live badge ── */}
                     <div className="market-hero-top">
-                        <div>
-                            {!isAuthenticated ? (
-                                <h1 className="market-greeting">Do you want to buy or sell?</h1>
-                            ) : isSeller ? (
-                                <>
-                                    <h1 className="market-greeting">Hey, {firstName} 👋</h1>
-                                    <p className="market-subtitle">Manage your store or browse the market</p>
-                                </>
-                            ) : (
-                                <>
-                                    <h1 className="market-greeting">Hey, {firstName} 👋</h1>
-                                    <p className="market-subtitle">Find what you need, from laptops to fashion</p>
-                                </>
-                            )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                <h1 className="market-greeting">
+                                    {isAuthenticated ? `Hey, ${firstName} 👋` : 'Market-U 🛒'}
+                                </h1>
+                                {/* Role tag */}
+                                {isAuthenticated && (
+                                    <span style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.3rem',
+                                        fontSize: '0.7rem',
+                                        fontWeight: '800',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.05em',
+                                        padding: '0.2rem 0.6rem',
+                                        borderRadius: 'var(--radius-full)',
+                                        background: isSeller
+                                            ? 'linear-gradient(135deg, #7C3AED, #A78BFA)'
+                                            : 'linear-gradient(135deg, #10B981, #3B82F6)',
+                                        color: 'white',
+                                        boxShadow: isSeller
+                                            ? '0 2px 8px rgba(124,58,237,0.3)'
+                                            : '0 2px 8px rgba(16,185,129,0.3)',
+                                    }}>
+                                        {isSeller ? '🏷️ Seller' : '🛍️ Buyer'}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="market-subtitle">
+                                {!isAuthenticated
+                                    ? 'Buy, sell & discover on campus'
+                                    : isSeller
+                                    ? 'Manage your store or browse the market'
+                                    : 'Find what you need, from laptops to fashion'}
+                            </p>
                         </div>
                         <div className="live-badge">
                             <span className="live-badge-dot" />
@@ -110,55 +133,71 @@ const Home = () => {
                         </div>
                     </div>
 
+                    {/* ── Guest signup prompt ── */}
                     {!isAuthenticated && (
                         <div className="guest-startup-prompt animate-fade-in-up" style={{
                             display: 'grid',
                             gridTemplateColumns: '1fr 1fr',
-                            gap: '1rem',
-                            marginBottom: '1.5rem',
+                            gap: '0.75rem',
+                            marginBottom: '1.25rem',
                         }}>
-                            <Link to="/register?role=buyer" className="btn btn-primary">
-                                🛍️ I want to Buy
+                            <Link to="/register?role=buyer" className="btn btn-primary" style={{ justifyContent: 'center', fontSize: '0.875rem' }}>
+                                🛍️ Buy
                             </Link>
-                            <Link to="/register?role=seller" className="btn btn-secondary">
-                                🏷️ I want to Sell
+                            <Link to="/register?role=seller" className="btn btn-secondary" style={{ justifyContent: 'center', fontSize: '0.875rem' }}>
+                                🏷️ Sell
                             </Link>
                         </div>
                     )}
 
+                    {/* ── Seller quick actions ── */}
                     {isAuthenticated && isSeller && (
-                        <div className="animate-fade-in-up" style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-                            <Link to="/add-product" className="btn btn-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1.1rem', borderRadius: 'var(--radius-full)' }}>
+                        <div className="animate-fade-in-up" style={{ display: 'flex', gap: '0.625rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+                            <Link to="/add-product" className="btn btn-primary" style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', borderRadius: 'var(--radius-full)' }}>
                                 + Post Item
                             </Link>
-                            <Link to="/notifications" className="btn btn-secondary" style={{ fontSize: '0.875rem', padding: '0.5rem 1.1rem', borderRadius: 'var(--radius-full)' }}>
-                                🔔 Notifications
+                            <Link to="/notifications" className="btn btn-secondary" style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', borderRadius: 'var(--radius-full)' }}>
+                                🔔 Alerts
                             </Link>
-                            <Link to="/dashboard" className="btn btn-secondary" style={{ fontSize: '0.875rem', padding: '0.5rem 1.1rem', borderRadius: 'var(--radius-full)' }}>
+                            <Link to="/dashboard" className="btn btn-secondary" style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', borderRadius: 'var(--radius-full)' }}>
                                 📊 Dashboard
                             </Link>
                         </div>
                     )}
 
-
-                    {isAuthenticated && (
-                        <div className="market-search-wrap">
-                            <Search size={20} className="market-search-icon" />
-                            <input
-                                type="text"
-                                placeholder="What do you want? (e.g. iPhone, sneakers, laptop)..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="market-search-input search-input-focus"
-                            />
-                            {searchTerm && (
-                                <button className="market-search-clear" onClick={() => setSearchTerm('')}>
-                                    <X size={16} />
-                                </button>
-                            )}
+                    {/* ── Buyer quick actions ── */}
+                    {isAuthenticated && !isSeller && (
+                        <div className="animate-fade-in-up" style={{ display: 'flex', gap: '0.625rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+                            <Link to="/saved" className="btn btn-secondary" style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', borderRadius: 'var(--radius-full)' }}>
+                                🔖 Saved
+                            </Link>
+                            <Link to="/notifications" className="btn btn-secondary" style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', borderRadius: 'var(--radius-full)' }}>
+                                ❤️ Activity
+                            </Link>
+                            <Link to="/dashboard" className="btn btn-primary" style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', borderRadius: 'var(--radius-full)' }}>
+                                🏷️ Start Selling
+                            </Link>
                         </div>
                     )}
 
+                    {/* ── Search bar (visible for all) ── */}
+                    <div className="market-search-wrap">
+                        <Search size={20} className="market-search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Search products, fashion, electronics…"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="market-search-input search-input-focus"
+                        />
+                        {searchTerm && (
+                            <button className="market-search-clear" onClick={() => setSearchTerm('')}>
+                                <X size={16} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* ── Category filter chips ── */}
                     <div className="market-filters hide-scrollbar">
                         {CATEGORIES.map(({ key, label, emoji }) => {
                             const isActive = key === 'verified' ? verifiedOnly : categoryFilter === key && !verifiedOnly;
@@ -175,6 +214,7 @@ const Home = () => {
                     </div>
                 </div>
             </div>
+
 
             <div className="container market-body" ref={productsRef}>
                 {showDownloadPrompt && (
