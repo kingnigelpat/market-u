@@ -5,22 +5,41 @@ import Navbar from './components/Navbar.jsx';
 import BottomNavigation from './components/BottomNavigation.jsx';
 import Footer from './components/Footer.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 
 import AIAssistant from './components/AIAssistant.jsx';
 import IOSInstallBanner from './components/IOSInstallBanner.jsx';
-const Landing = lazy(() => import('./pages/Landing.jsx'));
-const About = lazy(() => import('./pages/About.jsx'));
-const Home = lazy(() => import('./pages/Home.jsx'));
-const Login = lazy(() => import('./pages/Login.jsx'));
-const Register = lazy(() => import('./pages/Register.jsx'));
-const Waitlist = lazy(() => import('./pages/Waitlist.jsx'));
-const ProductDetail = lazy(() => import('./pages/ProductDetail.jsx'));
-const SellerDashboard = lazy(() => import('./pages/SellerDashboard.jsx'));
-const AddProduct = lazy(() => import('./pages/AddProduct.jsx'));
-const EditProduct = lazy(() => import('./pages/EditProduct.jsx'));
-const Notifications = lazy(() => import('./pages/Notifications.jsx'));
-const Profile = lazy(() => import('./pages/Profile.jsx'));
-const SavedItems = lazy(() => import('./pages/SavedItems.jsx'));
+
+// Resilient lazy-loader that auto-reloads if a new build invalidated old bundle hashes
+const lazyRetry = (componentImport) =>
+    lazy(async () => {
+        try {
+            return await componentImport();
+        } catch (error) {
+            console.warn('Chunk load error, attempting page reload for updated version:', error);
+            const lastReload = sessionStorage.getItem('chunk_reload_ts');
+            const now = Date.now();
+            if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+                sessionStorage.setItem('chunk_reload_ts', now.toString());
+                window.location.reload();
+            }
+            throw error;
+        }
+    });
+
+const Landing = lazyRetry(() => import('./pages/Landing.jsx'));
+const About = lazyRetry(() => import('./pages/About.jsx'));
+const Home = lazyRetry(() => import('./pages/Home.jsx'));
+const Login = lazyRetry(() => import('./pages/Login.jsx'));
+const Register = lazyRetry(() => import('./pages/Register.jsx'));
+const Waitlist = lazyRetry(() => import('./pages/Waitlist.jsx'));
+const ProductDetail = lazyRetry(() => import('./pages/ProductDetail.jsx'));
+const SellerDashboard = lazyRetry(() => import('./pages/SellerDashboard.jsx'));
+const AddProduct = lazyRetry(() => import('./pages/AddProduct.jsx'));
+const EditProduct = lazyRetry(() => import('./pages/EditProduct.jsx'));
+const Notifications = lazyRetry(() => import('./pages/Notifications.jsx'));
+const Profile = lazyRetry(() => import('./pages/Profile.jsx'));
+const SavedItems = lazyRetry(() => import('./pages/SavedItems.jsx'));
 
 import './styles/global.css';
 
@@ -34,7 +53,7 @@ function ScrollToTop() {
 }
 
 const AppContent = () => {
-    const { loading, isSeller, joinedGroupChat, setJoinedGroupChat } = useAuth();
+    const { loading } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const isLanding = location.pathname === '/search';
@@ -60,7 +79,10 @@ const AppContent = () => {
 
     if (loading) {
         return (
-            <div className="top-progress-bar" />
+            <div className="app-container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="top-progress-bar" />
+                <div className="page-spinner" />
+            </div>
         );
     }
 
@@ -120,11 +142,13 @@ const AppContent = () => {
 
 function App() {
     return (
-        <Router>
-            <AuthProvider>
-                <AppContent />
-            </AuthProvider>
-        </Router>
+        <ErrorBoundary>
+            <Router>
+                <AuthProvider>
+                    <AppContent />
+                </AuthProvider>
+            </Router>
+        </ErrorBoundary>
     );
 }
 

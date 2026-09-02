@@ -38,6 +38,12 @@ const SellerNotifications = ({ currentUser }) => {
     const [markedSeen, setMarkedSeen] = useState(false);
 
     useEffect(() => {
+        if (!currentUser?.uid) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setLoading(false);
+            return;
+        }
+
         const q = query(
             collection(db, 'interests'),
             where('sellerId', '==', currentUser.uid),
@@ -276,6 +282,12 @@ const BuyerActivity = ({ currentUser }) => {
     };
 
     useEffect(() => {
+        if (!currentUser?.uid) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setLoading(false);
+            return;
+        }
+
         const q = query(
             collection(db, 'interests'),
             where('buyerId', '==', currentUser.uid),
@@ -456,10 +468,18 @@ const BuyerActivity = ({ currentUser }) => {
     );
 };
 
-// ── Main Notifications Page ──────────────────────────────────────────────────
 const Notifications = () => {
     const { currentUser, isSeller } = useAuth();
     const navigate = useNavigate();
+
+    if (!currentUser) {
+        return (
+            <div className="container" style={{ paddingTop: '3rem', textAlign: 'center' }}>
+                <div className="page-spinner" style={{ margin: '0 auto 1rem' }} />
+                <p style={{ color: 'var(--text-secondary)' }}>Loading your profile...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="container" style={{ paddingTop: '1.5rem', paddingBottom: '3rem', maxWidth: '700px' }}>
