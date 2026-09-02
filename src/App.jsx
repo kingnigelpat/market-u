@@ -24,6 +24,15 @@ const SavedItems = lazy(() => import('./pages/SavedItems.jsx'));
 
 import './styles/global.css';
 
+// ── Scroll to top on every route change ──────────────────────────────────────
+function ScrollToTop() {
+    const { pathname } = useLocation();
+    useEffect(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }, [pathname]);
+    return null;
+}
+
 const AppContent = () => {
     const { loading, isSeller, joinedGroupChat, setJoinedGroupChat } = useAuth();
     const navigate = useNavigate();
@@ -60,6 +69,7 @@ const AppContent = () => {
 
     return (
         <div className="app-container">
+            <ScrollToTop />
             <Navbar />
             <BottomNavigation />
             <main className={`main-content ${!isLanding ? 'main-content--with-padding' : ''}`}>
