@@ -60,15 +60,7 @@ const AppContent = () => {
 
     if (loading) {
         return (
-            <div className="loading-overlay">
-                <div className="loading-logo">
-                    <div className="loading-logo-icon">🛒</div>
-                    <span className="loading-logo-name">Market-U</span>
-                </div>
-                <div className="dots-loader">
-                    <span /><span /><span />
-                </div>
-            </div>
+            <div className="top-progress-bar" />
         );
     }
 
@@ -79,11 +71,12 @@ const AppContent = () => {
             <BottomNavigation />
             <main className={`main-content ${!isLanding ? 'main-content--with-padding' : ''}`}>
                 <Suspense fallback={
-                    <div className="loading-overlay">
-                        <div className="dots-loader">
-                            <span /><span /><span />
+                    <>
+                        <div className="top-progress-bar" />
+                        <div className="page-loader">
+                            <div className="page-spinner" />
                         </div>
-                    </div>
+                    </>
                 }>
                     <Routes>
                         <Route path="/" element={<Home />} />
