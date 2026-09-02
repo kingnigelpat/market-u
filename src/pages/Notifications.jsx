@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot, writeBatch, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, writeBatch, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -191,7 +191,7 @@ const SellerNotifications = ({ currentUser }) => {
                                         color: '#ef4444',
                                         marginBottom: '0.5rem',
                                     }}>
-                                        CANCELED BY BUYER
+                                        <XCircle size={12} /> Buyer Cancelled
                                     </div>
                                 )}
 
@@ -252,17 +252,24 @@ const BuyerActivity = ({ currentUser }) => {
     const [loading, setLoading] = useState(true);
     const [cancellingId, setCancellingId] = useState(null);
 
-    const handleCancelInterest = async (e, interestId) => {
+    const handleCancelInterest = async (e, interestId, isAlreadyCanceled) => {
         e.preventDefault();
         e.stopPropagation();
         if (cancellingId) return;
         setCancellingId(interestId);
-        // Optimistically remove immediately from list so it doesn't linger
-        setInterests(prev => prev.filter(item => item.id !== interestId));
+
         try {
-            await deleteDoc(doc(db, 'interests', interestId));
+            if (isAlreadyCanceled) {
+                // Already canceled, clicking Remove deletes the record completely
+                setInterests(prev => prev.filter(item => item.id !== interestId));
+                await deleteDoc(doc(db, 'interests', interestId));
+            } else {
+                // Cancel interest: update Firestore and immediately show "Buyer Cancelled"
+                setInterests(prev => prev.map(item => item.id === interestId ? { ...item, canceled: true } : item));
+                await updateDoc(doc(db, 'interests', interestId), { canceled: true });
+            }
         } catch (err) {
-            console.error('Error deleting interest:', err);
+            console.error('Error updating interest:', err);
         } finally {
             setCancellingId(null);
         }
@@ -276,9 +283,7 @@ const BuyerActivity = ({ currentUser }) => {
         );
 
         const unsub = onSnapshot(q, (snapshot) => {
-            const items = snapshot.docs
-                .map(d => ({ id: d.id, ...d.data() }))
-                .filter(item => !item.canceled); // Filter out any canceled interests
+            const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             setInterests(items);
             setLoading(false);
         }, (err) => {
@@ -401,7 +406,7 @@ const BuyerActivity = ({ currentUser }) => {
                                 marginBottom: '0.5rem',
                             }}>
                                 {item.canceled ? <XCircle size={12} /> : item.seen ? <CheckCircle size={12} /> : <Clock size={12} />}
-                                {item.canceled ? 'Interest Canceled' : item.seen ? 'Seller has seen your interest' : 'Waiting for seller to see'}
+                                {item.canceled ? 'Buyer Cancelled' : item.seen ? 'Seller has seen your interest' : 'Waiting for seller to see'}
                             </div>
 
                             {/* Seller name if available */}
@@ -411,7 +416,7 @@ const BuyerActivity = ({ currentUser }) => {
                                 </p>
                             )}
 
-                            {/* Time + Cancel */}
+                            {/* Time + Cancel / Remove */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.25rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                                     <Clock size={12} style={{ color: 'var(--text-secondary)' }} />
@@ -421,7 +426,7 @@ const BuyerActivity = ({ currentUser }) => {
                                 </div>
 
                                 <button
-                                    onClick={(e) => handleCancelInterest(e, item.id)}
+                                    onClick={(e) => handleCancelInterest(e, item.id, item.canceled)}
                                     disabled={cancellingId === item.id}
                                     style={{
                                         display: 'inline-flex',
@@ -431,7 +436,7 @@ const BuyerActivity = ({ currentUser }) => {
                                         border: '1px solid var(--border)',
                                         borderRadius: '99px',
                                         background: 'none',
-                                        color: 'var(--danger, #ef4444)',
+                                        color: item.canceled ? 'var(--text-secondary)' : 'var(--danger, #ef4444)',
                                         fontSize: '0.75rem',
                                         fontWeight: '700',
                                         cursor: cancellingId === item.id ? 'not-allowed' : 'pointer',
@@ -440,7 +445,7 @@ const BuyerActivity = ({ currentUser }) => {
                                     }}
                                 >
                                     <XCircle size={13} />
-                                    {cancellingId === item.id ? 'Canceling...' : 'Cancel Interest'}
+                                    {cancellingId === item.id ? 'Updating...' : item.canceled ? 'Remove' : 'Cancel Interest'}
                                 </button>
                             </div>
                         </div>
