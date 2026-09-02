@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot, writeBatch, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, writeBatch, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -252,19 +252,17 @@ const BuyerActivity = ({ currentUser }) => {
     const [loading, setLoading] = useState(true);
     const [cancellingId, setCancellingId] = useState(null);
 
-    const handleCancelInterest = async (e, interestId, currentlyCanceled) => {
+    const handleCancelInterest = async (e, interestId) => {
         e.preventDefault();
         e.stopPropagation();
         if (cancellingId) return;
         setCancellingId(interestId);
+        // Optimistically remove immediately from list so it doesn't linger
+        setInterests(prev => prev.filter(item => item.id !== interestId));
         try {
-            if (currentlyCanceled) {
-                await deleteDoc(doc(db, 'interests', interestId));
-            } else {
-                await updateDoc(doc(db, 'interests', interestId), { canceled: true });
-            }
+            await deleteDoc(doc(db, 'interests', interestId));
         } catch (err) {
-            console.error('Error updating interest:', err);
+            console.error('Error deleting interest:', err);
         } finally {
             setCancellingId(null);
         }
@@ -278,7 +276,9 @@ const BuyerActivity = ({ currentUser }) => {
         );
 
         const unsub = onSnapshot(q, (snapshot) => {
-            const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            const items = snapshot.docs
+                .map(d => ({ id: d.id, ...d.data() }))
+                .filter(item => !item.canceled); // Filter out any canceled interests
             setInterests(items);
             setLoading(false);
         }, (err) => {
@@ -421,8 +421,8 @@ const BuyerActivity = ({ currentUser }) => {
                                 </div>
 
                                 <button
-                                    onClick={(e) => handleCancelInterest(e, item.id, item.canceled)}
-                                    disabled={!!cancellingId}
+                                    onClick={(e) => handleCancelInterest(e, item.id)}
+                                    disabled={cancellingId === item.id}
                                     style={{
                                         display: 'inline-flex',
                                         alignItems: 'center',
@@ -431,17 +431,16 @@ const BuyerActivity = ({ currentUser }) => {
                                         border: '1px solid var(--border)',
                                         borderRadius: '99px',
                                         background: 'none',
-                                        color: item.canceled ? 'var(--text-tertiary)' : 'var(--danger, #ef4444)',
+                                        color: 'var(--danger, #ef4444)',
                                         fontSize: '0.75rem',
                                         fontWeight: '700',
-                                        cursor: cancellingId ? 'not-allowed' : 'pointer',
+                                        cursor: cancellingId === item.id ? 'not-allowed' : 'pointer',
                                         transition: 'all 0.2s',
                                         fontFamily: 'inherit',
-                                        opacity: cancellingId && cancellingId !== item.id ? 0.5 : 1,
                                     }}
                                 >
                                     <XCircle size={13} />
-                                    {cancellingId === item.id ? 'Updating...' : item.canceled ? 'Remove Record' : 'Cancel Interest'}
+                                    {cancellingId === item.id ? 'Canceling...' : 'Cancel Interest'}
                                 </button>
                             </div>
                         </div>
