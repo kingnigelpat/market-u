@@ -13,7 +13,7 @@ import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import {
     User, Phone, Lock, Trash2, ArrowLeft,
     CheckCircle, AlertCircle, Eye, EyeOff, Save, ShieldAlert,
-    Bell, Send, Smartphone, RefreshCw, LogOut
+    Bell, Send, RefreshCw, LogOut, Palette, Sun, Moon
 } from 'lucide-react';
 import { requestNotificationPermission } from '../utils/notifications';
 import { getToken } from 'firebase/messaging';
@@ -136,6 +136,14 @@ const Profile = () => {
     const { currentUser, userName, userPhone, userRole } = useAuth();
     const navigate = useNavigate();
 
+    // App Theme / Background State
+    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
     // Edit name
     const [name, setName] = useState(userName || '');
     const [nameStatus, setNameStatus] = useState({ type: '', msg: '' });
@@ -166,6 +174,7 @@ const Profile = () => {
     const [deleteStatus, setDeleteStatus] = useState({ type: '', msg: '' });
     const [deleting, setDeleting] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deletePw, setDeletePw] = useState('');
 
     // Notification setup & testing state
     const [checkingNotifs, setCheckingNotifs] = useState(true);
@@ -175,7 +184,6 @@ const Profile = () => {
     const [testNotifCountdown, setTestNotifCountdown] = useState(null);
     const [notifStatus, setNotifStatus] = useState({ type: '', msg: '' });
     const [isIOSDevice, setIsIOSDevice] = useState(false);
-    const [isIOSStandalone, setIsIOSStandalone] = useState(false);
 
     // Sync notification status on mount
     const checkNotificationStatus = async () => {
@@ -185,7 +193,6 @@ const Profile = () => {
         const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
 
         setIsIOSDevice(isIOS);
-        setIsIOSStandalone(isStandalone);
 
         if (!hasNotif) {
             setNotifPermission('unsupported');
@@ -310,7 +317,7 @@ const Profile = () => {
                     msg: data.errors?.[0] || 'Notification delivery failed on server.'
                 });
             }
-        } catch (e) {
+        } catch (_e) {
             setNotifStatus({ type: 'error', msg: 'Failed to hit notification API endpoint.' });
         } finally {
             setTestNotifLoading(false);
@@ -489,6 +496,56 @@ const Profile = () => {
                     Log Out
                 </button>
             </div>
+
+            {/* ── App Theme & Background ── */}
+            <Section icon={<Palette size={18} />} title="App Theme & Background" subtitle="Customize overall app theme and background mode">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <button
+                        type="button"
+                        onClick={() => setTheme('light')}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.6rem',
+                            padding: '0.875rem 1rem',
+                            borderRadius: 'var(--radius-lg)',
+                            border: `2px solid ${theme === 'light' ? 'var(--primary)' : 'var(--border)'}`,
+                            backgroundColor: theme === 'light' ? 'var(--primary-light)' : 'var(--bg)',
+                            color: theme === 'light' ? 'var(--primary)' : 'var(--text)',
+                            fontWeight: '700',
+                            fontSize: '0.9375rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        <Sun size={18} />
+                        <span>Light Mode</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setTheme('dark')}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.6rem',
+                            padding: '0.875rem 1rem',
+                            borderRadius: 'var(--radius-lg)',
+                            border: `2px solid ${theme === 'dark' ? 'var(--primary)' : 'var(--border)'}`,
+                            backgroundColor: theme === 'dark' ? 'var(--primary-light)' : 'var(--bg)',
+                            color: theme === 'dark' ? 'var(--primary)' : 'var(--text)',
+                            fontWeight: '700',
+                            fontSize: '0.9375rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        <Moon size={18} />
+                        <span>Dark Mode</span>
+                    </button>
+                </div>
+            </Section>
 
             {/* ── Edit Name ── */}
             <Section icon={<User size={18} />} title="Display Name" subtitle="Shown to buyers and on your listings">

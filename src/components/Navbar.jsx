@@ -231,6 +231,8 @@ const Navbar = () => {
                     backdrop-filter: blur(20px);
                     -webkit-backdrop-filter: blur(20px);
                     border-bottom: 1px solid var(--border);
+                    transform: translateZ(0);
+                    -webkit-transform: translateZ(0);
                 }
 
                 .app-navbar-inner {

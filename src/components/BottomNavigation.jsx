@@ -17,14 +17,31 @@ import {
     Heart
 } from 'lucide-react';
 
+// NavItem is defined outside the parent to prevent recreating on every render
+const NavItem = ({ to, icon: Icon, label, badge, isCenter = false, isActive }) => (
+    <Link
+        to={to}
+        className={`bottom-nav-item ${isActive(to) ? 'bottom-nav-item--active' : ''} ${isCenter ? 'bottom-nav-item--center' : ''}`}
+    >
+        <div className="bottom-nav-icon">
+            <Icon size={isCenter ? 24 : 20} />
+            {badge > 0 && (
+                <span className="bottom-nav-badge">
+                    {badge > 99 ? '99+' : badge}
+                </span>
+            )}
+        </div>
+        <span className="bottom-nav-label">{label}</span>
+    </Link>
+);
+
 const BottomNavigation = () => {
     const { isAuthenticated, isSeller, currentUser } = useAuth();
     const location = useLocation();
     const [unseenCount, setUnseenCount] = useState(0);
     const [savedCount, setSavedCount] = useState(0);
 
-
-
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         if (!isSeller || !currentUser) { 
             setUnseenCount(0); 
@@ -39,6 +56,7 @@ const BottomNavigation = () => {
         return () => unsub();
     }, [isSeller, currentUser]);
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         if (!isAuthenticated || !currentUser) { 
             setSavedCount(0); 
@@ -49,8 +67,6 @@ const BottomNavigation = () => {
         return () => unsub();
     }, [isAuthenticated, currentUser]);
 
-
-
     const isActive = (path) => {
         if (path === '/market' && (location.pathname === '/' || location.pathname === '/market')) {
             return true;
@@ -58,52 +74,35 @@ const BottomNavigation = () => {
         return location.pathname === path;
     };
 
-    const NavItem = ({ to, icon: Icon, label, badge, isCenter = false }) => (
-        <Link 
-            to={to} 
-            className={`bottom-nav-item ${isActive(to) ? 'bottom-nav-item--active' : ''} ${isCenter ? 'bottom-nav-item--center' : ''}`}
-        >
-            <div className="bottom-nav-icon">
-                <Icon size={isCenter ? 24 : 20} />
-                {badge > 0 && (
-                    <span className="bottom-nav-badge">
-                        {badge > 99 ? '99+' : badge}
-                    </span>
-                )}
-            </div>
-            <span className="bottom-nav-label">{label}</span>
-        </Link>
-    );
-
     let navigation;
     if (!isAuthenticated) {
         navigation = (
             <div className="bottom-nav-container">
-                <NavItem to="/market" icon={Home} label="Home" />
-                <NavItem to="/search" icon={Search} label="Search" />
-                <NavItem to="/about" icon={Compass} label="About" />
-                <NavItem to="/login" icon={LogIn} label="Login" />
-                <NavItem to="/register" icon={UserPlus} label="Sign Up" />
+                <NavItem to="/market" icon={Home} label="Home" isActive={isActive} />
+                <NavItem to="/search" icon={Search} label="Search" isActive={isActive} />
+                <NavItem to="/about" icon={Compass} label="About" isActive={isActive} />
+                <NavItem to="/login" icon={LogIn} label="Login" isActive={isActive} />
+                <NavItem to="/register" icon={UserPlus} label="Sign Up" isActive={isActive} />
             </div>
         );
     } else if (isSeller) {
         navigation = (
             <div className="bottom-nav-container bottom-nav-container--seller">
-                <NavItem to="/market" icon={Compass} label="Market" />
-                <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-                <NavItem to="/add-product" icon={PlusCircle} label="Post" isCenter={true} />
-                <NavItem to="/notifications" icon={Bell} label="Alerts" badge={unseenCount} />
-                <NavItem to="/profile" icon={User} label="Profile" />
+                <NavItem to="/market" icon={Compass} label="Market" isActive={isActive} />
+                <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" isActive={isActive} />
+                <NavItem to="/add-product" icon={PlusCircle} label="Post" isCenter={true} isActive={isActive} />
+                <NavItem to="/notifications" icon={Bell} label="Alerts" badge={unseenCount} isActive={isActive} />
+                <NavItem to="/profile" icon={User} label="Profile" isActive={isActive} />
             </div>
         );
     } else {
         navigation = (
             <div className="bottom-nav-container">
-                <NavItem to="/market" icon={Compass} label="Market" />
-                <NavItem to="/search" icon={Search} label="Search" />
-                <NavItem to="/notifications" icon={Heart} label="Activity" />
-                <NavItem to="/saved" icon={Bookmark} label="Saved" badge={savedCount} />
-                <NavItem to="/profile" icon={User} label="Profile" />
+                <NavItem to="/market" icon={Compass} label="Market" isActive={isActive} />
+                <NavItem to="/search" icon={Search} label="Search" isActive={isActive} />
+                <NavItem to="/notifications" icon={Heart} label="Activity" isActive={isActive} />
+                <NavItem to="/saved" icon={Bookmark} label="Saved" badge={savedCount} isActive={isActive} />
+                <NavItem to="/profile" icon={User} label="Profile" isActive={isActive} />
             </div>
         );
     }
@@ -124,7 +123,9 @@ const BottomNavigation = () => {
                     backdrop-filter: blur(20px);
                     -webkit-backdrop-filter: blur(20px);
                     border-top: 1px solid var(--border);
-                    padding: env(safe-area-inset-bottom) 0 0 0;
+                    padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
+                    transform: translateZ(0);
+                    -webkit-transform: translateZ(0);
                     display: block;
                 }
 
