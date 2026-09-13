@@ -131,13 +131,13 @@ const Footer = () => {
           align-items: center;
           gap: 0.5rem;
           padding: 0.4rem 1rem;
-          background: rgba(124, 58, 237, 0.15);
-          border: 1px solid rgba(124, 58, 237, 0.25);
+          background: rgba(37, 99, 235, 0.15);
+          border: 1px solid rgba(37, 99, 235, 0.25);
           border-radius: var(--radius-full);
           margin-bottom: 1.25rem;
           font-size: 0.75rem;
           font-weight: 700;
-          color: #A78BFA;
+          color: #60A5FA;
           text-transform: uppercase;
           letter-spacing: 0.05em;
         }
@@ -182,12 +182,12 @@ const Footer = () => {
 
         .footer-guide-icon {
           width: 32px; height: 32px;
-          background: rgba(124, 58, 237, 0.15);
+          background: rgba(37, 99, 235, 0.15);
           border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #A78BFA;
+          color: #60A5FA;
           margin-bottom: 0.75rem;
         }
 
@@ -358,7 +358,7 @@ const Footer = () => {
           display: flex;
           align-items: center;
           gap: 0.25rem;
-          color: #A78BFA;
+          color: #60A5FA;
           font-size: 0.8125rem;
           font-weight: 600;
         }
@@ -395,7 +395,7 @@ const Footer = () => {
           letter-spacing: 0.04em;
           color: white;
         }
-        .footer-powered a span { color: #A78BFA; }
+        .footer-powered a span { color: #60A5FA; }
       `}</style>
     </footer>
   );

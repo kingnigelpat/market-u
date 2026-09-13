@@ -18,7 +18,7 @@
   height: 80vw;
   max-width: 800px;
   max-height: 800px;
-  background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, rgba(0,0,0,0) 60%);
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, rgba(0,0,0,0) 60%);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -47,7 +47,7 @@
   font-size: 3.5rem;
   font-weight: 800;
   margin-bottom: 1rem;
-  background: linear-gradient(135deg, #ffffff 0%, #a78bfa 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #60a5fa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -96,7 +96,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(45deg, #7c3aed, #ec4899, #3b82f6, #7c3aed);
+  background: linear-gradient(45deg, #2563eb, #38bdf8, #3b82f6, #1d4ed8);
   background-size: 300% 300%;
   animation: glimmer 4s ease infinite, pulse 3s ease-in-out infinite alternate;
   filter: blur(12px);

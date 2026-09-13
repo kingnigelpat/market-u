@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, deleteDoc, updateDoc, increment, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ArrowLeft, Trash2, Edit, Heart, CheckCircle, Loader, AlertCircle, Bookmark, BookmarkCheck, XCircle } from 'lucide-react';
+import { ArrowLeft, Trash2, Edit, Heart, CheckCircle, Loader, AlertCircle, Bookmark, BookmarkCheck, XCircle, Share2, Check, ExternalLink } from 'lucide-react';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SellerRating from '../components/SellerRating';
 import { useAuth } from '../context/AuthContext';
@@ -34,6 +34,7 @@ const ProductDetail = () => {
     const [savedDocId, setSavedDocId] = useState(null);
     const [saveLoading, setSaveLoading] = useState(false);
     const [saveError, setSaveError] = useState('');
+    const [shareToast, setShareToast] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -66,6 +67,7 @@ const ProductDetail = () => {
                     }
 
                     setProduct(productData);
+                    document.title = `${productData.title} • ₦${parseFloat(productData.price).toLocaleString('en-NG')} | Market-U`;
 
                     // Check if current buyer already expressed interest
                     if (currentUser && currentUser.uid !== productData.sellerId) {
@@ -234,6 +236,36 @@ const ProductDetail = () => {
         }
     };
 
+    const handleShare = async () => {
+        if (!product) return;
+        const formattedPrice = `₦${parseFloat(product.price).toLocaleString('en-NG')}`;
+        const shareUrl = window.location.href;
+        const shareText = `🔥 Check out "${product.title}" (${formattedPrice}) on Market-U!`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `${product.title} • ${formattedPrice} | Market-U`,
+                    text: shareText,
+                    url: shareUrl,
+                });
+                return;
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.warn('Share cancelled or failed:', err);
+                }
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            setShareToast(true);
+            setTimeout(() => setShareToast(false), 2500);
+        } catch (err) {
+            console.error('Clipboard copy failed:', err);
+        }
+    };
+
     const handleDelete = async () => {
         if (window.confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
             setDeleting(true);
@@ -340,35 +372,57 @@ const ProductDetail = () => {
                             <h1 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.25rem)', fontWeight: '900', margin: 0, letterSpacing: '-0.03em', lineHeight: '1.1' }}>
                                 {product.title}
                             </h1>
-                            {/* Save for Later — only for non-owners */}
-                            {!isOwner && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
                                 <button
-                                    onClick={handleSaveLater}
-                                    disabled={saveLoading}
-                                    title={saved ? 'Remove from saved' : 'Save for later'}
+                                    onClick={handleShare}
+                                    title="Share product link"
+                                    id="product-share-btn"
                                     style={{
-                                        flexShrink: 0,
                                         width: '44px',
                                         height: '44px',
                                         borderRadius: '12px',
-                                        border: saved ? '1.5px solid rgba(37, 99, 235, 0.4)' : '1.5px solid var(--border)',
-                                        backgroundColor: saved ? 'rgba(37, 99, 235, 0.08)' : 'var(--surface)',
-                                        color: saved ? 'var(--primary)' : 'var(--text-secondary)',
+                                        border: '1.5px solid var(--border)',
+                                        backgroundColor: 'var(--surface)',
+                                        color: 'var(--primary)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        cursor: saveLoading ? 'not-allowed' : 'pointer',
+                                        cursor: 'pointer',
                                         transition: 'all 0.2s',
-                                        opacity: saveLoading ? 0.6 : 1,
                                     }}
-                                    onMouseEnter={e => { if (!saveLoading) { e.currentTarget.style.backgroundColor = saved ? 'rgba(37,99,235,0.12)' : 'var(--bg)'; } }}
-                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = saved ? 'rgba(37,99,235,0.08)' : 'var(--surface)'; }}
+                                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--surface-elevated)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--surface)'; }}
                                 >
-                                    {saved
-                                        ? <BookmarkCheck size={20} />
-                                        : <Bookmark size={20} />}
+                                    <Share2 size={20} />
                                 </button>
-                            )}
+                                {!isOwner && (
+                                    <button
+                                        onClick={handleSaveLater}
+                                        disabled={saveLoading}
+                                        title={saved ? 'Remove from saved' : 'Save for later'}
+                                        style={{
+                                            width: '44px',
+                                            height: '44px',
+                                            borderRadius: '12px',
+                                            border: saved ? '1.5px solid var(--primary)' : '1.5px solid var(--border)',
+                                            backgroundColor: saved ? 'var(--primary-light)' : 'var(--surface)',
+                                            color: saved ? 'var(--primary)' : 'var(--text-secondary)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: saveLoading ? 'not-allowed' : 'pointer',
+                                            transition: 'all 0.2s',
+                                            opacity: saveLoading ? 0.6 : 1,
+                                        }}
+                                        onMouseEnter={e => { if (!saveLoading) { e.currentTarget.style.backgroundColor = saved ? 'var(--primary-glow)' : 'var(--surface-elevated)'; } }}
+                                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = saved ? 'var(--primary-light)' : 'var(--surface)'; }}
+                                    >
+                                        {saved
+                                            ? <BookmarkCheck size={20} />
+                                            : <Bookmark size={20} />}
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         {/* Saved confirmation */}
                         {saved && !isOwner && (
@@ -401,22 +455,43 @@ const ProductDetail = () => {
                             </div>
                         )}
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
-                            <div style={{ width: '40px', height: '40px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--primary)', border: '1px solid var(--border)' }}>
-                                {product.sellerName ? product.sellerName.charAt(0).toUpperCase() : 'S'}
-                            </div>
-                            <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                    <span style={{ fontWeight: '700', fontSize: '1rem' }}>{product.sellerName}</span>
-                                    {product.sellerVerified && <VerifiedBadge size={16} />}
-                                    <ReadOnlyRating sellerId={product.sellerId} />
+                        <Link
+                            to={`/seller/${product.sellerId}`}
+                            title="View seller's store and all products"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                marginBottom: '1.5rem',
+                                padding: '1rem',
+                                backgroundColor: 'var(--surface)',
+                                borderRadius: 'var(--radius-lg)',
+                                border: '1px solid var(--border)',
+                                textDecoration: 'none',
+                                color: 'inherit',
+                                transition: 'all 0.2s ease',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none'; }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ width: '40px', height: '40px', backgroundColor: 'var(--surface-elevated)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--primary)', border: '1px solid var(--border)' }}>
+                                    {product.sellerName ? product.sellerName.charAt(0).toUpperCase() : 'S'}
                                 </div>
-                                <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                                    {product.sellerVerified ? 'Verified Campus Seller' : 'Campus Seller'}
-                                </span>
-                                <SellerRating sellerId={product.sellerId} hideAverage={true} />
+                                <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                        <span style={{ fontWeight: '700', fontSize: '1rem' }}>{product.sellerName}</span>
+                                        {product.sellerVerified && <VerifiedBadge size={16} />}
+                                        <ReadOnlyRating sellerId={product.sellerId} />
+                                    </div>
+                                    <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                                        {product.sellerVerified ? 'Verified Campus Seller • Visit Store' : 'Campus Seller • Visit Store'}
+                                    </span>
+                                    <SellerRating sellerId={product.sellerId} hideAverage={true} />
+                                </div>
                             </div>
-                        </div>
+                            <ExternalLink size={16} style={{ color: 'var(--text-tertiary)' }} />
+                        </Link>
 
                         {!isOwner && !product.sellerVerified && (
                             <div style={{
@@ -614,6 +689,31 @@ const ProductDetail = () => {
                 onClose={() => setShowPrompt(false)} 
                 message="Sign up to contact sellers and start using Market-U"
             />
+
+            {/* Floating Share Link Toast */}
+            {shareToast && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '5.5rem',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    backgroundColor: 'var(--surface-elevated)',
+                    color: 'var(--text)',
+                    padding: '0.75rem 1.25rem',
+                    borderRadius: 'var(--radius-full)',
+                    border: '1px solid var(--border)',
+                    boxShadow: 'var(--shadow-xl)',
+                    zIndex: 2000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '700',
+                    animation: 'fadeInUp 0.3s ease',
+                }}>
+                    <Check size={16} color="var(--success)" /> Link copied to clipboard!
+                </div>
+            )}
         </div>
     );
 };

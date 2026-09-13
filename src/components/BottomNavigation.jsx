@@ -123,9 +123,10 @@ const BottomNavigation = () => {
                     backdrop-filter: blur(20px);
                     -webkit-backdrop-filter: blur(20px);
                     border-top: 1px solid var(--border);
-                    padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
-                    transform: translateZ(0);
-                    -webkit-transform: translateZ(0);
+                    padding-bottom: max(0.35rem, env(safe-area-inset-bottom));
+                    touch-action: manipulation;
+                    -webkit-user-select: none;
+                    user-select: none;
                     display: block;
                 }
 
@@ -133,13 +134,13 @@ const BottomNavigation = () => {
                     display: flex;
                     justify-content: space-around;
                     align-items: center;
-                    padding: 0.75rem 1rem 1rem 1rem;
-                    max-width: 600px;
+                    padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+                    max-width: 520px;
                     margin: 0 auto;
                 }
 
                 .bottom-nav-container--seller {
-                    padding: 0.5rem 1rem 1rem 1rem;
+                    padding: 0.35rem 0.5rem 0.5rem 0.5rem;
                     position: relative;
                 }
 
@@ -147,32 +148,34 @@ const BottomNavigation = () => {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    gap: 0.25rem;
+                    justify-content: center;
+                    gap: 0.2rem;
                     text-decoration: none;
                     color: var(--text-secondary);
-                    transition: all 0.2s ease;
-                    padding: 0.5rem 0.75rem;
+                    transition: color 0.15s ease, transform 0.15s ease;
+                    padding: 0.35rem 0.25rem;
                     border-radius: var(--radius-lg);
-                    min-width: 60px;
-                    flex: 1;
-                    max-width: 80px;
+                    min-width: 0;
+                    flex: 1 1 0;
+                    max-width: 72px;
                 }
 
                 .bottom-nav-item--center {
                     position: absolute;
                     left: 50%;
                     transform: translateX(-50%);
-                    top: -0.75rem;
+                    top: -0.85rem;
                     background: var(--gradient-primary);
                     color: white;
                     border-radius: 50%;
-                    width: 56px;
-                    height: 56px;
+                    width: 52px;
+                    height: 52px;
                     padding: 0;
                     box-shadow: 0 4px 16px var(--primary-glow);
                     flex: none;
                     max-width: none;
                     min-width: auto;
+                    z-index: 2;
                 }
 
                 .bottom-nav-item--center:active {
@@ -181,8 +184,8 @@ const BottomNavigation = () => {
 
                 .bottom-nav-item--center .bottom-nav-label {
                     position: absolute;
-                    bottom: -1.5rem;
-                    font-size: 0.7rem;
+                    bottom: -1.35rem;
+                    font-size: 0.65rem;
                     font-weight: 600;
                     color: var(--text-secondary);
                     white-space: nowrap;
@@ -203,7 +206,7 @@ const BottomNavigation = () => {
                 .bottom-nav-item--active .bottom-nav-icon::after {
                     content: '';
                     position: absolute;
-                    bottom: -0.5rem;
+                    bottom: -0.35rem;
                     width: 4px;
                     height: 4px;
                     background: var(--primary);
@@ -218,10 +221,14 @@ const BottomNavigation = () => {
                 }
 
                 .bottom-nav-label {
-                    font-size: 0.7rem;
+                    font-size: 0.65rem;
                     font-weight: 600;
                     text-align: center;
-                    line-height: 1;
+                    line-height: 1.1;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    max-width: 100%;
                 }
 
                 .bottom-nav-badge {
@@ -249,14 +256,12 @@ const BottomNavigation = () => {
                     }
                 }
 
-                .bottom-nav-container--seller .bottom-nav-item:first-child,
                 .bottom-nav-container--seller .bottom-nav-item:nth-child(2) {
-                    margin-right: 28px;
+                    margin-right: 22px;
                 }
 
-                .bottom-nav-container--seller .bottom-nav-item:nth-child(4),
-                .bottom-nav-container--seller .bottom-nav-item:last-child {
-                    margin-left: 28px;
+                .bottom-nav-container--seller .bottom-nav-item:nth-child(4) {
+                    margin-left: 22px;
                 }
             `}</style>
         </>

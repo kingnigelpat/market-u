@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Link } from 'react-router-dom';
-import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap, Star, MessageCircle, Package } from 'lucide-react';
+import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap, Star, MessageCircle, Package, Share2, Check, ExternalLink } from 'lucide-react';
 
 const SellerDashboard = () => {
     const { currentUser, userRole, setUserRole } = useAuth();
@@ -15,6 +15,34 @@ const SellerDashboard = () => {
     const requestingVerif = sellerData?.verificationStatus === 'pending';
     const [isUpgrading, setIsUpgrading] = useState(false);
     const [sellType, setSellType] = useState(null);
+    const [shareToast, setShareToast] = useState(false);
+
+    const handleShareStore = async () => {
+        const storeUrl = `${window.location.origin}/seller/${currentUser.uid}`;
+        const sellerName = sellerData?.name || currentUser.displayName || 'My';
+        const shareText = `🛍️ Check out ${sellerName}'s campus store on Market-U! Browse my items:`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `${sellerName}'s Store | Market-U`,
+                    text: shareText,
+                    url: storeUrl,
+                });
+                return;
+            } catch (err) {
+                if (err.name !== 'AbortError') console.warn('Share error:', err);
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(storeUrl);
+            setShareToast(true);
+            setTimeout(() => setShareToast(false), 2500);
+        } catch (err) {
+            console.error('Clipboard error:', err);
+        }
+    };
     useEffect(() => {
         const fetchDashboardData = async () => {
             setLoading(true);
@@ -344,6 +372,76 @@ const SellerDashboard = () => {
                 </div>
             )}
 
+            {/* Public Storefront Share Banner */}
+            <div className="card animate-fade-in-up" style={{
+                padding: '1.25rem 1.5rem',
+                marginBottom: '2rem',
+                backgroundColor: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-xl)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1rem',
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '12px',
+                        backgroundColor: 'var(--primary-light)',
+                        color: 'var(--primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                    }}>
+                        <Store size={22} />
+                    </div>
+                    <div>
+                        <h4 style={{ margin: '0 0 0.2rem 0', fontWeight: '800', fontSize: '1rem' }}>
+                            Your Public Storefront
+                        </h4>
+                        <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                            Share your personal store link on WhatsApp Status, Instagram, or TikTok bio!
+                        </p>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
+                    <Link
+                        to={`/seller/${currentUser.uid}`}
+                        className="btn btn-secondary"
+                        style={{
+                            fontSize: '0.8125rem',
+                            padding: '0.5rem 1rem',
+                            borderRadius: 'var(--radius-md)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                        }}
+                    >
+                        <ExternalLink size={14} /> Preview Store
+                    </Link>
+                    <button
+                        onClick={handleShareStore}
+                        id="share-my-store-btn"
+                        className="btn btn-primary"
+                        style={{
+                            fontSize: '0.8125rem',
+                            padding: '0.5rem 1rem',
+                            borderRadius: 'var(--radius-md)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                        }}
+                    >
+                        <Share2 size={14} /> Share Store Link
+                    </button>
+                </div>
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: '600' }}>Your Inventory</h2>
             </div>
@@ -425,6 +523,32 @@ const SellerDashboard = () => {
                             </div>
                         </div>
                     )}
+                </div>
+            )}
+            {/* Share Toast */}
+            {shareToast && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        bottom: '5.5rem',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        backgroundColor: 'var(--surface-elevated)',
+                        color: 'var(--text)',
+                        padding: '0.75rem 1.25rem',
+                        borderRadius: 'var(--radius-full)',
+                        border: '1px solid var(--border)',
+                        boxShadow: 'var(--shadow-xl)',
+                        zIndex: 2000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        fontSize: '0.875rem',
+                        fontWeight: '700',
+                        animation: 'fadeInUp 0.3s ease',
+                    }}
+                >
+                    <Check size={16} color="var(--success)" /> Store link copied to clipboard!
                 </div>
             )}
         </div>

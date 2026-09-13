@@ -21,7 +21,7 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
-  "theme_color": "#6C3CE1",
+  "theme_color": "#2563EB",
   "background_color": "#FAFAF8",
   "categories": ["shopping", "education"]
 }

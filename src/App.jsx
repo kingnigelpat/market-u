@@ -40,6 +40,7 @@ const EditProduct = lazyRetry(() => import('./pages/EditProduct.jsx'));
 const Notifications = lazyRetry(() => import('./pages/Notifications.jsx'));
 const Profile = lazyRetry(() => import('./pages/Profile.jsx'));
 const SavedItems = lazyRetry(() => import('./pages/SavedItems.jsx'));
+const SellerStore = lazyRetry(() => import('./pages/SellerStore.jsx'));
 
 import './styles/global.css';
 
@@ -109,6 +110,7 @@ const AppContent = () => {
                         <Route path="/register" element={<Register />} />
                         <Route path="/waitlist" element={<Waitlist />} />
                         <Route path="/product/:id" element={<ProductDetail />} />
+                        <Route path="/seller/:id" element={<SellerStore />} />
 
                         {/* Protected Routes */}
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>

@@ -6,7 +6,7 @@ import { Heart, Eye } from 'lucide-react';
 import { optimizeImage } from '../utils/cloudinary';
 
 const CATEGORY_COLORS = {
-    Electronics: { bg: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED' },
+    Electronics: { bg: 'rgba(37, 99, 235, 0.12)', color: '#2563EB' },
     Fashion: { bg: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B' },
     Services: { bg: 'rgba(16, 185, 129, 0.12)', color: '#10B981' },
     'Food & Groceries': { bg: 'rgba(239, 68, 68, 0.12)', color: '#EF4444' },
@@ -16,7 +16,7 @@ const ProductCard = ({ product, index = 0 }) => {
     const navigate = useNavigate();
     const [hovered, setHovered] = useState(false);
     const [imgLoaded, setImgLoaded] = useState(false);
-    const catStyle = CATEGORY_COLORS[product.category] || { bg: 'rgba(124, 58, 237, 0.12)', color: '#7C3AED' };
+    const catStyle = CATEGORY_COLORS[product.category] || { bg: 'rgba(37, 99, 235, 0.12)', color: '#2563EB' };
 
     return (
         <div

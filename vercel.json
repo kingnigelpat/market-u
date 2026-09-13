@@ -3,6 +3,17 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/product/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(bot|facebookexternalhit|whatsapp|twitterbot|slackbot|telegrambot|applebot|linkedinbot|discordbot|pinterest|embedly).*"
+        }
+      ],
+      "destination": "/api/og?id=:id"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

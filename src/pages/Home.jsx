@@ -108,11 +108,11 @@ const Home = () => {
                                         padding: '0.2rem 0.6rem',
                                         borderRadius: 'var(--radius-full)',
                                         background: isSeller
-                                            ? 'linear-gradient(135deg, #7C3AED, #A78BFA)'
-                                            : 'linear-gradient(135deg, #10B981, #3B82F6)',
+                                            ? 'linear-gradient(135deg, #2563EB, #60A5FA)'
+                                            : 'linear-gradient(135deg, #10B981, #06B6D4)',
                                         color: 'white',
                                         boxShadow: isSeller
-                                            ? '0 2px 8px rgba(124,58,237,0.3)'
+                                            ? '0 2px 8px rgba(37,99,235,0.3)'
                                             : '0 2px 8px rgba(16,185,129,0.3)',
                                     }}>
                                         {isSeller ? '🏷️ Seller' : '🛍️ Buyer'}
