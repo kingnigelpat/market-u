@@ -80,7 +80,7 @@ const ProductCard = ({ product, index = 0 }) => {
 
                 <div className="product-card-price-row">
                     <div className="product-card-price">
-                        ₦{parseFloat(product.price).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₦{(parseFloat(product.price) || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         {product.stock !== undefined && product.stock !== null && parseInt(product.stock, 10) > 0 && (

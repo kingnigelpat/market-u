@@ -67,7 +67,9 @@ const ProductDetail = () => {
                     }
 
                     setProduct(productData);
-                    document.title = `${productData.title} • ₦${parseFloat(productData.price).toLocaleString('en-NG')} | Market-U`;
+                    const numPrice = parseFloat(productData.price);
+                    const priceTag = !isNaN(numPrice) ? ` • ₦${numPrice.toLocaleString('en-NG')}` : '';
+                    document.title = `${productData.title}${priceTag} | Market-U`;
 
                     // Check if current buyer already expressed interest
                     if (currentUser && currentUser.uid !== productData.sellerId) {
@@ -238,14 +240,17 @@ const ProductDetail = () => {
 
     const handleShare = async () => {
         if (!product) return;
-        const formattedPrice = `₦${parseFloat(product.price).toLocaleString('en-NG')}`;
+        const numPrice = parseFloat(product.price);
+        const formattedPrice = !isNaN(numPrice) ? `₦${numPrice.toLocaleString('en-NG')}` : '';
         const shareUrl = window.location.href;
-        const shareText = `🔥 Check out "${product.title}" (${formattedPrice}) on Market-U!`;
+        const shareText = formattedPrice
+            ? `🔥 Check out "${product.title}" (${formattedPrice}) on Market-U!`
+            : `🔥 Check out "${product.title}" on Market-U!`;
 
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: `${product.title} • ${formattedPrice} | Market-U`,
+                    title: formattedPrice ? `${product.title} • ${formattedPrice} | Market-U` : `${product.title} | Market-U`,
                     text: shareText,
                     url: shareUrl,
                 });
@@ -455,26 +460,56 @@ const ProductDetail = () => {
                             </div>
                         )}
 
-                        <Link
-                            to={`/seller/${product.sellerId}`}
-                            title="View seller's store and all products"
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                marginBottom: '1.5rem',
-                                padding: '1rem',
-                                backgroundColor: 'var(--surface)',
-                                borderRadius: 'var(--radius-lg)',
-                                border: '1px solid var(--border)',
-                                textDecoration: 'none',
-                                color: 'inherit',
-                                transition: 'all 0.2s ease',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none'; }}
-                        >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        {product.sellerId ? (
+                            <Link
+                                to={`/seller/${product.sellerId}`}
+                                title="View seller's store and all products"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    marginBottom: '1rem',
+                                    padding: '1rem',
+                                    backgroundColor: 'var(--surface)',
+                                    borderRadius: 'var(--radius-lg)',
+                                    border: '1px solid var(--border)',
+                                    textDecoration: 'none',
+                                    color: 'inherit',
+                                    transition: 'all 0.2s ease',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none'; }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ width: '40px', height: '40px', backgroundColor: 'var(--surface-elevated)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--primary)', border: '1px solid var(--border)' }}>
+                                        {product.sellerName ? product.sellerName.charAt(0).toUpperCase() : 'S'}
+                                    </div>
+                                    <div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                            <span style={{ fontWeight: '700', fontSize: '1rem' }}>{product.sellerName}</span>
+                                            {product.sellerVerified && <VerifiedBadge size={16} />}
+                                            <ReadOnlyRating sellerId={product.sellerId} />
+                                        </div>
+                                        <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                                            {product.sellerVerified ? 'Verified Campus Seller • Visit Store' : 'Campus Seller • Visit Store'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <ExternalLink size={16} style={{ color: 'var(--text-tertiary)' }} />
+                            </Link>
+                        ) : (
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.75rem',
+                                    marginBottom: '1rem',
+                                    padding: '1rem',
+                                    backgroundColor: 'var(--surface)',
+                                    borderRadius: 'var(--radius-lg)',
+                                    border: '1px solid var(--border)',
+                                }}
+                            >
                                 <div style={{ width: '40px', height: '40px', backgroundColor: 'var(--surface-elevated)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--primary)', border: '1px solid var(--border)' }}>
                                     {product.sellerName ? product.sellerName.charAt(0).toUpperCase() : 'S'}
                                 </div>
@@ -482,16 +517,32 @@ const ProductDetail = () => {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                                         <span style={{ fontWeight: '700', fontSize: '1rem' }}>{product.sellerName}</span>
                                         {product.sellerVerified && <VerifiedBadge size={16} />}
-                                        <ReadOnlyRating sellerId={product.sellerId} />
                                     </div>
                                     <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                                        {product.sellerVerified ? 'Verified Campus Seller • Visit Store' : 'Campus Seller • Visit Store'}
+                                        {product.sellerVerified ? 'Verified Campus Seller' : 'Campus Seller'}
                                     </span>
-                                    <SellerRating sellerId={product.sellerId} hideAverage={true} />
                                 </div>
                             </div>
-                            <ExternalLink size={16} style={{ color: 'var(--text-tertiary)' }} />
-                        </Link>
+                        )}
+
+                        {/* Interactive Seller Rating (separate from link to allow clicking stars) */}
+                        {!isOwner && product.sellerId && (
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '0.625rem 1rem',
+                                marginBottom: '1.25rem',
+                                backgroundColor: 'var(--surface-elevated)',
+                                borderRadius: 'var(--radius-md)',
+                                border: '1px solid var(--border)',
+                            }}>
+                                <span style={{ fontSize: '0.8125rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                                    Rate this seller:
+                                </span>
+                                <SellerRating sellerId={product.sellerId} hideAverage={true} />
+                            </div>
+                        )}
 
                         {!isOwner && !product.sellerVerified && (
                             <div style={{
