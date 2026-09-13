@@ -1,0 +1,8 @@
+The app is showing a white screen with MIME type errors in the console. The errors say JS files are being served as "text/html" instead of JavaScript modules. Vercel deployment is green but the app won't load.
+
+Please check:
+
+The vite.config.js build output settings
+Make sure the build output goes to dist folder
+Check if there's a "outputDirectory" set correctly in vercel.json
+Fix the MIME type issue so JS chunks load correctly

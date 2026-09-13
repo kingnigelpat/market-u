@@ -1,0 +1,244 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { useAuth } from '../context/AuthContext';
+import { Save, ArrowLeft } from 'lucide-react';
+
+const EditProduct = () => {
+    const { id } = useParams();
+    const { currentUser, userRole } = useAuth();
+    const navigate = useNavigate();
+
+    const [formData, setFormData] = useState({
+        title: '',
+        price: '',
+        stock: '1',
+        description: '',
+        category: 'Electronics'
+    });
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+    const [sellerVerified, setSellerVerified] = useState(false);
+
+    useEffect(() => {
+        const fetchProduct = async () => {
+            try {
+                const docRef = doc(db, 'products', id);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.sellerId !== currentUser.uid) {
+                        setError("You don't have permission to edit this product.");
+                    } else {
+                        setFormData({
+                            title: data.title || '',
+                            price: data.price || '',
+                            stock: data.stock !== undefined ? data.stock.toString() : '1',
+                            description: data.description || '',
+                            category: data.category || 'Electronics'
+                        });
+                        // Fetch LIVE seller verified status to keep product in sync
+                        const sellerRef = doc(db, 'users', currentUser.uid);
+                        const sellerSnap = await getDoc(sellerRef);
+                        if (sellerSnap.exists()) {
+                            setSellerVerified(!!sellerSnap.data().verified);
+                        }
+                    }
+                } else {
+                    setError("Product not found.");
+                }
+            } catch (err) {
+                console.error("Error fetching product:", err);
+                setError("Failed to load product details.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (currentUser) {
+            fetchProduct();
+        }
+    }, [id, currentUser]);
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!formData.title.trim() || !formData.description.trim()) {
+            setError('Please fill in all text fields.');
+            return;
+        }
+
+        const numericPrice = parseFloat(formData.price);
+        if (isNaN(numericPrice) || numericPrice <= 0) {
+            setError('Please enter a valid price greater than zero.');
+            return;
+        }
+
+        setSaving(true);
+        setError('');
+
+        try {
+            // Re-verify ownership from the database before writing
+            const docRef = doc(db, 'products', id);
+            const freshSnap = await getDoc(docRef);
+            if (!freshSnap.exists()) {
+                setError('Product no longer exists.');
+                setSaving(false);
+                return;
+            }
+            const freshData = freshSnap.data();
+            if (freshData.sellerId !== currentUser.uid && userRole !== 'admin') {
+                setError("You don't have permission to edit this product.");
+                setSaving(false);
+                return;
+            }
+
+            const parsedStock = parseInt(formData.stock, 10);
+            const stockQuantity = isNaN(parsedStock) || parsedStock < 0 ? 0 : parsedStock;
+
+            await updateDoc(docRef, {
+                title: formData.title.trim(),
+                description: formData.description.trim(),
+                price: numericPrice,
+                stock: stockQuantity,
+                category: formData.category,
+                sellerVerified: sellerVerified, // Always sync with live seller status
+            });
+
+            // Redirect back to product detail
+            navigate(`/product/${id}`);
+        } catch (err) {
+            console.error(err);
+            setError('Error updating product. Please try again.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) {
+        return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}>Loading product details...</div>;
+    }
+
+    if (error && !formData.title) {
+        return <div className="container" style={{ padding: '3rem 0', textAlign: 'center', color: 'var(--danger)' }}>{error}</div>;
+    }
+
+    return (
+        <div className="container" style={{ padding: '0 0 2rem 0' }}>
+            <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+                <button
+                    onClick={() => navigate(-1)}
+                    className="btn"
+                    style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}
+                >
+                    <ArrowLeft size={20} /> Back
+                </button>
+                <h1 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '1.5rem' }}>Edit Product</h1>
+
+                <div className="card mobile-card-padding">
+                    {error && (
+                        <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+                            {error}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label htmlFor="title">Product Title</label>
+                            <input
+                                type="text"
+                                id="title"
+                                name="title"
+                                value={formData.title}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="price">Price (₦)</label>
+                            <input
+                                type="number"
+                                id="price"
+                                name="price"
+                                value={formData.price}
+                                onChange={handleChange}
+                                required
+                                min="0"
+                                step="0.01"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="stock">Stock Quantity (Units Available)</label>
+                            <input
+                                type="number"
+                                id="stock"
+                                name="stock"
+                                value={formData.stock}
+                                onChange={handleChange}
+                                required
+                                min="0"
+                            />
+                            <small style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginTop: '0.35rem', display: 'block' }}>
+                                Units remaining. Set to 0 if this item is currently out of stock.
+                            </small>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="category">Category</label>
+                            <select id="category" name="category" value={formData.category} onChange={handleChange}>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Phones & Tablets">Phones & Tablets</option>
+                                <option value="Computing">Computing (Laptops)</option>
+                                <option value="Fashion">Fashion (Clothing, Shoes)</option>
+                                <option value="Health & Beauty">Health & Beauty</option>
+                                <option value="Home & Kitchen">Home & Kitchen</option>
+                                <option value="Books & Stationery">Books & Stationery</option>
+                                <option value="Food & Groceries">Food & Groceries</option>
+                                <option value="Services">Services (Tutoring, Haircuts)</option>
+                                <option value="Hostels & Rooms">Hostels & Rooms</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="description">Description (Condition, Features, etc.)</label>
+                            <textarea
+                                id="description"
+                                name="description"
+                                value={formData.description}
+                                onChange={handleChange}
+                                required
+                                rows="5"
+                            />
+                        </div>
+
+                        <div style={{ marginTop: '2rem' }}>
+                            <button
+                                type="submit"
+                                disabled={saving}
+                                className="btn btn-primary"
+                                style={{ width: '100%', padding: '0.75rem', justifyContent: 'center' }}
+                            >
+                                {saving ? 'Saving...' : (
+                                    <>
+                                        <Save size={20} /> Update Product
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default EditProduct;
