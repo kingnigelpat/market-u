@@ -207,6 +207,7 @@ const PromoBanner = ({
                     align-items: center;
                     overflow: hidden;
                     box-shadow: 0 16px 36px -10px rgba(30, 58, 138, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+                    max-width: 100%;
                 }
 
                 [data-theme="dark"] .promo-banner {
@@ -357,6 +358,7 @@ const PromoBanner = ({
                     gap: 0.75rem;
                     margin-top: 0.5rem;
                     align-items: center;
+                    max-width: 100%;
                 }
 
                 .promo-cta-btn {
@@ -369,6 +371,10 @@ const PromoBanner = ({
                     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
                     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
                     border: none;
+                    max-width: 100%;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                 }
 
                 .promo-cta-btn:hover {
@@ -528,8 +534,8 @@ const PromoBanner = ({
                 @media (max-width: 860px) {
                     .promo-banner {
                         grid-template-columns: 1fr;
-                        padding: 1.75rem 1.25rem;
-                        gap: 1.25rem;
+                        padding: 1.5rem 1.15rem;
+                        gap: 0.75rem;
                     }
 
                     .hide-on-mobile {
@@ -540,56 +546,75 @@ const PromoBanner = ({
                         display: block;
                     }
 
+                    .promo-content {
+                        gap: 0.65rem;
+                        min-width: 0;
+                    }
+
                     .promo-title {
-                        font-size: 1.85rem;
+                        font-size: 1.65rem;
                     }
 
                     .promo-subtitle {
-                        font-size: 0.9375rem;
+                        font-size: 0.875rem;
+                        max-width: 100%;
                     }
 
                     .promo-cta-btn {
                         width: 100%;
                         justify-content: center;
+                        white-space: nowrap;
+                        font-size: 0.875rem;
+                        padding: 0.7rem 1.25rem;
+                    }
+
+                    .promo-cta-btn span {
+                        overflow: hidden;
+                        text-overflow: ellipsis;
                     }
 
                     .promo-mobile-showcase {
-                        margin-top: 0.5rem;
+                        margin-top: 0.25rem;
                         border-top: 1px solid rgba(255, 255, 255, 0.15);
-                        padding-top: 1rem;
+                        padding-top: 0.75rem;
+                        min-width: 0;
+                        overflow: hidden;
                     }
 
                     .promo-mobile-label {
-                        font-size: 0.725rem;
+                        font-size: 0.7rem;
                         font-weight: 700;
                         text-transform: uppercase;
                         letter-spacing: 0.04em;
                         color: rgba(255, 255, 255, 0.8);
-                        margin-bottom: 0.6rem;
+                        margin-bottom: 0.5rem;
                     }
 
                     .promo-mobile-scroll {
                         display: flex;
-                        gap: 0.625rem;
+                        gap: 0.5rem;
                         overflow-x: auto;
                         padding-bottom: 0.25rem;
+                        margin: 0 -0.25rem;
+                        padding-left: 0.25rem;
+                        padding-right: 0.25rem;
                     }
 
                     .promo-mobile-card {
-                        flex: 0 0 190px;
+                        flex: 0 0 170px;
                         background: rgba(255, 255, 255, 0.95);
                         border-radius: var(--radius-md);
-                        padding: 0.4rem 0.5rem;
+                        padding: 0.35rem 0.45rem;
                         display: flex;
                         align-items: center;
-                        gap: 0.5rem;
+                        gap: 0.4rem;
                         cursor: pointer;
                         color: #0F172A;
                     }
 
                     .promo-mobile-card-img {
-                        width: 44px;
-                        height: 44px;
+                        width: 40px;
+                        height: 40px;
                         border-radius: var(--radius-sm);
                         object-fit: cover;
                         flex-shrink: 0;
@@ -600,10 +625,11 @@ const PromoBanner = ({
                         flex-direction: column;
                         overflow: hidden;
                         flex: 1;
+                        min-width: 0;
                     }
 
                     .promo-mobile-card-title {
-                        font-size: 0.75rem;
+                        font-size: 0.7rem;
                         font-weight: 700;
                         white-space: nowrap;
                         overflow: hidden;
@@ -612,7 +638,7 @@ const PromoBanner = ({
                     }
 
                     .promo-mobile-card-price {
-                        font-size: 0.725rem;
+                        font-size: 0.7rem;
                         font-weight: 800;
                         color: #2563EB;
                     }
@@ -625,52 +651,52 @@ const PromoBanner = ({
 
                 @media (max-width: 480px) {
                     .promo-banner {
-                        padding: 1.25rem 1rem;
+                        padding: 1.15rem 0.9rem;
                         border-radius: var(--radius-xl);
-                        gap: 0.875rem;
+                        gap: 0.6rem;
                     }
 
                     .promo-badge {
-                        font-size: 0.675rem;
-                        padding: 0.25rem 0.65rem;
+                        font-size: 0.65rem;
+                        padding: 0.2rem 0.55rem;
                     }
 
                     .promo-admin-btn {
-                        font-size: 0.675rem;
-                        padding: 0.25rem 0.6rem;
+                        font-size: 0.65rem;
+                        padding: 0.2rem 0.5rem;
                     }
 
                     .promo-title {
-                        font-size: clamp(1.35rem, 5.5vw, 1.65rem);
-                        line-height: 1.15;
+                        font-size: clamp(1.25rem, 5.5vw, 1.55rem);
+                        line-height: 1.12;
                     }
 
                     .promo-subtitle {
-                        font-size: 0.85rem;
-                        line-height: 1.35;
+                        font-size: 0.8rem;
+                        line-height: 1.3;
                     }
 
                     .promo-cta-btn {
-                        padding: 0.65rem 1.25rem;
-                        font-size: 0.85rem;
+                        padding: 0.6rem 1rem;
+                        font-size: 0.8rem;
                     }
 
                     .promo-mobile-card {
-                        flex: 0 0 160px;
-                        padding: 0.35rem 0.45rem;
+                        flex: 0 0 150px;
+                        padding: 0.3rem 0.4rem;
                     }
 
                     .promo-mobile-card-img {
-                        width: 38px;
-                        height: 38px;
+                        width: 36px;
+                        height: 36px;
                     }
 
                     .promo-mobile-card-title {
-                        font-size: 0.7rem;
+                        font-size: 0.675rem;
                     }
 
                     .promo-mobile-card-price {
-                        font-size: 0.7rem;
+                        font-size: 0.675rem;
                     }
                 }
             `}</style>
