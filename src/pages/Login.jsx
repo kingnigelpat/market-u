@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { LogIn } from 'lucide-react';
 
 const Login = () => {
@@ -23,19 +23,19 @@ const Login = () => {
         setError('');
         setResetSent(false);
         try {
-            const res = await fetch('/api/reset-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email.trim() }),
-            });
-            const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.error || 'Failed to send reset email');
-            }
+            await sendPasswordResetEmail(auth, email.trim());
             setResetSent(true);
             setError('');
         } catch (err) {
-            setError(err.message || 'Failed to send reset email. Please try again.');
+            if (err.code === 'auth/user-not-found') {
+                setError('No account found with that email address.');
+            } else if (err.code === 'auth/invalid-email') {
+                setError('Please enter a valid email address.');
+            } else if (err.code === 'auth/too-many-requests') {
+                setError('Too many requests. Please wait a moment and try again.');
+            } else {
+                setError('Failed to send reset email. Please try again.');
+            }
             setResetSent(false);
             console.error('Password reset error:', err);
         } finally {
