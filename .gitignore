@@ -25,6 +25,7 @@ dist-ssr
 
 # Security
 .env
+env
 .env.local
 .env.*.local
 firebase-key.json

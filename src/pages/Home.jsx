@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
+import PromoBanner from '../components/PromoBanner';
+import BuyerDiscovery from '../components/BuyerDiscovery';
+import CampaignEditModal from '../components/CampaignEditModal';
 import { Search, PackagePlus, ArrowRight, Sparkles, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +12,7 @@ import InstallGuideModal from '../components/InstallGuideModal';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { smartMatchesProduct } from '../utils/smartSearch';
+import { subscribeToActiveCampaign, DEFAULT_CAMPAIGN, getActiveDiscoveryCollections } from '../utils/campaignService';
 
 const CATEGORIES = [
     { key: 'all', label: 'All', emoji: '🔥' },
@@ -25,13 +29,16 @@ const CATEGORIES = [
 ];
 
 const Home = () => {
-    const { isAuthenticated, isSeller, currentUser, userName } = useAuth();
+    const { isAuthenticated, isSeller, currentUser, userName, isAdmin } = useAuth();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('all');
     const [verifiedOnly, setVerifiedOnly] = useState(false);
     const [showInstallGuide, setShowInstallGuide] = useState(false);
+    const [campaign, setCampaign] = useState(DEFAULT_CAMPAIGN);
+    const [showAdminModal, setShowAdminModal] = useState(false);
+    const [activeCollectionKey, setActiveCollectionKey] = useState(null);
     const productsRef = useRef(null);
 
     const [showDownloadPrompt, setShowDownloadPrompt] = useState(() => {
@@ -44,6 +51,7 @@ const Home = () => {
     };
 
     const handleCategoryClick = (key) => {
+        setActiveCollectionKey(null);
         if (key === 'verified') {
             setCategoryFilter('all');
             setVerifiedOnly(true);
@@ -52,6 +60,13 @@ const Home = () => {
             setVerifiedOnly(false);
         }
     };
+
+    useEffect(() => {
+        const unsub = subscribeToActiveCampaign((activeCamp) => {
+            setCampaign(activeCamp);
+        });
+        return () => unsub && unsub();
+    }, []);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -73,11 +88,56 @@ const Home = () => {
         fetchProducts();
     }, []);
 
+    const discoveryCollections = getActiveDiscoveryCollections(products);
+
+    const handleSelectCollection = (col) => {
+        if (activeCollectionKey === col.key) {
+            setActiveCollectionKey(null);
+            setCategoryFilter('all');
+        } else {
+            setActiveCollectionKey(col.key);
+            if (col.categories && col.categories.length === 1) {
+                setCategoryFilter(col.categories[0]);
+            } else {
+                setCategoryFilter('all');
+            }
+            if (productsRef.current) {
+                productsRef.current.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    };
+
+    const handleBannerCtaClick = () => {
+        if (campaign?.ctaTarget && campaign.ctaTarget !== 'resumption') {
+            setCategoryFilter(campaign.ctaTarget);
+            setActiveCollectionKey(null);
+        } else {
+            const firstCol = discoveryCollections[0];
+            if (firstCol) {
+                handleSelectCollection(firstCol);
+            } else {
+                setCategoryFilter('Fashion');
+            }
+        }
+        if (productsRef.current) {
+            productsRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
     const filteredProducts = products.filter(product => {
         const matchesSearch = smartMatchesProduct(product, searchTerm);
+        
+        let matchesCollection = true;
+        if (activeCollectionKey) {
+            const activeCol = discoveryCollections.find(c => c.key === activeCollectionKey);
+            if (activeCol && activeCol.filterFn) {
+                matchesCollection = activeCol.filterFn(product);
+            }
+        }
+
         const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
         const matchesVerified = !verifiedOnly || Boolean(product.sellerVerified) === true;
-        return matchesSearch && matchesCategory && matchesVerified;
+        return matchesSearch && matchesCategory && matchesVerified && matchesCollection;
     }).sort((a, b) => {
         return (b.views || 0) - (a.views || 0);
     });
@@ -217,6 +277,64 @@ const Home = () => {
 
 
             <div className="container market-body" ref={productsRef}>
+                {/* ── Promotional Campaign Banner (School Resumption / Admin-managed) ── */}
+                {(!searchTerm && categoryFilter === 'all' && !verifiedOnly && !activeCollectionKey) && (
+                    <PromoBanner
+                        campaign={campaign}
+                        products={products}
+                        isAdmin={isAdmin}
+                        onOpenAdminModal={() => setShowAdminModal(true)}
+                        onCtaClick={handleBannerCtaClick}
+                    />
+                )}
+
+                {/* ── Buyer Discovery Section ("Getting ready for campus?") ── */}
+                {(!searchTerm && !verifiedOnly) && (
+                    <BuyerDiscovery
+                        collections={discoveryCollections}
+                        activeCollectionKey={activeCollectionKey}
+                        onSelectCollection={handleSelectCollection}
+                    />
+                )}
+
+                {/* ── Active Collection Bar Indicator ── */}
+                {activeCollectionKey && (
+                    <div className="active-collection-bar animate-fade-in-up" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.875rem 1.25rem',
+                        background: 'var(--surface-elevated)',
+                        border: '1.5px solid var(--primary)',
+                        borderRadius: 'var(--radius-xl)',
+                        marginBottom: '2rem',
+                        boxShadow: 'var(--shadow-sm)',
+                        flexWrap: 'wrap',
+                        gap: '0.75rem'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '1.25rem' }}>
+                                {discoveryCollections.find(c => c.key === activeCollectionKey)?.emoji}
+                            </span>
+                            <div>
+                                <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: 'var(--text)' }}>
+                                    Showing &quot;{discoveryCollections.find(c => c.key === activeCollectionKey)?.title}&quot; Collection
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                    {filteredProducts.length} {filteredProducts.length === 1 ? 'item' : 'items'} available
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => { setActiveCollectionKey(null); setCategoryFilter('all'); }}
+                            className="btn btn-secondary"
+                            style={{ fontSize: '0.8125rem', padding: '0.4rem 1rem' }}
+                        >
+                            Show All Products
+                        </button>
+                    </div>
+                )}
+
                 {showDownloadPrompt && (
                     <div className="download-banner animate-fade-in-up">
                         <button onClick={dismissDownloadPrompt} className="download-banner-close" aria-label="Dismiss">
@@ -378,6 +496,11 @@ const Home = () => {
             </div>
 
             <InstallGuideModal isOpen={showInstallGuide} onClose={() => setShowInstallGuide(false)} />
+            <CampaignEditModal
+                isOpen={showAdminModal}
+                onClose={() => setShowAdminModal(false)}
+                currentCampaign={campaign}
+            />
 
             <style>{`
                 .market-page {
@@ -393,8 +516,20 @@ const Home = () => {
                     padding: 1.5rem 0 1.25rem;
                 }
 
+                @media (max-width: 640px) {
+                    .market-hero {
+                        padding: 1rem 0 0.875rem;
+                    }
+                }
+
                 .market-hero-inner {
                     padding: 0 1.5rem;
+                }
+
+                @media (max-width: 640px) {
+                    .market-hero-inner {
+                        padding: 0 1rem;
+                    }
                 }
 
                 .market-hero-top {
@@ -402,6 +537,7 @@ const Home = () => {
                     justify-content: space-between;
                     align-items: flex-start;
                     margin-bottom: 1.25rem;
+                    gap: 0.75rem;
                 }
 
                 .market-greeting {
@@ -413,11 +549,23 @@ const Home = () => {
                     color: var(--text);
                 }
 
+                @media (max-width: 640px) {
+                    .market-greeting {
+                        font-size: 1.25rem;
+                    }
+                }
+
                 .market-subtitle {
                     color: var(--text-secondary);
                     font-size: 0.875rem;
                     margin: 0.25rem 0 0;
                     font-weight: 500;
+                }
+
+                @media (max-width: 640px) {
+                    .market-subtitle {
+                        font-size: 0.8125rem;
+                    }
                 }
 
                 .live-badge {
@@ -473,6 +621,16 @@ const Home = () => {
                     transition: all 0.2s ease;
                 }
 
+                @media (max-width: 640px) {
+                    .market-search-input {
+                        padding: 0.75rem 1rem 0.75rem 2.85rem;
+                        font-size: 0.875rem;
+                    }
+                    .market-search-icon {
+                        left: 1rem;
+                    }
+                }
+
                 .market-search-clear {
                     position: absolute;
                     top: 50%;
@@ -496,6 +654,14 @@ const Home = () => {
                     padding-bottom: 0.25rem;
                 }
 
+                @media (max-width: 640px) {
+                    .market-filters {
+                        margin: 0 -1rem;
+                        padding: 0 1rem 0.35rem;
+                        scroll-padding: 1rem;
+                    }
+                }
+
                 .filter-chip {
                     display: flex;
                     align-items: center;
@@ -512,6 +678,13 @@ const Home = () => {
                     cursor: pointer;
                 }
 
+                @media (max-width: 640px) {
+                    .filter-chip {
+                        padding: 0.4rem 0.8rem;
+                        font-size: 0.75rem;
+                    }
+                }
+
                 .filter-chip:hover {
                     border-color: var(--primary);
                     color: var(--primary);
@@ -526,6 +699,12 @@ const Home = () => {
 
                 .market-body {
                     padding: 1.5rem 1.5rem 6rem;
+                }
+
+                @media (max-width: 640px) {
+                    .market-body {
+                        padding: 1rem 1rem 6rem;
+                    }
                 }
 
                 .download-banner {
@@ -585,11 +764,23 @@ const Home = () => {
                     margin-bottom: 2.5rem;
                 }
 
+                @media (max-width: 640px) {
+                    .market-section {
+                        margin-bottom: 2rem;
+                    }
+                }
+
                 .market-section-header {
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
                     margin-bottom: 1.25rem;
+                }
+
+                @media (max-width: 640px) {
+                    .market-section-header {
+                        margin-bottom: 0.875rem;
+                    }
                 }
 
                 .market-section-title {
@@ -598,6 +789,12 @@ const Home = () => {
                     font-weight: 800;
                     letter-spacing: -0.02em;
                     margin: 0;
+                }
+
+                @media (max-width: 640px) {
+                    .market-section-title {
+                        font-size: 1.1rem;
+                    }
                 }
 
                 .market-section-link {
@@ -646,11 +843,21 @@ const Home = () => {
                 }
 
                 @media (max-width: 768px) {
+                    .swimlane {
+                        margin: -0.5rem -1rem 0;
+                        padding: 0.5rem 1rem 1rem;
+                        scroll-padding-left: 1rem;
+                        gap: 0.75rem;
+                    }
                     .swimlane-item { flex: 0 0 calc(48% - 0.5rem); }
                 }
 
                 @media (max-width: 480px) {
-                    .swimlane-item { flex: 0 0 calc(82% - 0.5rem); }
+                    .swimlane-item {
+                        flex: 0 0 162px;
+                        min-width: 155px;
+                        max-width: 175px;
+                    }
                 }
 
                 .empty-state {
@@ -741,6 +948,26 @@ const Home = () => {
                     align-items: center;
                     justify-content: center;
                     flex-shrink: 0;
+                }
+
+                @media (max-width: 768px) {
+                    .guest-cta {
+                        bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+                        width: calc(100% - 1.5rem);
+                    }
+                    .guest-cta-inner {
+                        padding: 0.75rem 1.125rem;
+                    }
+                    .guest-cta-title {
+                        font-size: 0.875rem;
+                    }
+                    .guest-cta-sub {
+                        font-size: 0.75rem;
+                    }
+                    .guest-cta-arrow {
+                        width: 32px;
+                        height: 32px;
+                    }
                 }
 
                 @media (max-width: 640px) {

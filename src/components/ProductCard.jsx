@@ -80,7 +80,9 @@ const ProductCard = ({ product, index = 0 }) => {
 
                 <div className="product-card-price-row">
                     <div className="product-card-price">
-                        ₦{(parseFloat(product.price) || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₦{(parseFloat(product.price) || 0).toLocaleString('en-NG', {
+                            maximumFractionDigits: (parseFloat(product.price) % 1 === 0 ? 0 : 2)
+                        })}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         {product.stock !== undefined && product.stock !== null && parseInt(product.stock, 10) > 0 && (
@@ -336,6 +338,54 @@ const ProductCard = ({ product, index = 0 }) => {
                 @keyframes shimmer {
                     0% { background-position: -1000px 0; }
                     100% { background-position: 1000px 0; }
+                }
+
+                @media (max-width: 480px) {
+                    .product-card-body {
+                        padding: 0.65rem 0.55rem;
+                    }
+
+                    .product-card-title {
+                        font-size: 0.8125rem;
+                        margin-bottom: 0.2rem;
+                        line-height: 1.3;
+                    }
+
+                    .product-card-seller {
+                        font-size: 0.6875rem;
+                        margin-bottom: 0.25rem;
+                        gap: 0.25rem;
+                    }
+
+                    .product-card-price-row {
+                        margin: 0.35rem 0 0.45rem;
+                        flex-wrap: wrap;
+                        gap: 0.25rem;
+                    }
+
+                    .product-card-price {
+                        font-size: 0.9375rem;
+                    }
+
+                    .product-card-cta {
+                        padding: 0.45rem 0.35rem;
+                        font-size: 0.75rem;
+                        gap: 0.25rem;
+                    }
+
+                    .product-card-category {
+                        top: 0.4rem;
+                        left: 0.4rem;
+                        font-size: 0.6rem;
+                        padding: 0.15rem 0.45rem;
+                    }
+
+                    .product-card-new,
+                    .product-card-popular,
+                    .product-card-stock-badge {
+                        font-size: 0.575rem;
+                        padding: 0.15rem 0.4rem;
+                    }
                 }
             `}</style>
         </div>

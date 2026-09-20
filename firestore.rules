@@ -180,10 +180,10 @@ service cloud.firestore {
 
 
     // ─────────────────────────────────────────────
-    // DENY EVERYTHING ELSE
+    // WAITLIST
     // ─────────────────────────────────────────────
 
-match /waitlist/{waitlistId} {
+    match /waitlist/{waitlistId} {
 
       // Authenticated users can create waitlist submissions.
       allow create: if request.auth != null;
@@ -193,11 +193,22 @@ match /waitlist/{waitlistId} {
       allow read: if isSignedIn()
         && (request.auth.uid == resource.data.userId
           || isAdmin());
-
-      // Only admins can update or delete waitlist submissions.
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
     }
+
+
+    // ─────────────────────────────────────────────
+    // CAMPAIGNS (Homepage Promotional Banners)
+    // ─────────────────────────────────────────────
+
+    match /campaigns/{campaignId} {
+
+      // Banners are publicly visible on homepage.
+      allow read: if true;
+
+      // Only admins can create, update, or delete campaigns.
+      allow write: if isAdmin();
+    }
+
 
     // ─────────────────────────────────────────────
     // DENY EVERYTHING ELSE
@@ -206,5 +217,5 @@ match /waitlist/{waitlistId} {
     match /{document=**} {
       allow read, write: if false;
     }
-}
+  }
 }

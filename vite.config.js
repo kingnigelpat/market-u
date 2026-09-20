@@ -149,5 +149,9 @@ export default defineConfig(({ mode }) => {
   return {
     base: '/',
     plugins: [react(), firebaseSwPlugin()],
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true,
+    },
   }
 })
