@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { LogIn } from 'lucide-react';
 
 const Login = () => {
@@ -10,15 +10,37 @@ const Login = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [resetSent, setResetSent] = useState(false);
+    const [resetLoading, setResetLoading] = useState(false);
     const navigate = useNavigate();
 
-    const handleForgotPassword = () => {
-        const message = email 
-            ? `Hello Admin, I forgot my Market-U password. My email is: ${email}`
-            : `Hello Admin, I forgot my Market-U password.`;
-        window.open(`https://wa.me/2347073544811?text=${encodeURIComponent(message)}`, '_blank');
-        setResetSent(true);
+    const handleForgotPassword = async () => {
+        if (!email || !email.trim()) {
+            setError('Please enter your email address first, then click "Forgot password?"');
+            setResetSent(false);
+            return;
+        }
+        setResetLoading(true);
         setError('');
+        setResetSent(false);
+        try {
+            await sendPasswordResetEmail(auth, email.trim());
+            setResetSent(true);
+            setError('');
+        } catch (err) {
+            if (err.code === 'auth/user-not-found') {
+                setError('No account found with that email address.');
+            } else if (err.code === 'auth/invalid-email') {
+                setError('Please enter a valid email address.');
+            } else if (err.code === 'auth/too-many-requests') {
+                setError('Too many requests. Please wait a moment and try again.');
+            } else {
+                setError('Failed to send reset email. Please try again.');
+            }
+            setResetSent(false);
+            console.error('Password reset error:', err);
+        } finally {
+            setResetLoading(false);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -60,7 +82,7 @@ const Login = () => {
                         border: '1px solid rgba(37, 99, 235, 0.15)',
                         textAlign: 'center'
                     }}>
-                        Redirecting to WhatsApp support. Please message the Admin to reset your password.
+                        ✅ Password reset link sent! Check your email inbox (and spam folder) for a link to reset your password.
                     </div>
                 )}
 
@@ -108,7 +130,7 @@ const Login = () => {
                                     fontWeight: '500'
                                 }}
                             >
-                                Forgot password?
+                                {resetLoading ? 'Sending...' : 'Forgot password?'}
                             </button>
                         </div>
                         <input

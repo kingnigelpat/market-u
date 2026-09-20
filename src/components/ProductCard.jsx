@@ -86,7 +86,12 @@ const ProductCard = ({ product, index = 0 }) => {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         {product.stock !== undefined && product.stock !== null && parseInt(product.stock, 10) > 0 && (
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                            <span style={{ 
+                                fontSize: '0.75rem', 
+                                color: parseInt(product.stock, 10) <= 3 ? '#F59E0B' : '#10B981', 
+                                fontWeight: '700',
+                                letterSpacing: '-0.01em'
+                            }}>
                                 {parseInt(product.stock, 10)} in stock
                             </span>
                         )}

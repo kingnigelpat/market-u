@@ -1,0 +1,222 @@
+I want you to design and implement a new homepage promotional banner system for Market-U.
+
+IMPORTANT:
+Do not start coding immediately.
+First inspect the existing Market-U homepage, design system, colors, typography, navbar, product cards, responsive layout, Firebase structure, authentication/roles, and existing admin-related functionality.
+
+CONTEXT:
+Market-U is a student marketplace where students buy and sell products.
+We already have a growing marketplace with many products and sellers.
+
+I want the homepage to feel more like a modern marketplace such as Jumia, rather than a generic student web app.
+
+The banner should help buyers DISCOVER what they may want to buy, not just advertise Market-U.
+
+FIRST CAMPAIGN:
+School resumption.
+
+Do NOT make the campaign about textbooks.
+
+Think about practical student/resumption shopping such as:
+- fashion
+- shoes
+- bags
+- electronics/accessories
+- hostel/lifestyle items
+- personal items
+- other products that actually exist on Market-U
+
+IMPORTANT:
+Do not invent products that aren't actually available.
+The banner and discovery sections should be able to connect to real Market-U products/categories.
+
+DESIGN DIRECTION:
+
+Create a premium marketplace-style hero/banner.
+
+It should feel:
+- modern
+- bold
+- youthful
+- clean
+- commercial
+- visually exciting
+- mobile-first
+
+Do NOT make it look like:
+- a school notice
+- a Canva flyer
+- a generic SaaS hero
+- an overly corporate dashboard
+- a giant block of text
+
+Think:
+"Jumia campaign banner, but designed specifically for Market-U students."
+
+The banner should have:
+
+1. Strong campaign headline
+Example direction:
+"BACK TO CAMPUS"
+
+2. Short supporting copy
+Something like:
+"New semester? Find the things you actually need."
+
+3. Clear CTA
+Example:
+"Shop Resumption Essentials"
+
+4. Strong visual composition
+Use actual Market-U product imagery where possible.
+If the current product data makes this possible, dynamically feature relevant real products rather than using fake stock products.
+
+5. Make the banner visually balanced.
+Text should occupy one side and product imagery/visual composition the other side on desktop.
+
+6. On mobile, redesign the composition rather than simply shrinking the desktop banner.
+
+7. The banner must sit naturally inside the existing Market-U homepage and not overwhelm the search experience.
+
+DISCOVERY IDEA:
+
+Immediately around/after the campaign banner, create a buyer-oriented section such as:
+
+"Getting ready for campus?"
+
+Then show useful shopping collections based on actual Market-U inventory.
+
+For example:
+- Fresh Fits
+- Bags & Everyday Carry
+- Tech & Accessories
+- Campus Essentials
+
+BUT:
+Only show categories/collections that actually have relevant products in Market-U.
+
+The purpose is to help buyers discover what they might need instead of forcing them to already know exactly what to search for.
+
+ADMIN CONTROL:
+
+This is very important.
+
+The banner must NOT be hardcoded permanently.
+
+Build the system so an administrator can update the homepage campaign without changing the source code.
+
+Inspect the existing Firebase setup and determine the cleanest way to store this.
+
+The admin-controlled campaign should support at minimum:
+
+- active/inactive
+- campaign title
+- subtitle
+- CTA text
+- CTA destination
+- desktop visual/image
+- mobile visual/image if appropriate
+- campaign start date
+- campaign end date
+- priority/order
+
+If multiple campaigns exist, the homepage should determine which active campaign to display based on the campaign settings.
+
+The admin should be able to change:
+
+"BACK TO CAMPUS"
+
+to something completely different later, such as:
+
+"NEW DROPS"
+
+"FRESHERS' PICKS"
+
+"DEALS THIS WEEK"
+
+"CHRISTMAS SHOPPING"
+
+without requiring another code deployment.
+
+IMPORTANT:
+Before creating an admin interface, inspect whether Market-U already has an admin mechanism.
+If one exists, integrate into it.
+If there is no admin dashboard, do NOT build a huge admin system just for this feature.
+
+Instead, design the Firebase data structure cleanly so the admin control can be added safely and explain what minimal admin UI would be needed.
+
+DATA SAFETY:
+
+Do not break:
+- authentication
+- buyer/seller roles
+- product listing
+- product search
+- existing homepage functionality
+- school selection
+- waitlist
+- seller profiles
+- Firebase security rules
+- existing product images
+
+Reuse existing components and services where appropriate.
+
+RESPONSIVE DESIGN:
+
+Desktop:
+- large campaign banner
+- strong visual hierarchy
+- product imagery
+- CTA
+- polished marketplace feel
+
+Tablet:
+- preserve hierarchy
+- reduce unnecessary spacing
+
+Mobile:
+- banner should feel intentionally designed for mobile
+- readable headline
+- visible CTA
+- product imagery still prominent
+- no horizontal overflow
+- no text/image collision
+
+VISUAL QUALITY:
+
+This is not just a functionality task.
+
+Spend time making the banner look genuinely good.
+
+Use Market-U's existing brand identity rather than introducing random colors.
+
+Use the existing Market-U logo where appropriate.
+
+Use the existing icon library/components instead of adding unnecessary dependencies.
+
+Use subtle rounded corners, depth, spacing, typography and imagery appropriately.
+
+Avoid excessive gradients, excessive glassmorphism, excessive animations, or generic AI-looking UI.
+
+The final result should look like something a real Nigerian student marketplace could confidently put on its homepage.
+
+IMPLEMENTATION:
+
+After inspecting the project:
+
+1. Explain briefly what existing components/data you found.
+2. Design the banner.
+3. Implement the responsive banner.
+4. Implement the campaign data structure.
+5. Implement the buyer discovery section using real available products/categories.
+6. Make sure the homepage remains fast and responsive.
+7. Do not modify unrelated parts of the application.
+8. Run lint/build checks.
+9. Test desktop and mobile layouts.
+10. Report exactly which files were changed and what was implemented.
+
+Do not use fake product data in production code.
+
+The goal is:
+
+Market-U should feel like a marketplace that helps students discover what to buy, not just a website where students search for products.

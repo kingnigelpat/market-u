@@ -2,7 +2,7 @@
  * Smart Search Utility & Semantic Synonym Engine for MarketU
  */
 
-// Comprehensive Campus Synonym Clusters
+// Comprehensive Campus Synonym Clusters — granular grouping to avoid false positives
 const SYNONYM_CLUSTERS = [
   // Skincare & Beauty
   {
@@ -17,22 +17,32 @@ const SYNONYM_CLUSTERS = [
   // Laptops & Computing
   {
     category: 'Electronics',
-    synonyms: ['laptop', 'macbook', 'computer', 'pc', 'hp', 'dell', 'lenovo', 'thinkpad', 'asus', 'acer', 'desktop', 'monitor', 'keyboard', 'mouse', 'drive', 'pendrive', 'flashdrive', 'hard drive', 'ssd', 'ram']
+    synonyms: ['laptop', 'macbook', 'computer', 'pc', 'dell', 'lenovo', 'thinkpad', 'asus', 'acer', 'desktop', 'monitor', 'keyboard', 'mouse', 'drive', 'pendrive', 'flashdrive', 'hard drive', 'ssd', 'ram']
   },
   // Footwear & Shoes
   {
     category: 'Fashion',
     synonyms: ['shoe', 'shoes', 'sneaker', 'sneakers', 'kick', 'kicks', 'dunk', 'dunks', 'nike', 'adidas', 'puma', 'slide', 'slides', 'crocs', 'boot', 'boots', 'heel', 'heels', 'footwear', 'sandal', 'sandals', 'palm', 'slippers', 'loafers']
   },
+  // Bags & Carriers
+  {
+    category: 'Fashion',
+    synonyms: ['bag', 'bags', 'backpack', 'tote', 'purse', 'handbag', 'duffle', 'satchel', 'fanny pack', 'laptop bag', 'school bag', 'luggage', 'suitcase']
+  },
+  // Accessories (Jewelry, Watches, Hats)
+  {
+    category: 'Fashion',
+    synonyms: ['cap', 'hat', 'watch', 'watches', 'jewelry', 'chain', 'ring', 'rings', 'bracelet', 'necklace', 'earring', 'earrings', 'sunglasses', 'glasses', 'belt', 'belts', 'tie', 'scarf']
+  },
   // Clothes & Apparel
   {
     category: 'Fashion',
-    synonyms: ['clothe', 'clothes', 'dress', 'shirt', 't-shirt', 'top', 'pant', 'pants', 'trousers', 'jean', 'jeans', 'hoodie', 'jacket', 'gown', 'outfit', 'wear', 'skirt', 'short', 'shorts', 'sweatshirt', 'jersey', 'suit', 'tote', 'bag', 'backpack', 'cap', 'hat', 'watch', 'jewelry', 'chain', 'ring']
+    synonyms: ['clothe', 'clothes', 'dress', 'shirt', 't-shirt', 'top', 'pant', 'pants', 'trousers', 'jean', 'jeans', 'hoodie', 'jacket', 'gown', 'outfit', 'wear', 'skirt', 'short', 'shorts', 'sweatshirt', 'jersey', 'suit', 'blouse', 'ankara', 'thrift']
   },
   // Food & Groceries
   {
     category: 'Food & Groceries',
-    synonyms: ['food', 'snack', 'snacks', 'drink', 'drinks', 'meal', 'lunch', 'dinner', 'noodle', 'noodles', 'indomie', 'rice', 'oil', 'biscuit', 'beverage', 'groceries', 'bread', 'egg', 'eggs', 'spaghetti', 'pasta', 'shawarma', 'pizza', 'burger', 'chicken', 'cake', 'pastry']
+    synonyms: ['food', 'snack', 'snacks', 'drink', 'drinks', 'meal', 'lunch', 'dinner', 'noodle', 'noodles', 'indomie', 'rice', 'biscuit', 'beverage', 'groceries', 'bread', 'egg', 'eggs', 'spaghetti', 'pasta', 'shawarma', 'pizza', 'burger', 'chicken', 'cake', 'pastry']
   },
   // Accommodation & Housing
   {
@@ -73,17 +83,35 @@ export function parseQueryBudget(queryStr) {
 }
 
 /**
- * Expands a single query term to all related semantic synonyms
+ * Checks if a search term matches a synonym using exact word boundary matching.
+ * Prevents "bag" from matching "backpack" via substring, while still allowing
+ * exact matches like "bag" === "bag" and multi-word matches like "laptop bag".
+ */
+function termMatchesSynonym(term, synonym) {
+  if (term === synonym) return true;
+  // Check if term is a whole word within the synonym (e.g. "bag" in "laptop bag")
+  const wordBoundary = new RegExp(`\\b${escapeRegex(term)}\\b`, 'i');
+  return wordBoundary.test(synonym);
+}
+
+/** Escape regex special characters in a string */
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Expands a single query term to all related semantic synonyms.
+ * Uses exact word matching to prevent false positives.
  */
 export function getExpandedTerms(term) {
   const cleanTerm = term.toLowerCase().trim();
-  if (!cleanTerm) return [];
+  if (!cleanTerm || cleanTerm.length < 2) return [];
 
   const expanded = new Set([cleanTerm]);
 
   for (const cluster of SYNONYM_CLUSTERS) {
-    // If the term is in the cluster synonyms or matches the cluster category
-    const matchesCluster = cluster.synonyms.some(s => s.toLowerCase().includes(cleanTerm) || cleanTerm.includes(s.toLowerCase()));
+    // Only match if the term is an exact match to one of the synonyms in this cluster
+    const matchesCluster = cluster.synonyms.some(s => termMatchesSynonym(cleanTerm, s.toLowerCase()));
     if (matchesCluster) {
       cluster.synonyms.forEach(s => expanded.add(s.toLowerCase()));
       if (cluster.category) expanded.add(cluster.category.toLowerCase());
