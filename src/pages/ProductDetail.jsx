@@ -11,11 +11,12 @@ import AuthPromptModal from '../components/AuthPromptModal';
 import ReadOnlyRating from '../components/ReadOnlyRating';
 import { optimizeImage } from '../utils/cloudinary';
 import { sendPushNotification } from '../utils/notifications';
+import NotificationPermissionPrompt from '../components/NotificationPermissionPrompt';
 
 const ProductDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { currentUser, isAuthenticated, userName, userPhone } = useAuth();
+    const { currentUser, isAuthenticated, userName, userPhone, enableNotifications } = useAuth();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
@@ -35,6 +36,7 @@ const ProductDetail = () => {
     const [saveLoading, setSaveLoading] = useState(false);
     const [saveError, setSaveError] = useState('');
     const [shareToast, setShareToast] = useState(false);
+    const [showNotifPrompt, setShowNotifPrompt] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -229,6 +231,12 @@ const ProductDetail = () => {
                 });
                 setSaved(true);
                 setSavedDocId(ref.id);
+
+                // 🎯 Trojan Horse: nudge buyer to allow notifications after saving
+                if ('Notification' in window && Notification.permission === 'default') {
+                    // Small delay so the save animation is seen first
+                    setTimeout(() => setShowNotifPrompt(true), 600);
+                }
             }
         } catch (e) {
             console.error('Save for later error:', e);
@@ -290,6 +298,14 @@ const ProductDetail = () => {
 
     return (
         <div className="container">
+            {/* Notification Permission Prompt (Trojan Horse) */}
+            {showNotifPrompt && (
+                <NotificationPermissionPrompt
+                    onAllow={enableNotifications}
+                    onDismiss={() => setShowNotifPrompt(false)}
+                />
+            )}
+
             {/* Lightbox Modal */}
             {selectedImage && (
                 <div 

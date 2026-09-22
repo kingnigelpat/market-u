@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { auth, db, messagingReady } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot, collection, query, where, getDocs, limit } from 'firebase/firestore';
@@ -141,6 +141,18 @@ export function AuthProvider({ children }) {
 
     const normalizedRole = (userRole || '').trim().toLowerCase();
 
+    // Allow any component (buyer or seller) to request notification permission on demand
+    const enableNotifications = useCallback(async () => {
+        if (!currentUser) return;
+        const msg = await messagingReady;
+        if (!msg) return;
+        await requestNotificationPermission(currentUser.uid, msg);
+        // Set up foreground listener if not already running
+        if (!unlistenForegroundRef.current) {
+            unlistenForegroundRef.current = listenForForegroundMessages(msg, null);
+        }
+    }, [currentUser]);
+
     const value = {
         currentUser,
         userRole: normalizedRole || null,
@@ -156,7 +168,8 @@ export function AuthProvider({ children }) {
         isAuthenticated: !!currentUser,
         isSeller: normalizedRole === 'seller' || normalizedRole === 'admin',
         isAdmin: normalizedRole === 'admin',
-        loading
+        loading,
+        enableNotifications,
     };
 
     return (

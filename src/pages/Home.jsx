@@ -13,6 +13,7 @@ import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { smartMatchesProduct } from '../utils/smartSearch';
 import { subscribeToActiveCampaign, DEFAULT_CAMPAIGN, getActiveDiscoveryCollections } from '../utils/campaignService';
+import EnableNotificationsBanner from '../components/EnableNotificationsBanner';
 
 const CATEGORIES = [
     { key: 'all', label: 'All', emoji: '🔥' },
@@ -29,7 +30,7 @@ const CATEGORIES = [
 ];
 
 const Home = () => {
-    const { isAuthenticated, isSeller, currentUser, userName, isAdmin } = useAuth();
+    const { isAuthenticated, isSeller, currentUser, userName, isAdmin, enableNotifications } = useAuth();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -146,6 +147,10 @@ const Home = () => {
 
     return (
         <div className="market-page">
+            {/* Public Enable Notifications Banner — shown to logged-in buyers */}
+            {isAuthenticated && (
+                <EnableNotificationsBanner onAllow={enableNotifications} />
+            )}
             <div className="market-hero">
                 <div className="market-hero-inner container">
                     {/* ── Top row: greeting + live badge ── */}
