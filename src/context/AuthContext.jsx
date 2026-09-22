@@ -94,17 +94,28 @@ export function AuthProvider({ children }) {
                         setJoinedGroupChat(!!data.joinedGroupChat);
                         setLoading(false);
 
-                        // Request FCM notification permission for sellers (once per session)
-                        if ((resolvedRole === 'seller' || resolvedRole === 'admin') && !notifRequestedRef.current) {
+                        // ── FCM Token Registration (once per session) ──────────────────────────
+                        if (!notifRequestedRef.current) {
                             notifRequestedRef.current = true;
-                            // Small delay so the UI settles before the browser prompt appears
                             setTimeout(async () => {
                                 const msg = await messagingReady;
                                 if (!msg) return;
-                                requestNotificationPermission(user.uid, msg);
-                                // Set up foreground push listener (plays chime + shows notification)
-                                if (unlistenForegroundRef.current) unlistenForegroundRef.current();
-                                unlistenForegroundRef.current = listenForForegroundMessages(msg, null);
+
+                                const alreadyGranted = 'Notification' in window && Notification.permission === 'granted';
+
+                                if (alreadyGranted) {
+                                    // ✅ Silent: user already allowed — just save/refresh their FCM token
+                                    // Works for ALL users (buyers + sellers) who previously clicked Allow
+                                    requestNotificationPermission(user.uid, msg);
+                                    if (unlistenForegroundRef.current) unlistenForegroundRef.current();
+                                    unlistenForegroundRef.current = listenForForegroundMessages(msg, null);
+                                } else if (resolvedRole === 'seller' || resolvedRole === 'admin') {
+                                    // 🔔 Seller/Admin who hasn't allowed yet — prompt them
+                                    // (Buyers are handled by the Trojan Horse modal on save)
+                                    requestNotificationPermission(user.uid, msg);
+                                    if (unlistenForegroundRef.current) unlistenForegroundRef.current();
+                                    unlistenForegroundRef.current = listenForForegroundMessages(msg, null);
+                                }
                             }, 2000);
                         }
                     } else {
