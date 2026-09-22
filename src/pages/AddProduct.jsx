@@ -93,6 +93,22 @@ const AddProduct = () => {
 
             await addDoc(collection(db, 'products'), productData);
 
+            // 🔔 Broadcast to all buyers — fire and forget (don't block the redirect)
+            fetch('/api/notify-new-listing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productTitle: formData.title,
+                    sellerName: sellerData.name || 'A seller',
+                    category: formData.category || 'Other',
+                    // productId is set after redirect — we pass it on the next line
+                }),
+            }).then(r => r.json()).then(d => {
+                console.log('[Notify] Broadcast result:', d);
+            }).catch(e => {
+                console.warn('[Notify] Broadcast failed (non-critical):', e);
+            });
+
             // Redirect back to dashboard
             navigate('/dashboard');
         } catch (err) {
