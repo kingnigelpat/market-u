@@ -5,10 +5,10 @@ import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Link } from 'react-router-dom';
-import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap, Star, MessageCircle, Package, Share2, Check, ExternalLink, Megaphone, ArrowRight, GraduationCap } from 'lucide-react';
+import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap, Star, MessageCircle, Package, Share2, Check, ExternalLink, Megaphone, ArrowRight, GraduationCap, Bell, Send, Sparkles, AlertCircle } from 'lucide-react';
 
 const SellerDashboard = () => {
-    const { currentUser, userRole, setUserRole } = useAuth();
+    const { currentUser, userRole, setUserRole, enableNotifications } = useAuth();
     const [products, setProducts] = useState([]);
     const [sellerData, setSellerData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -16,6 +16,12 @@ const SellerDashboard = () => {
     const [isUpgrading, setIsUpgrading] = useState(false);
     const [sellType, setSellType] = useState(null);
     const [shareToast, setShareToast] = useState(false);
+    const [broadcastMsg, setBroadcastMsg] = useState('Buy from Market-U today');
+    const [sendingBroadcast, setSendingBroadcast] = useState(false);
+    const [broadcastResult, setBroadcastResult] = useState(null);
+    const [deviceNotifEnabled, setDeviceNotifEnabled] = useState(() => {
+        return 'Notification' in window && Notification.permission === 'granted';
+    });
 
     const handleShareStore = async () => {
         const storeUrl = `${window.location.origin}/seller/${currentUser.uid}`;
@@ -41,6 +47,54 @@ const SellerDashboard = () => {
             setTimeout(() => setShareToast(false), 2500);
         } catch (err) {
             console.error('Clipboard error:', err);
+        }
+    };
+
+    const handleEnableDeviceNotifs = async () => {
+        try {
+            if (enableNotifications) {
+                await enableNotifications();
+            }
+            setDeviceNotifEnabled('Notification' in window && Notification.permission === 'granted');
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleSendBroadcast = async (e) => {
+        e.preventDefault();
+        if (!broadcastMsg.trim()) return;
+        if (!confirm(`Send "${broadcastMsg.trim()}" notification to ALL registered buyers right now?`)) return;
+
+        setSendingBroadcast(true);
+        setBroadcastResult(null);
+        try {
+            const res = await fetch('/api/daily-reminder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ body: broadcastMsg.trim() }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setBroadcastResult({
+                    type: 'success',
+                    text: data.total > 0
+                        ? `✅ Broadcast sent! ${data.succeeded} devices received the notification (${data.failed} failed/expired out of ${data.total}).`
+                        : `ℹ️ Broadcast processed. Note: 0 buyer devices registered yet in the database. When users allow notifications on Market-U, they will receive it automatically.`
+                });
+            } else {
+                setBroadcastResult({
+                    type: 'error',
+                    text: `❌ Error (${res.status}): ${data.error || 'Failed to send broadcast'}`
+                });
+            }
+        } catch (err) {
+            setBroadcastResult({
+                type: 'error',
+                text: `❌ Network error: ${err.message || 'Could not reach serverless endpoint'}`
+            });
+        } finally {
+            setSendingBroadcast(false);
         }
     };
     useEffect(() => {
@@ -342,6 +396,148 @@ const SellerDashboard = () => {
                     Advertise <ArrowRight size={15} />
                 </span>
             </Link>
+
+            {/* Daily Buyer Push Notification Card */}
+            <div style={{
+                background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%)',
+                border: '1px solid rgba(99, 102, 241, 0.35)',
+                borderRadius: 'var(--radius-xl)',
+                padding: '1.35rem 1.5rem',
+                marginBottom: '1.75rem',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 0 15px rgba(99, 102, 241, 0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1.1rem'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{
+                        width: '46px',
+                        height: '46px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff',
+                        flexShrink: 0,
+                        boxShadow: '0 4px 14px rgba(245, 158, 11, 0.45)'
+                    }}>
+                        <Bell size={24} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: '220px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.3rem' }}>
+                            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#fff' }}>
+                                Daily Buyer Push Broadcast
+                            </h2>
+                            <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                                background: 'rgba(99, 102, 241, 0.25)',
+                                border: '1px solid rgba(99, 102, 241, 0.45)',
+                                color: '#a5b4fc',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                padding: '0.2rem 0.65rem',
+                                borderRadius: '9999px'
+                            }}>
+                                ⏰ Automated: 11:00 AM WAT Daily
+                            </span>
+                        </div>
+                        <p style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.75)', margin: 0, lineHeight: 1.5 }}>
+                            All registered buyers receive a daily reminder on their phones & laptops to visit Market-U and buy campus items. You can also send an instant broadcast right now.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Device permission reminder for tester */}
+                {!deviceNotifEnabled && (
+                    <div style={{
+                        background: 'rgba(245, 158, 11, 0.12)',
+                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        borderRadius: 'var(--radius-lg)',
+                        padding: '0.75rem 1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '0.75rem',
+                        flexWrap: 'wrap'
+                    }}>
+                        <span style={{ fontSize: '0.825rem', color: '#fcd34d', fontWeight: 600 }}>
+                            🔔 Enable notifications on this device first so you can test and receive the alert!
+                        </span>
+                        <button
+                            type="button"
+                            onClick={handleEnableDeviceNotifs}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', fontWeight: 700 }}
+                        >
+                            Enable Alerts on This Phone/PC
+                        </button>
+                    </div>
+                )}
+
+                <form onSubmit={handleSendBroadcast} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '240px' }}>
+                        <input
+                            type="text"
+                            value={broadcastMsg}
+                            onChange={(e) => setBroadcastMsg(e.target.value)}
+                            placeholder="Notification text (e.g. Buy from Market-U today)"
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem 1rem',
+                                borderRadius: 'var(--radius-lg)',
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                color: '#fff',
+                                fontSize: '0.925rem',
+                                fontWeight: 600,
+                                outline: 'none'
+                            }}
+                            required
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={sendingBroadcast}
+                        className="btn btn-primary"
+                        style={{
+                            padding: '0.75rem 1.4rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            fontWeight: 700,
+                            whiteSpace: 'nowrap'
+                        }}
+                        id="dashboard-send-broadcast-btn"
+                    >
+                        {sendingBroadcast ? 'Sending Broadcast...' : (
+                            <>
+                                <Send size={16} /> Send Broadcast Now
+                            </>
+                        )}
+                    </button>
+                </form>
+
+                {broadcastResult && (
+                    <div style={{
+                        padding: '0.85rem 1rem',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.6rem',
+                        background: broadcastResult.type === 'success' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                        border: `1px solid ${broadcastResult.type === 'success' ? 'rgba(34, 197, 94, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
+                        color: broadcastResult.type === 'success' ? '#4ade80' : '#f87171'
+                    }}>
+                        {broadcastResult.type === 'success' ? <Sparkles size={16} /> : <AlertCircle size={16} />}
+                        <span>{broadcastResult.text}</span>
+                    </div>
+                )}
+            </div>
 
             {/* Gamification / Stats Section */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
