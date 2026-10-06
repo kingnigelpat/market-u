@@ -45,7 +45,7 @@ async function getAccessToken(serviceAccount) {
     const header = base64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
     const payload = base64url(JSON.stringify({
         iss: serviceAccount.client_email,
-        scope: 'https://www.googleapis.com/auth/firebase.messaging',
+        scope: 'https://www.googleapis.com/auth/firebase.messaging https://www.googleapis.com/auth/datastore',
         aud: 'https://oauth2.googleapis.com/token',
         exp: now + 3600,
         iat: now,

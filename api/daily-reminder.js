@@ -4,18 +4,19 @@
  * Broadcasts a daily push notification to buyers:
  * "Buy from Market-U today"
  *
- * Triggers:
- *  1. Automated Vercel Cron: runs daily at 10:00 UTC (11:00 AM West Africa Time) via vercel.json
- *  2. Manual Admin Trigger: HTTP GET or POST from Admin Dashboard or cURL
+ * Actions:
+ *  - GET /api/daily-reminder?action=subscribers -> Returns audience count & list of subscribers
+ *  - GET /api/daily-reminder                   -> Automated Vercel Cron trigger
+ *  - POST /api/daily-reminder                  -> Admin on-demand broadcast trigger
  */
 
 // ── Token cache ───────────────────────────────────────────────────────────────
 let _cachedToken = null;
 let _tokenExpiresAt = 0;
 
-// ── Rate limiter — max 3 manual broadcasts per 5 minutes ─────────────────────
+// ── Rate limiter — max 5 manual broadcasts per 5 minutes ─────────────────────
 const _rateLimitMap = new Map();
-const RATE_LIMIT_MAX = 3;
+const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 
 function isRateLimited(ip) {
@@ -46,7 +47,7 @@ async function getAccessToken(serviceAccount) {
     const header = base64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
     const payload = base64url(JSON.stringify({
         iss: serviceAccount.client_email,
-        scope: 'https://www.googleapis.com/auth/firebase.messaging',
+        scope: 'https://www.googleapis.com/auth/firebase.messaging https://www.googleapis.com/auth/datastore',
         aud: 'https://oauth2.googleapis.com/token',
         exp: now + 3600,
         iat: now,
@@ -69,8 +70,8 @@ async function getAccessToken(serviceAccount) {
     return _cachedToken;
 }
 
-// Fetch all buyer FCM tokens from Firestore via REST API
-async function getAllBuyerTokens(serviceAccount, accessToken, roleFilter = null) {
+// Fetch all buyer FCM tokens & audience info from Firestore via REST API
+async function getAudienceData(serviceAccount, accessToken, roleFilter = null) {
     const projectId = serviceAccount.project_id;
     const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
 
@@ -91,34 +92,53 @@ async function getAllBuyerTokens(serviceAccount, accessToken, roleFilter = null)
     });
 
     const docs = await res.json();
+    const subscribers = [];
     const allTokens = [];
+    let totalUsers = 0;
 
     if (Array.isArray(docs)) {
         for (const item of docs) {
             if (!item.document) continue;
+            totalUsers++;
             const fields = item.document.fields || {};
 
-            // Optional role filter (e.g. only 'buyer')
-            if (roleFilter) {
-                const userRole = fields.role?.stringValue;
-                if (userRole && userRole !== roleFilter) continue;
-            }
+            const userRole = fields.role?.stringValue || (fields.isSeller?.booleanValue ? 'seller' : 'buyer');
+            if (roleFilter && userRole !== roleFilter) continue;
 
+            const userTokens = [];
             // Collect fcmTokens array
             if (fields.fcmTokens && fields.fcmTokens.arrayValue && fields.fcmTokens.arrayValue.values) {
                 for (const v of fields.fcmTokens.arrayValue.values) {
-                    if (v.stringValue) allTokens.push(v.stringValue);
+                    if (v.stringValue) userTokens.push(v.stringValue);
                 }
             }
             // Also collect legacy single fcmToken string
             if (fields.fcmToken && fields.fcmToken.stringValue) {
-                const t = fields.fcmToken.stringValue;
-                if (!allTokens.includes(t)) allTokens.push(t);
+                userTokens.push(fields.fcmToken.stringValue);
+            }
+
+            const uniqueTokens = [...new Set(userTokens)];
+            if (uniqueTokens.length > 0) {
+                allTokens.push(...uniqueTokens);
+                subscribers.push({
+                    name: fields.name?.stringValue || 'Anonymous User',
+                    email: fields.email?.stringValue || '—',
+                    role: userRole,
+                    schoolName: fields.schoolName?.stringValue || 'Western Delta University',
+                    tokensCount: uniqueTokens.length,
+                });
             }
         }
     }
 
-    return [...new Set(allTokens)]; // deduplicate
+    const uniqueAllTokens = [...new Set(allTokens)];
+    return {
+        totalUsers,
+        totalSubscribers: subscribers.length,
+        totalTokens: uniqueAllTokens.length,
+        subscribers,
+        tokens: uniqueAllTokens,
+    };
 }
 
 export default async function handler(req, res) {
@@ -127,7 +147,6 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-secret');
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    // Vercel Cron uses GET; Admin Dashboard or webhook can use GET or POST
     if (req.method !== 'GET' && req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -153,14 +172,6 @@ export default async function handler(req, res) {
         }
     }
 
-    // Rate limit manual invocations (skip rate limiting for automated Vercel Cron header)
-    const isCronHeader = authHeader === `Bearer ${cronSecret}`;
-    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
-    if (!isCronHeader && isRateLimited(clientIp)) {
-        console.warn(`[DAILY REMINDER] Rate limit reached for IP: ${clientIp}`);
-        return res.status(429).json({ error: 'Too many broadcast requests. Please try again shortly.' });
-    }
-
     const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (!serviceAccountRaw) {
         return res.status(500).json({ error: 'FIREBASE_SERVICE_ACCOUNT is not configured' });
@@ -181,15 +192,35 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Firebase authentication failed' });
     }
 
-    // Fetch buyer tokens
     const role = req.query?.role || req.body?.role || null;
-    let tokens = [];
+    let audience;
     try {
-        tokens = await getAllBuyerTokens(serviceAccount, accessToken, role);
+        audience = await getAudienceData(serviceAccount, accessToken, role);
     } catch (e) {
         console.error('[DAILY REMINDER] Token query failed:', e);
         return res.status(500).json({ error: 'Failed to retrieve registered buyer tokens' });
     }
+
+    // If requested action is just to inspect subscribers audience
+    if (req.query?.action === 'subscribers' || req.query?.action === 'audience') {
+        return res.status(200).json({
+            success: true,
+            totalUsers: audience.totalUsers,
+            totalSubscribers: audience.totalSubscribers,
+            totalTokens: audience.totalTokens,
+            subscribers: audience.subscribers,
+        });
+    }
+
+    // Rate limit manual broadcast sending
+    const isCronHeader = authHeader === `Bearer ${cronSecret}`;
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
+    if (!isCronHeader && isRateLimited(clientIp)) {
+        console.warn(`[DAILY REMINDER] Rate limit reached for IP: ${clientIp}`);
+        return res.status(429).json({ error: 'Too many broadcast requests. Please wait a moment.' });
+    }
+
+    const tokens = audience.tokens;
 
     if (tokens.length === 0) {
         return res.status(200).json({
@@ -197,6 +228,8 @@ export default async function handler(req, res) {
             sent: 0,
             failed: 0,
             total: 0,
+            totalUsers: audience.totalUsers,
+            totalSubscribers: 0,
         });
     }
 
@@ -205,7 +238,6 @@ export default async function handler(req, res) {
     const protocol = (req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
     const appOrigin = `${protocol}://${host}`;
 
-    // Custom notification content (defaults to exact requested message)
     const notifTitle = req.body?.title || req.query?.title || 'Market-U';
     const notifBody = req.body?.body || req.query?.body || 'Buy from Market-U today';
     const targetUrl = req.body?.link || req.query?.link || `${appOrigin}/market`;
@@ -233,14 +265,14 @@ export default async function handler(req, res) {
                     webpush: {
                         headers: {
                             Urgency: 'high',
-                            TTL: '86400', // 24 hours
+                            TTL: '86400',
                         },
                         notification: {
                             title: notifTitle,
                             body: notifBody,
                             icon: `${appOrigin}/icon.png`,
                             badge: `${appOrigin}/icon.png`,
-                            tag: 'market-u-daily', // replace previous daily reminder so trays stay clean
+                            tag: 'market-u-daily',
                             vibrate: [200, 100, 200],
                         },
                         fcm_options: {
@@ -277,7 +309,7 @@ export default async function handler(req, res) {
         }
     }
 
-    console.log(`[DAILY REMINDER] Sent to ${succeeded} devices (${failed} failed) out of ${tokens.length} total tokens.`);
+    console.log(`[DAILY REMINDER] Broadcast "${notifBody}": sent to ${succeeded} devices (${failed} expired) out of ${tokens.length} tokens across ${audience.totalSubscribers} subscribers.`);
 
     return res.status(200).json({
         success: true,
@@ -285,6 +317,8 @@ export default async function handler(req, res) {
         succeeded,
         failed,
         total: tokens.length,
+        totalSubscribers: audience.totalSubscribers,
+        totalUsers: audience.totalUsers,
         timestamp: new Date().toISOString(),
     });
 }

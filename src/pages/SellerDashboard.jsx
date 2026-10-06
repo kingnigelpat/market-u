@@ -22,6 +22,28 @@ const SellerDashboard = () => {
     const [deviceNotifEnabled, setDeviceNotifEnabled] = useState(() => {
         return 'Notification' in window && Notification.permission === 'granted';
     });
+    const [audienceData, setAudienceData] = useState(null);
+    const [showAudienceList, setShowAudienceList] = useState(false);
+    const [loadingAudience, setLoadingAudience] = useState(false);
+
+    const fetchAudience = async () => {
+        setLoadingAudience(true);
+        try {
+            const res = await fetch('/api/daily-reminder?action=subscribers');
+            if (res.ok) {
+                const data = await res.json();
+                setAudienceData(data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch audience:', err);
+        } finally {
+            setLoadingAudience(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchAudience();
+    }, []);
 
     const handleShareStore = async () => {
         const storeUrl = `${window.location.origin}/seller/${currentUser.uid}`;
@@ -449,6 +471,73 @@ const SellerDashboard = () => {
                         </p>
                     </div>
                 </div>
+
+                {/* Audience stats */}
+                <div style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: '0.75rem 1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <span style={{ fontSize: '0.9rem', color: '#a5b4fc', fontWeight: 700 }}>
+                            👥 Audience: {audienceData
+                                ? `${audienceData.totalSubscribers} students subscribed (${audienceData.totalTokens} active devices)`
+                                : loadingAudience ? 'Checking subscribers...' : 'Audience data ready'}
+                        </span>
+                    </div>
+                    {audienceData && audienceData.subscribers?.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => setShowAudienceList(prev => !prev)}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#38bdf8',
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                textDecoration: 'underline'
+                            }}
+                        >
+                            {showAudienceList ? '▲ Hide List' : `▼ View Subscribers (${audienceData.totalSubscribers})`}
+                        </button>
+                    )}
+                </div>
+
+                {/* Collapsible Subscribers List */}
+                {showAudienceList && audienceData?.subscribers && (
+                    <div style={{
+                        background: 'rgba(15, 23, 42, 0.9)',
+                        border: '1px solid rgba(99, 102, 241, 0.25)',
+                        borderRadius: 'var(--radius-lg)',
+                        padding: '0.85rem 1rem',
+                        maxHeight: '240px',
+                        overflowY: 'auto'
+                    }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: '0.6rem' }}>
+                            Students who accepted push notifications ({audienceData.subscribers.length}):
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                            {audienceData.subscribers.map((sub, i) => (
+                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.825rem', padding: '0.35rem 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                    <div style={{ minWidth: 0, paddingRight: '0.5rem' }}>
+                                        <strong style={{ color: '#fff', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{sub.name}</strong>
+                                        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>{sub.email} • {sub.schoolName}</span>
+                                    </div>
+                                    <span style={{ background: 'rgba(99, 102, 241, 0.25)', color: '#c7d2fe', padding: '0.15rem 0.55rem', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: 700, flexShrink: 0 }}>
+                                        {sub.tokensCount} device{sub.tokensCount > 1 ? 's' : ''}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Device permission reminder for tester */}
                 {!deviceNotifEnabled && (
