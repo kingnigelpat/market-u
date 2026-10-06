@@ -1,17 +1,20 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, query, addDoc, serverTimestamp, orderBy, onSnapshot, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { X, Send, AlertTriangle, Store } from 'lucide-react';
+import { X, Send, AlertTriangle, Store, Loader } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { sendPushNotification } from '../utils/notifications';
 
 const ProductChat = ({ product, onClose }) => {
     const { currentUser, userName } = useAuth();
-    const [chatId, setChatId] = useState(null);
+    // Deterministic chat ID: 1-to-1 conversation per product and buyer
+    const chatId = product?.id && currentUser?.uid ? `${product.id}_${currentUser.uid}` : null;
     const [allMessages, setAllMessages] = useState([]);
     const [clearedAt, setClearedAt] = useState(null);
     const [text, setText] = useState('');
     const [loading, setLoading] = useState(true);
+    const [sending, setSending] = useState(false);
+    const [sendError, setSendError] = useState('');
     const messagesEndRef = useRef(null);
     const chatIdRef = useRef(null);
 
@@ -33,30 +36,20 @@ const ProductChat = ({ product, onClose }) => {
         };
     }, []);
 
-    // Initialize or retrieve chat
+    // Ensure chat doc exists in Firestore
     useEffect(() => {
-        if (!product?.id || !currentUser?.uid) return;
+        if (!chatId || !product?.id || !currentUser?.uid) return;
 
         let isMounted = true;
-        const initChat = async () => {
+        const ensureChatDoc = async () => {
             try {
-                // Find existing chat between this buyer and seller for this product
-                const q = query(
-                    collection(db, 'chats'),
-                    where('productId', '==', product.id),
-                    where('buyerId', '==', currentUser.uid)
-                );
-                const snap = await getDocs(q);
-                let currentChatId;
-
-                if (!snap.empty) {
-                    currentChatId = snap.docs[0].id;
-                } else {
-                    // Create new chat
-                    const newChat = await addDoc(collection(db, 'chats'), {
+                const chatRef = doc(db, 'chats', chatId);
+                const snap = await getDoc(chatRef);
+                if (!snap.exists()) {
+                    await setDoc(chatRef, {
                         productId: product.id,
                         buyerId: currentUser.uid,
-                        sellerId: product.sellerId,
+                        sellerId: product.sellerId || '',
                         buyerName: userName || currentUser.displayName || 'A buyer',
                         productName: product.title || 'Product',
                         productPrice: product.price || '',
@@ -65,21 +58,17 @@ const ProductChat = ({ product, onClose }) => {
                         updatedAt: serverTimestamp(),
                         buyerClearedAt: null,
                     });
-                    currentChatId = newChat.id;
                 }
-
-                if (isMounted) {
-                    setChatId(currentChatId);
-                }
-            } catch (error) {
-                console.error("Error initializing chat:", error);
+            } catch (err) {
+                console.warn("Notice: Chat doc check:", err);
+            } finally {
                 if (isMounted) setLoading(false);
             }
         };
 
-        initChat();
+        ensureChatDoc();
         return () => { isMounted = false; };
-    }, [product.id, product.sellerId, currentUser.uid, currentUser.displayName, userName, product.title, product.price, product.images, product.image]);
+    }, [chatId, product.id, product.sellerId, currentUser.uid, currentUser.displayName, userName, product.title, product.price, product.images, product.image]);
 
     // Subscribe to chat metadata (buyerClearedAt) and messages
     useEffect(() => {
@@ -138,23 +127,34 @@ const ProductChat = ({ product, onClose }) => {
 
     const handleSend = async (e) => {
         e.preventDefault();
-        if (!text.trim() || !chatId) return;
+        if (!text.trim() || !chatId || sending) return;
 
         const msgText = text.trim();
         setText('');
+        setSending(true);
+        setSendError('');
 
         try {
+            // Atomically ensure parent chat document exists and record last message
+            await setDoc(doc(db, 'chats', chatId), {
+                productId: product.id,
+                buyerId: currentUser.uid,
+                sellerId: product.sellerId || '',
+                buyerName: userName || currentUser.displayName || 'A buyer',
+                productName: product.title || 'Product',
+                productPrice: product.price || '',
+                productImage: product.images?.[0] || product.image || '',
+                updatedAt: serverTimestamp(),
+                lastMessage: msgText,
+                lastSenderId: currentUser.uid
+            }, { merge: true });
+
+            // Add new message to subcollection
             await addDoc(collection(db, 'chats', chatId, 'messages'), {
                 senderId: currentUser.uid,
                 senderName: userName || currentUser.displayName || 'Buyer',
                 text: msgText,
                 createdAt: serverTimestamp()
-            });
-
-            await updateDoc(doc(db, 'chats', chatId), {
-                updatedAt: serverTimestamp(),
-                lastMessage: msgText,
-                lastSenderId: currentUser.uid
             });
 
             // If seller has fcm tokens, send push notification
@@ -172,7 +172,7 @@ const ProductChat = ({ product, onClose }) => {
                                 fcmTokens,
                                 userName || currentUser.displayName || 'A buyer',
                                 product.title
-                            ).catch(e => console.warn('Push error on chat:', e));
+                            ).catch(pushErr => console.warn('Push error on chat:', pushErr));
                         }
                     }
                 } catch (pushErr) {
@@ -181,6 +181,12 @@ const ProductChat = ({ product, onClose }) => {
             }
         } catch (error) {
             console.error("Error sending message:", error);
+            setText(msgText); // Restore input so user doesn't lose text
+            setSendError(error.code === 'permission-denied'
+                ? 'Permission denied. Please verify your Firestore rules in Firebase Console.'
+                : 'Failed to send message. Please check your internet connection.');
+        } finally {
+            setSending(false);
         }
     };
 
@@ -326,6 +332,20 @@ const ProductChat = ({ product, onClose }) => {
                 <div ref={messagesEndRef} />
             </div>
 
+            {/* Error Banner */}
+            {sendError && (
+                <div style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    color: 'var(--danger)',
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    borderTop: '1px solid rgba(239, 68, 68, 0.2)'
+                }}>
+                    ⚠️ {sendError}
+                </div>
+            )}
+
             {/* Input Area */}
             <form onSubmit={handleSend} style={{
                 padding: '0.75rem 1rem',
@@ -350,28 +370,32 @@ const ProductChat = ({ product, onClose }) => {
                         color: 'var(--text)',
                         fontSize: '0.875rem'
                     }}
-                    disabled={!chatId}
+                    disabled={sending}
                 />
                 <button 
                     type="submit"
-                    disabled={!text.trim() || !chatId}
+                    disabled={!text.trim() || sending}
                     style={{
                         width: '38px',
                         height: '38px',
                         borderRadius: '50%',
-                        backgroundColor: text.trim() ? 'var(--primary)' : 'var(--surface-elevated)',
-                        color: text.trim() ? 'white' : 'var(--text-tertiary)',
+                        backgroundColor: (text.trim() && !sending) ? 'var(--primary)' : 'var(--surface-elevated)',
+                        color: (text.trim() && !sending) ? 'white' : 'var(--text-tertiary)',
                         border: 'none',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        cursor: text.trim() ? 'pointer' : 'not-allowed',
+                        cursor: (text.trim() && !sending) ? 'pointer' : 'not-allowed',
                         transition: 'all 0.2s',
                         flexShrink: 0
                     }}
                     title="Send"
                 >
-                    <Send size={16} style={{ marginLeft: '-2px' }} />
+                    {sending ? (
+                        <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                    ) : (
+                        <Send size={16} style={{ marginLeft: '-2px' }} />
+                    )}
                 </button>
             </form>
         </div>

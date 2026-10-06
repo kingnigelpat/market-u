@@ -90,7 +90,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // ── Offline Caching (PWA Caches) ──────────────────────────────────────────────
-const CACHE_NAME = 'market-u-v6';
+const CACHE_NAME = 'market-u-v7';
 const ASSETS_TO_CACHE = ['/', '/index.html', '/icon.png', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
