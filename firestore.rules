@@ -286,15 +286,20 @@ service cloud.firestore {
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
+        function chatExists() {
+          return exists(/databases/$(database)/documents/chats/$(chatId));
+        }
         function getChat() {
           return get(/databases/$(database)/documents/chats/$(chatId)).data;
         }
         function isChatParticipantForMsg() {
-          return isSignedIn() && (getChat().buyerId == request.auth.uid || getChat().sellerId == request.auth.uid);
+          return isSignedIn() && chatExists() && (getChat().buyerId == request.auth.uid || getChat().sellerId == request.auth.uid);
         }
 
         allow read: if isChatParticipantForMsg() || isAdmin();
-        allow create: if isChatParticipantForMsg() && request.resource.data.senderId == request.auth.uid;
+        allow create: if isSignedIn() 
+          && request.resource.data.senderId == request.auth.uid
+          && (isChatParticipantForMsg() || !chatExists());
         allow update, delete: if isAdmin();
       }
     }
