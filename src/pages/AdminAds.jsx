@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, XCircle, ExternalLink, Eye, MousePointerClick, Clock, StopCircle, Megaphone, Wallet } from 'lucide-react';
+import { CheckCircle2, XCircle, ExternalLink, Eye, MousePointerClick, Clock, StopCircle, Megaphone, Wallet, Bell, Send, Sparkles, AlertCircle } from 'lucide-react';
 import { subscribeToAllAds, approveAd, rejectAd, endAdNow, getEffectiveStatus, getDaysLeft } from '../utils/adService';
 import { optimizeImage } from '../utils/cloudinary';
 import { formatNaira } from '../config/ads';
@@ -23,6 +23,46 @@ const AdminAds = () => {
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState('pending_payment');
     const [busyId, setBusyId] = useState(null);
+    const [broadcastMsg, setBroadcastMsg] = useState('Buy from Market-U today');
+    const [sendingBroadcast, setSendingBroadcast] = useState(false);
+    const [broadcastResult, setBroadcastResult] = useState(null);
+
+    const handleSendBroadcast = async (e) => {
+        e.preventDefault();
+        if (!broadcastMsg.trim()) return;
+        if (!confirm(`Send "${broadcastMsg.trim()}" notification to ALL registered buyers right now?`)) return;
+
+        setSendingBroadcast(true);
+        setBroadcastResult(null);
+        try {
+            const res = await fetch('/api/daily-reminder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ body: broadcastMsg.trim() }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setBroadcastResult({
+                    type: 'success',
+                    text: data.total > 0
+                        ? `✅ Broadcast sent successfully! ${data.succeeded} devices received the alert (${data.failed} failed/expired out of ${data.total}).`
+                        : `ℹ️ Broadcast processed. Note: 0 user device tokens registered in database yet. Devices get registered as buyers allow notifications on Market-U.`
+                });
+            } else {
+                setBroadcastResult({
+                    type: 'error',
+                    text: `❌ Error (${res.status}): ${data.error || 'Failed to broadcast'}`
+                });
+            }
+        } catch (err) {
+            setBroadcastResult({
+                type: 'error',
+                text: `❌ Network error: ${err.message || 'Could not reach serverless endpoint'}`
+            });
+        } finally {
+            setSendingBroadcast(false);
+        }
+    };
 
     useEffect(() => subscribeToAllAds((list) => { setAds(list); setLoading(false); }), []);
 
@@ -72,6 +112,58 @@ const AdminAds = () => {
                     <div className="aa-stat aa-stat--rev"><span><Wallet size={13} /> Revenue</span><strong>{formatNaira(revenue)}</strong></div>
                 </div>
             </header>
+
+            {/* Daily Buyer Push Broadcast Section */}
+            <section className="aa-broadcast-card">
+                <div className="aa-bc-top">
+                    <div className="aa-bc-icon-badge">
+                        <Bell size={22} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="aa-bc-title-row">
+                            <h2 className="aa-bc-title">Daily Buyer Push Broadcast</h2>
+                            <span className="aa-bc-badge">⏰ Automated: 11:00 AM WAT Daily</span>
+                        </div>
+                        <p className="aa-bc-desc">
+                            All registered buyers receive a daily reminder on their phones & laptops to visit Market-U and buy campus items. You can also trigger an immediate broadcast right now.
+                        </p>
+                    </div>
+                </div>
+
+                <form onSubmit={handleSendBroadcast} className="aa-bc-form">
+                    <div className="aa-bc-input-wrap">
+                        <input
+                            type="text"
+                            value={broadcastMsg}
+                            onChange={(e) => setBroadcastMsg(e.target.value)}
+                            placeholder="Notification text (e.g. Buy from Market-U today)"
+                            className="aa-bc-input"
+                            required
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={sendingBroadcast}
+                        className="btn btn-primary aa-bc-btn"
+                        id="send-daily-broadcast-btn"
+                    >
+                        {sendingBroadcast ? (
+                            <>Sending Broadcast...</>
+                        ) : (
+                            <>
+                                <Send size={15} /> Send Broadcast Now
+                            </>
+                        )}
+                    </button>
+                </form>
+
+                {broadcastResult && (
+                    <div className={`aa-bc-alert aa-bc-alert--${broadcastResult.type}`}>
+                        {broadcastResult.type === 'success' ? <Sparkles size={16} /> : <AlertCircle size={16} />}
+                        <span>{broadcastResult.text}</span>
+                    </div>
+                )}
+            </section>
 
             <div className="aa-tabs" role="tablist">
                 {TABS.map((t) => (
@@ -169,6 +261,121 @@ const AdminAds = () => {
                 .aa-stat strong { font-family: var(--font-display); font-size: 1.5rem; }
                 .aa-stat--rev { background: var(--gradient-primary); border: none; color: #fff; }
                 .aa-stat--rev span { color: rgba(255,255,255,0.85); }
+
+                /* Broadcast Card */
+                .aa-broadcast-card {
+                    background: linear-gradient(135deg, rgba(30, 27, 75, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
+                    border: 1px solid rgba(99, 102, 241, 0.3);
+                    border-radius: var(--radius-xl);
+                    padding: 1.35rem 1.5rem;
+                    margin-bottom: 2rem;
+                    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 0 15px rgba(99, 102, 241, 0.1);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1.1rem;
+                }
+                .aa-bc-top {
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 1rem;
+                }
+                .aa-bc-icon-badge {
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 12px;
+                    background: linear-gradient(135deg, #f59e0b, #ef4444);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #fff;
+                    flex-shrink: 0;
+                    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+                }
+                .aa-bc-title-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    flex-wrap: wrap;
+                    margin-bottom: 0.3rem;
+                }
+                .aa-bc-title {
+                    font-size: 1.15rem;
+                    font-weight: 800;
+                    margin: 0;
+                    color: #fff;
+                }
+                .aa-bc-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    background: rgba(99, 102, 241, 0.2);
+                    border: 1px solid rgba(99, 102, 241, 0.4);
+                    color: #a5b4fc;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    padding: 0.2rem 0.6rem;
+                    border-radius: var(--radius-full);
+                }
+                .aa-bc-desc {
+                    font-size: 0.85rem;
+                    color: var(--text-secondary);
+                    margin: 0;
+                    line-height: 1.5;
+                }
+                .aa-bc-form {
+                    display: flex;
+                    gap: 0.75rem;
+                    flex-wrap: wrap;
+                }
+                .aa-bc-input-wrap {
+                    flex: 1;
+                    min-width: 260px;
+                }
+                .aa-bc-input {
+                    width: 100%;
+                    padding: 0.75rem 1rem;
+                    border-radius: var(--radius-lg);
+                    background: var(--surface-elevated);
+                    border: 1px solid var(--border);
+                    color: #fff;
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                    outline: none;
+                    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+                }
+                .aa-bc-input:focus {
+                    border-color: var(--primary);
+                    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+                }
+                .aa-bc-btn {
+                    padding: 0.75rem 1.4rem;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.45rem;
+                    font-weight: 700;
+                    white-space: nowrap;
+                    flex-shrink: 0;
+                }
+                .aa-bc-alert {
+                    padding: 0.75rem 1rem;
+                    border-radius: var(--radius-md);
+                    font-size: 0.85rem;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.6rem;
+                    line-height: 1.4;
+                }
+                .aa-bc-alert--success {
+                    background: rgba(34, 197, 94, 0.12);
+                    border: 1px solid rgba(34, 197, 94, 0.35);
+                    color: #4ade80;
+                }
+                .aa-bc-alert--error {
+                    background: rgba(239, 68, 68, 0.12);
+                    border: 1px solid rgba(239, 68, 68, 0.35);
+                    color: #f87171;
+                }
 
                 .aa-tabs { display: flex; gap: 0.4rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; overflow-x: auto; }
                 .aa-tabs button { padding: 0.7rem 1rem; font-weight: 700; font-size: 0.875rem; color: var(--text-secondary); border-bottom: 2.5px solid transparent; margin-bottom: -1px; display: inline-flex; gap: 0.4rem; align-items: center; white-space: nowrap; }

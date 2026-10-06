@@ -2,6 +2,12 @@
   "framework": "vite",
   "buildCommand": "vite build",
   "outputDirectory": "dist",
+  "crons": [
+    {
+      "path": "/api/daily-reminder",
+      "schedule": "0 10 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",

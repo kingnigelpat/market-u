@@ -31,17 +31,19 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[SW] onBackgroundMessage:', payload);
 
-  const title = (payload.notification && payload.notification.title) || '🔔 Market-U';
-  const body = (payload.notification && payload.notification.body) || 'You have a new notification';
+  const title = (payload.notification && payload.notification.title) || '🛍️ Market-U';
+  const body = (payload.notification && payload.notification.body) || 'Buy from Market-U today';
+  const tag = (payload.notification && payload.notification.tag) || (payload.data && payload.data.tag) || 'market-u-notification';
+  const targetUrl = (payload.fcmOptions && payload.fcmOptions.link) || (payload.data && (payload.data.url || payload.data.link)) || '/market';
 
   self.registration.showNotification(title, {
     body: body,
     icon: '/icon.png',
     badge: '/icon.png',
-    vibrate: [200, 100, 200, 100, 200],
-    requireInteraction: true,
-    tag: 'market-u-interest',
-    data: payload.data || {},
+    vibrate: [200, 100, 200],
+    requireInteraction: false,
+    tag: tag,
+    data: { url: targetUrl, ...payload.data },
   });
 });
 
@@ -53,44 +55,49 @@ self.addEventListener('push', (event) => {
   let payload = {};
   try { payload = event.data.json(); } catch(e) {}
 
-  const title = (payload.notification && payload.notification.title) || '🔔 Market-U';
-  const body = (payload.notification && payload.notification.body) || 'Someone is interested in your product!';
+  const title = (payload.notification && payload.notification.title) || '🛍️ Market-U';
+  const body = (payload.notification && payload.notification.body) || 'Buy from Market-U today';
+  const tag = (payload.notification && payload.notification.tag) || (payload.data && payload.data.tag) || 'market-u-notification';
+  const targetUrl = (payload.notification && payload.notification.click_action) || (payload.data && (payload.data.url || payload.data.link)) || '/market';
 
   event.waitUntil(
     self.registration.showNotification(title, {
       body: body,
       icon: '/icon.png',
       badge: '/icon.png',
-      vibrate: [200, 100, 200, 100, 200],
-      requireInteraction: true,
-      tag: 'market-u-interest',
+      vibrate: [200, 100, 200],
+      requireInteraction: false,
+      tag: tag,
+      data: { url: targetUrl, ...payload.data },
     })
   );
 });
 
-// Open app to /notifications when notification is clicked
+// Open app to target URL when notification is clicked
 self.addEventListener('notificationclick', (event) => {
   console.log('[SW] notificationclick');
   event.notification.close();
+  const targetUrl = (event.notification.data && (event.notification.data.url || event.notification.data.link)) || '/market';
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           client.focus();
           // Post message for smooth client-side React Router navigation
-          client.postMessage({ type: 'NAVIGATE', url: '/notifications' });
+          client.postMessage({ type: 'NAVIGATE', url: targetUrl });
           return;
         }
       }
       if (clients.openWindow) {
-        return clients.openWindow('/notifications');
+        return clients.openWindow(targetUrl);
       }
     })
   );
 });
 
 // ── Offline Caching (PWA Caches) ──────────────────────────────────────────────
-const CACHE_NAME = 'market-u-v7';
+const CACHE_NAME = 'market-u-v8';
 const ASSETS_TO_CACHE = ['/', '/index.html', '/icon.png', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
