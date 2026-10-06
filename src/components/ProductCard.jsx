@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import VerifiedBadge from './VerifiedBadge';
 import ReadOnlyRating from './ReadOnlyRating';
-import { Heart, Eye } from 'lucide-react';
+import { Heart, Eye, GraduationCap } from 'lucide-react';
 import { optimizeImage } from '../utils/cloudinary';
 
 const CATEGORY_COLORS = {
@@ -78,6 +78,23 @@ const ProductCard = ({ product, index = 0 }) => {
                     <ReadOnlyRating sellerId={product.sellerId} />
                 </div>
 
+                {product.schoolName && (
+                    <div className="product-card-campus" style={{
+                        fontSize: '0.72rem',
+                        color: 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        marginTop: '0.15rem',
+                        marginBottom: '0.25rem'
+                    }}>
+                        <GraduationCap size={12} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {product.schoolName}
+                        </span>
+                    </div>
+                )}
+
                 <div className="product-card-price-row">
                     <div className="product-card-price">
                         ₦{(parseFloat(product.price) || 0).toLocaleString('en-NG', {
@@ -112,7 +129,7 @@ const ProductCard = ({ product, index = 0 }) => {
                     }}
                 >
                     <Heart size={15} fill={hovered ? 'white' : 'none'} />
-                    I&apos;m Interested
+                    View &amp; Inquire
                 </button>
             </div>
 

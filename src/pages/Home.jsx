@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
 import PromoBanner from '../components/PromoBanner';
 import BuyerDiscovery from '../components/BuyerDiscovery';
 import CampaignEditModal from '../components/CampaignEditModal';
-import { Search, PackagePlus, ArrowRight, Sparkles, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Search, PackagePlus, ArrowRight, Sparkles, X, GraduationCap } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import InstallGuideModal from '../components/InstallGuideModal';
 import Skeleton from 'react-loading-skeleton';
@@ -14,6 +14,10 @@ import 'react-loading-skeleton/dist/skeleton.css';
 import { smartMatchesProduct } from '../utils/smartSearch';
 import { subscribeToActiveCampaign, DEFAULT_CAMPAIGN, getActiveDiscoveryCollections } from '../utils/campaignService';
 import EnableNotificationsBanner from '../components/EnableNotificationsBanner';
+import AdCarousel from '../components/AdCarousel';
+import { subscribeToActiveAds } from '../utils/adService';
+import { SUPPORTED_SCHOOL, DEFAULT_CAMPUS } from '../data/institutions';
+import CampusSwitcher from '../components/CampusSwitcher';
 
 const CATEGORIES = [
     { key: 'all', label: 'All', emoji: '🔥' },
@@ -30,7 +34,7 @@ const CATEGORIES = [
 ];
 
 const Home = () => {
-    const { isAuthenticated, isSeller, currentUser, userName, isAdmin, enableNotifications } = useAuth();
+    const { isAuthenticated, isSeller, currentUser, userName, isAdmin, enableNotifications, userSchoolName } = useAuth();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -40,7 +44,32 @@ const Home = () => {
     const [campaign, setCampaign] = useState(DEFAULT_CAMPAIGN);
     const [showAdminModal, setShowAdminModal] = useState(false);
     const [activeCollectionKey, setActiveCollectionKey] = useState(null);
+    const [sponsoredAds, setSponsoredAds] = useState([]);
     const productsRef = useRef(null);
+    const location = useLocation();
+
+    const [selectedCampus, setSelectedCampus] = useState(() => {
+        const params = new URLSearchParams(window.location.search);
+        const querySchool = params.get('school');
+        if (querySchool) return querySchool;
+        return localStorage.getItem('marketu_selected_campus') || userSchoolName || DEFAULT_CAMPUS;
+    });
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const querySchool = params.get('school');
+        if (querySchool) {
+            setSelectedCampus(querySchool);
+            localStorage.setItem('marketu_selected_campus', querySchool);
+        }
+    }, [location.search]);
+
+    const handleSelectCampus = (campusName) => {
+        setSelectedCampus(campusName);
+        localStorage.setItem('marketu_selected_campus', campusName);
+    };
+
+    const adSchool = (selectedCampus !== DEFAULT_CAMPUS ? selectedCampus : userSchoolName) || SUPPORTED_SCHOOL;
 
     const [showDownloadPrompt, setShowDownloadPrompt] = useState(() => {
         return localStorage.getItem('hideDownloadPrompt') !== 'true';
@@ -68,6 +97,12 @@ const Home = () => {
         });
         return () => unsub && unsub();
     }, []);
+
+    // Paid sponsored banners targeted at the viewer's campus
+    useEffect(() => {
+        const unsub = subscribeToActiveAds(adSchool, setSponsoredAds);
+        return () => unsub && unsub();
+    }, [adSchool]);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -125,23 +160,39 @@ const Home = () => {
         }
     };
 
-    const filteredProducts = products.filter(product => {
-        const matchesSearch = smartMatchesProduct(product, searchTerm);
-        
-        let matchesCollection = true;
-        if (activeCollectionKey) {
-            const activeCol = discoveryCollections.find(c => c.key === activeCollectionKey);
-            if (activeCol && activeCol.filterFn) {
-                matchesCollection = activeCol.filterFn(product);
-            }
+    // Filter products by selected campus first
+    const campusProducts = useMemo(() => {
+        if (!selectedCampus || selectedCampus === DEFAULT_CAMPUS) {
+            return products;
         }
+        return products.filter(product => {
+            if (product.schoolName) {
+                return product.schoolName === selectedCampus;
+            }
+            // Fallback for legacy products without a schoolName: associate with Western Delta University
+            return selectedCampus === SUPPORTED_SCHOOL;
+        });
+    }, [products, selectedCampus]);
 
-        const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
-        const matchesVerified = !verifiedOnly || Boolean(product.sellerVerified) === true;
-        return matchesSearch && matchesCategory && matchesVerified && matchesCollection;
-    }).sort((a, b) => {
-        return (b.views || 0) - (a.views || 0);
-    });
+    const filteredProducts = useMemo(() => {
+        return campusProducts.filter(product => {
+            const matchesSearch = smartMatchesProduct(product, searchTerm);
+            
+            let matchesCollection = true;
+            if (activeCollectionKey) {
+                const activeCol = discoveryCollections.find(c => c.key === activeCollectionKey);
+                if (activeCol && activeCol.filterFn) {
+                    matchesCollection = activeCol.filterFn(product);
+                }
+            }
+
+            const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
+            const matchesVerified = !verifiedOnly || Boolean(product.sellerVerified) === true;
+            return matchesSearch && matchesCategory && matchesVerified && matchesCollection;
+        }).sort((a, b) => {
+            return (b.views || 0) - (a.views || 0);
+        });
+    }, [campusProducts, searchTerm, activeCollectionKey, discoveryCollections, categoryFilter, verifiedOnly]);
 
     const firstName = (currentUser?.displayName || userName)?.split(' ')[0] || 'there';
 
@@ -245,6 +296,12 @@ const Home = () => {
                         </div>
                     )}
 
+                    {/* ── Campus Marketplace Switcher ── */}
+                    <CampusSwitcher
+                        selectedCampus={selectedCampus}
+                        onSelectCampus={handleSelectCampus}
+                    />
+
                     {/* ── Search bar (visible for all) ── */}
                     <div className="market-search-wrap">
                         <Search size={20} className="market-search-icon" />
@@ -284,12 +341,17 @@ const Home = () => {
             <div className="container market-body" ref={productsRef}>
                 {/* ── Promotional Campaign Banner (School Resumption / Admin-managed) ── */}
                 {(!searchTerm && categoryFilter === 'all' && !verifiedOnly && !activeCollectionKey) && (
-                    <PromoBanner
-                        campaign={campaign}
-                        products={products}
-                        isAdmin={isAdmin}
-                        onOpenAdminModal={() => setShowAdminModal(true)}
-                        onCtaClick={handleBannerCtaClick}
+                    <AdCarousel
+                        ads={sponsoredAds}
+                        campaignSlide={
+                            <PromoBanner
+                                campaign={campaign}
+                                products={products}
+                                isAdmin={isAdmin}
+                                onOpenAdminModal={() => setShowAdminModal(true)}
+                                onCtaClick={handleBannerCtaClick}
+                            />
+                        }
                     />
                 )}
 
@@ -379,21 +441,43 @@ const Home = () => {
                         </div>
                     </div>
                 ) : filteredProducts.length === 0 ? (
-                    <div className="empty-state">
-                        <div className="empty-state-icon">
-                            <PackagePlus size={36} />
+                    selectedCampus !== DEFAULT_CAMPUS && campusProducts.length === 0 ? (
+                        <div className="empty-state" style={{ padding: '3.5rem 1.5rem', background: 'var(--surface-elevated)', borderRadius: 'var(--radius-2xl)', border: '1.5px solid var(--border)' }}>
+                            <div className="empty-state-icon" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)' }}>
+                                <GraduationCap size={40} />
+                            </div>
+                            <h3 style={{ fontSize: '1.35rem', fontWeight: '900', marginBottom: '0.4rem' }}>
+                                No listings at {selectedCampus} yet!
+                            </h3>
+                            <p style={{ maxWidth: '460px', margin: '0 auto 1.75rem', color: 'var(--text-secondary)', fontSize: '0.9375rem', lineHeight: '1.5' }}>
+                                Be the first student seller at your institution to post an item. Items sell fast to students on your campus!
+                            </p>
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                <Link to={`/add-product?school=${encodeURIComponent(selectedCampus)}`} className="btn btn-primary" style={{ padding: '0.65rem 1.25rem' }}>
+                                    + Post First Item at {selectedCampus.split(' ')[0]}
+                                </Link>
+                                <button onClick={() => handleSelectCampus(DEFAULT_CAMPUS)} className="btn btn-secondary" style={{ padding: '0.65rem 1.25rem' }}>
+                                    Browse All Campuses
+                                </button>
+                            </div>
                         </div>
-                        <h3>Nothing here yet</h3>
-                        <p>Try different keywords or browse all categories to see what&apos;s available on campus.</p>
-                        <button onClick={() => { setSearchTerm(''); setCategoryFilter('all'); setVerifiedOnly(false); }} className="btn btn-primary">
-                            Clear filters
-                        </button>
-                    </div>
+                    ) : (
+                        <div className="empty-state">
+                            <div className="empty-state-icon">
+                                <PackagePlus size={36} />
+                            </div>
+                            <h3>Nothing here yet</h3>
+                            <p>Try different keywords or browse all categories to see what&apos;s available on campus.</p>
+                            <button onClick={() => { setSearchTerm(''); setCategoryFilter('all'); setVerifiedOnly(false); }} className="btn btn-primary">
+                                Clear filters
+                            </button>
+                        </div>
+                    )
                 ) : categoryFilter === 'all' && !searchTerm && !verifiedOnly ? (
                     <div className="category-swimlanes">
                         {/* Verified Sellers Swimlane */}
                         {(() => {
-                            const verifiedProducts = products.filter(p => p.sellerVerified).sort((a, b) => (b.views || 0) - (a.views || 0));
+                            const verifiedProducts = campusProducts.filter(p => p.sellerVerified).sort((a, b) => (b.views || 0) - (a.views || 0));
                             if (verifiedProducts.length === 0) return null;
                             return (
                                 <div className="market-section">
@@ -419,7 +503,7 @@ const Home = () => {
 
                         {/* Standard Categories Swimlanes */}
                         {CATEGORIES.filter(c => c.key !== 'all' && c.key !== 'verified').map(category => {
-                            const categoryProducts = products.filter(p => p.category === category.key).sort((a, b) => (b.views || 0) - (a.views || 0));
+                            const categoryProducts = campusProducts.filter(p => p.category === category.key).sort((a, b) => (b.views || 0) - (a.views || 0));
                             if (categoryProducts.length === 0) return null;
                             
                             return (

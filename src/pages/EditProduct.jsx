@@ -4,6 +4,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { Save, ArrowLeft } from 'lucide-react';
+import { INSTITUTIONS, SUPPORTED_SCHOOL } from '../data/institutions';
 
 const EditProduct = () => {
     const { id } = useParams();
@@ -38,7 +39,8 @@ const EditProduct = () => {
                             price: data.price || '',
                             stock: data.stock !== undefined ? data.stock.toString() : '1',
                             description: data.description || '',
-                            category: data.category || 'Electronics'
+                            category: data.category || 'Electronics',
+                            schoolName: data.schoolName || SUPPORTED_SCHOOL
                         });
                         // Fetch LIVE seller verified status to keep product in sync
                         const sellerRef = doc(db, 'users', currentUser.uid);
@@ -108,6 +110,7 @@ const EditProduct = () => {
                 price: numericPrice,
                 stock: stockQuantity,
                 category: formData.category,
+                schoolName: formData.schoolName || SUPPORTED_SCHOOL,
                 sellerVerified: sellerVerified, // Always sync with live seller status
             });
 
@@ -206,6 +209,26 @@ const EditProduct = () => {
                                 <option value="Hostels & Rooms">Hostels & Rooms</option>
                                 <option value="Other">Other</option>
                             </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="schoolName">Campus / Institution</label>
+                            <select
+                                id="schoolName"
+                                name="schoolName"
+                                value={formData.schoolName || ''}
+                                onChange={handleChange}
+                                style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                            >
+                                {INSTITUTIONS.map(inst => (
+                                    <option key={inst.name} value={inst.name}>
+                                        {inst.name} {inst.short ? `(${inst.short})` : ''}
+                                    </option>
+                                ))}
+                            </select>
+                            <small style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginTop: '0.35rem', display: 'block' }}>
+                                The campus marketplace where students can discover and purchase this item.
+                            </small>
                         </div>
 
                         <div className="form-group">

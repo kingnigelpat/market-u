@@ -41,6 +41,10 @@ const Notifications = lazyRetry(() => import('./pages/Notifications.jsx'));
 const Profile = lazyRetry(() => import('./pages/Profile.jsx'));
 const SavedItems = lazyRetry(() => import('./pages/SavedItems.jsx'));
 const SellerStore = lazyRetry(() => import('./pages/SellerStore.jsx'));
+const Advertise = lazyRetry(() => import('./pages/Advertise.jsx'));
+const AdminAds = lazyRetry(() => import('./pages/AdminAds.jsx'));
+const Messages = lazyRetry(() => import('./pages/Messages.jsx'));
+const SchoolsDashboard = lazyRetry(() => import('./pages/SchoolsDashboard.jsx'));
 
 import './styles/global.css';
 
@@ -111,6 +115,9 @@ const AppContent = () => {
                         <Route path="/waitlist" element={<Waitlist />} />
                         <Route path="/product/:id" element={<ProductDetail />} />
                         <Route path="/seller/:id" element={<SellerStore />} />
+                        <Route path="/advertise" element={<Advertise />} />
+                        <Route path="/schools" element={<SchoolsDashboard />} />
+                        <Route path="/campuses" element={<SchoolsDashboard />} />
 
                         {/* Protected Routes */}
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
@@ -125,11 +132,17 @@ const AppContent = () => {
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
                             <Route path="/notifications" element={<Notifications />} />
                         </Route>
+                        <Route element={<ProtectedRoute allowedRoles={['seller', 'admin']} />}>
+                            <Route path="/messages" element={<Messages />} />
+                        </Route>
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
                             <Route path="/profile" element={<Profile />} />
                         </Route>
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
                             <Route path="/saved" element={<SavedItems />} />
+                        </Route>
+                        <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                            <Route path="/admin/ads" element={<AdminAds />} />
                         </Route>
                     </Routes>
                 </Suspense>

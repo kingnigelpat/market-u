@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, deleteDoc, updateDoc, increment, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ArrowLeft, Trash2, Edit, Heart, CheckCircle, Loader, AlertCircle, Bookmark, BookmarkCheck, XCircle, Share2, Check, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Trash2, Edit, Heart, Loader, AlertCircle, Bookmark, BookmarkCheck, XCircle, Share2, Check, ExternalLink, MessageCircle, GraduationCap } from 'lucide-react';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SellerRating from '../components/SellerRating';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +12,7 @@ import ReadOnlyRating from '../components/ReadOnlyRating';
 import { optimizeImage } from '../utils/cloudinary';
 import { sendPushNotification } from '../utils/notifications';
 import NotificationPermissionPrompt from '../components/NotificationPermissionPrompt';
+import ProductChat from '../components/ProductChat';
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -28,7 +29,6 @@ const ProductDetail = () => {
     const [alreadyInterested, setAlreadyInterested] = useState(false);
     const [isCanceled, setIsCanceled] = useState(false);
     const [interestDocId, setInterestDocId] = useState(null);
-    const [interestSuccess, setInterestSuccess] = useState(false);
 
     // Save for Later state
     const [saved, setSaved] = useState(false);
@@ -37,6 +37,7 @@ const ProductDetail = () => {
     const [saveError, setSaveError] = useState('');
     const [shareToast, setShareToast] = useState(false);
     const [showNotifPrompt, setShowNotifPrompt] = useState(false);
+    const [showChat, setShowChat] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -93,7 +94,7 @@ const ProductDetail = () => {
                                     setIsCanceled(true);
                                 }
                             }
-                        } catch (e) {
+                        } catch {
                             // If rules deny (e.g. seller viewing buyer interests), silently ignore
                         }
 
@@ -109,7 +110,7 @@ const ProductDetail = () => {
                                 setSaved(true);
                                 setSavedDocId(savedSnap.docs[0].id);
                             }
-                        } catch (e) { /* silently ignore */ }
+                        } catch { /* silently ignore */ }
                     }
                 } else {
                     console.error("No such product!");
@@ -152,7 +153,6 @@ const ProductDetail = () => {
                 }
                 setAlreadyInterested(false);
                 setIsCanceled(true);
-                setInterestSuccess(false);
             } else {
                 // Express interest (or re-express interest)
                 const buyerName = userName || currentUser.displayName || 'A buyer';
@@ -176,7 +176,6 @@ const ProductDetail = () => {
                     });
                     setInterestDocId(ref.id);
                 }
-                setInterestSuccess(true);
                 setAlreadyInterested(true);
                 setIsCanceled(false);
 
@@ -292,9 +291,6 @@ const ProductDetail = () => {
             }
         }
     };
-
-    // Determine interest button state
-    const isDone = alreadyInterested || interestSuccess;
 
     return (
         <div className="container">
@@ -541,6 +537,24 @@ const ProductDetail = () => {
                             </div>
                         )}
 
+                        {/* Campus Badge */}
+                        <div style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.45rem',
+                            padding: '0.45rem 0.85rem',
+                            borderRadius: 'var(--radius-full)',
+                            backgroundColor: 'var(--primary-light)',
+                            color: 'var(--primary)',
+                            fontSize: '0.8125rem',
+                            fontWeight: '700',
+                            marginBottom: '1.25rem',
+                            border: '1px solid rgba(37, 99, 235, 0.2)'
+                        }}>
+                            <GraduationCap size={16} />
+                            <span>Campus: {product.schoolName || 'Western Delta University'}</span>
+                        </div>
+
                         {/* Interactive Seller Rating (separate from link to allow clicking stars) */}
                         {!isOwner && product.sellerId && (
                             <div style={{
@@ -632,89 +646,62 @@ const ProductDetail = () => {
                             );
                         })()}
 
-                        {/* Interest Button — shown to everyone except the owner */}
+                        {/* Action Buttons — shown to everyone except the owner */}
                         {!isOwner && (
-                            alreadyInterested && !isCanceled ? (
-                                <button
-                                    onClick={handleInterested}
-                                    disabled={interestLoading}
-                                    id="cancel-interest-btn"
-                                    style={{
-                                        width: '100%',
-                                        padding: '1.25rem',
-                                        fontSize: '1.125rem',
-                                        fontWeight: '700',
-                                        borderRadius: 'var(--radius-lg)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '0.625rem',
-                                        backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                                        color: '#ef4444',
-                                        border: '1.5px solid rgba(239, 68, 68, 0.3)',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                    }}
-                                >
-                                    {interestLoading ? (
-                                        <><Loader size={22} style={{ animation: 'spin 0.8s linear infinite' }} /> Updating...</>
-                                    ) : (
-                                        <><XCircle size={22} /> Cancel Interest</>
-                                    )}
-                                </button>
-                            ) : (() => {
+                            (() => {
                                 const stockNum = typeof product.stock === 'number' ? product.stock : (product.stock !== undefined ? parseInt(product.stock, 10) : null);
-                                return stockNum !== null && stockNum <= 0;
-                            })() ? (
-                                <div
-                                    style={{
-                                        width: '100%',
-                                        padding: '1.25rem',
-                                        fontSize: '1.125rem',
-                                        fontWeight: '700',
-                                        borderRadius: 'var(--radius-lg)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '0.625rem',
-                                        backgroundColor: 'rgba(148, 163, 184, 0.1)',
-                                        color: 'var(--text-secondary)',
-                                        border: '1px dashed var(--border)',
-                                        cursor: 'not-allowed',
-                                    }}
-                                >
-                                    ❌ Out of Stock
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={handleInterested}
-                                    disabled={interestLoading}
-                                    id="interested-btn"
-                                    style={{
-                                        width: '100%',
-                                        padding: '1.25rem',
-                                        fontSize: '1.125rem',
-                                        fontWeight: '700',
-                                        borderRadius: 'var(--radius-lg)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '0.625rem',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        backgroundColor: 'var(--primary)',
-                                        color: 'white',
-                                        boxShadow: '0 10px 20px -5px rgba(37, 99, 235, 0.35)',
-                                    }}
-                                >
-                                    {interestLoading ? (
-                                        <><Loader size={22} style={{ animation: 'spin 0.8s linear infinite' }} /> Saving...</>
-                                    ) : (
-                                        <><Heart size={22} /> I&apos;m Interested</>
-                                    )}
-                                </button>
-                            )
+                                const isOutOfStock = stockNum !== null && stockNum <= 0;
+                                
+                                if (isOutOfStock) {
+                                    return (
+                                        <div style={{
+                                            width: '100%', padding: '1.25rem', fontSize: '1.125rem', fontWeight: '700', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem', backgroundColor: 'rgba(148, 163, 184, 0.1)', color: 'var(--text-secondary)', border: '1px dashed var(--border)', cursor: 'not-allowed'
+                                        }}>
+                                            ❌ Out of Stock
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                        {alreadyInterested && !isCanceled ? (
+                                            <button
+                                                onClick={handleInterested}
+                                                disabled={interestLoading}
+                                                id="cancel-interest-btn"
+                                                style={{
+                                                    padding: '1rem', fontSize: '1rem', fontWeight: '700', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', backgroundColor: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', border: '1.5px solid rgba(239, 68, 68, 0.3)', cursor: 'pointer', transition: 'all 0.3s'
+                                                }}
+                                            >
+                                                {interestLoading ? <Loader size={20} style={{ animation: 'spin 0.8s linear infinite' }} /> : <><XCircle size={20} /> Cancel</>}
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={handleInterested}
+                                                disabled={interestLoading}
+                                                id="interested-btn"
+                                                style={{
+                                                    padding: '1rem', fontSize: '1rem', fontWeight: '700', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', border: 'none', cursor: 'pointer', transition: 'all 0.3s', backgroundColor: 'var(--primary)', color: 'white', boxShadow: '0 4px 12px -2px rgba(37, 99, 235, 0.3)'
+                                                }}
+                                            >
+                                                {interestLoading ? <Loader size={20} style={{ animation: 'spin 0.8s linear infinite' }} /> : <><Heart size={20} /> Notify Seller</>}
+                                            </button>
+                                        )}
+                                        
+                                        <button
+                                            onClick={() => {
+                                                if (!isAuthenticated) setShowPrompt(true);
+                                                else setShowChat(!showChat);
+                                            }}
+                                            style={{
+                                                padding: '1rem', fontSize: '1rem', fontWeight: '700', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', border: '1.5px solid var(--primary)', backgroundColor: showChat ? 'var(--primary-light)' : 'var(--surface)', color: 'var(--primary)', cursor: 'pointer', transition: 'all 0.3s'
+                                            }}
+                                        >
+                                            <MessageCircle size={20} /> {showChat ? 'Close Chat' : 'Have Question'}
+                                        </button>
+                                    </div>
+                                );
+                            })()
                         )}
 
                         {/* Success sub-text */}
@@ -724,6 +711,14 @@ const ProductDetail = () => {
                                     The seller has been notified and will contact you on WhatsApp soon 😊
                                 </p>
                             </div>
+                        )}
+
+                        {/* Chat UI */}
+                        {showChat && !isOwner && isAuthenticated && (
+                            <ProductChat 
+                                product={product} 
+                                onClose={() => setShowChat(false)} 
+                            />
                         )}
 
                         {isOwner && (

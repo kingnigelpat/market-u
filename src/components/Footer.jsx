@@ -54,7 +54,9 @@ const Footer = () => {
             <h3 className="footer-heading">Quick Links</h3>
             <ul className="footer-links">
               <li><Link to="/market">Browse Market</Link></li>
-              <li><Link to="/register?role=seller">Sell an Item</Link></li>
+              <li><Link to="/schools">Campus Hub &amp; Schools</Link></li>
+              <li><Link to="/register?role=seller">Sell an Item (Free)</Link></li>
+              <li><Link to="/advertise">Advertise on MarketU</Link></li>
               <li><Link to="/login">Seller Login</Link></li>
               <li><Link to="/about">About Us</Link></li>
             </ul>

@@ -1,4 +1,4 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import fs from 'fs'
 import path from 'path'
@@ -90,7 +90,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // ── Offline Caching (PWA Caches) ──────────────────────────────────────────────
-const CACHE_NAME = 'market-u-v5';
+const CACHE_NAME = 'market-u-v6';
 const ASSETS_TO_CACHE = ['/', '/index.html', '/icon.png', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
@@ -144,14 +144,31 @@ self.addEventListener('fetch', (event) => {
   }
 }
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
+export default defineConfig(() => {
   return {
     base: '/',
     plugins: [react(), firebaseSwPlugin()],
     build: {
       outDir: 'dist',
       emptyOutDir: true,
+      chunkSizeWarningLimit: 1200,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('firebase')) {
+                return 'vendor-firebase';
+              }
+              if (id.includes('react-dom') || id.includes('react-router-dom') || id.includes('/react/')) {
+                return 'vendor-react';
+              }
+              if (id.includes('lucide-react') || id.includes('react-icons')) {
+                return 'vendor-icons';
+              }
+            }
+          },
+        },
+      },
     },
   }
 })

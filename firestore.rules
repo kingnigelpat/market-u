@@ -211,6 +211,96 @@ service cloud.firestore {
 
 
     // ─────────────────────────────────────────────
+    // ADS (Paid homepage banners — ₦500 / week)
+    // Lifecycle: pending_payment → (admin) active → expired | rejected
+    // ─────────────────────────────────────────────
+
+    match /ads/{adId} {
+
+      function adOwner() {
+        return isSignedIn() && resource.data.ownerId == request.auth.uid;
+      }
+
+      function changed() {
+        return request.resource.data.diff(resource.data).affectedKeys();
+      }
+
+      // Anyone (incl. guests) may bump exactly one counter by exactly 1 on a live ad.
+      function isCounterBump() {
+        return resource.data.status == 'active'
+          && (
+            (changed().hasOnly(['impressions'])
+              && request.resource.data.impressions == resource.data.impressions + 1)
+            || (changed().hasOnly(['clicks'])
+              && request.resource.data.clicks == resource.data.clicks + 1)
+          );
+      }
+
+      // Live ads are public; owners see their own; admins see all.
+      allow read: if resource.data.status == 'active' || adOwner() || isAdmin();
+
+      // Advertisers can only create unpaid, correctly priced ads for themselves.
+      allow create: if isSignedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.status == 'pending_payment'
+        && request.resource.data.weeks is int
+        && request.resource.data.weeks >= 1
+        && request.resource.data.weeks <= 4
+        && request.resource.data.amount == request.resource.data.weeks * 500
+        && request.resource.data.impressions == 0
+        && request.resource.data.clicks == 0
+        && request.resource.data.startDate == null
+        && request.resource.data.endDate == null
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 80
+        && request.resource.data.imageUrl is string
+        && request.resource.data.linkUrl is string;
+
+      allow update: if isAdmin()
+        // Owner may tweak content / payment ref while still unpaid — never status, dates or price.
+        || (adOwner()
+            && resource.data.status == 'pending_payment'
+            && changed().hasOnly(['paymentRef', 'title', 'subtitle', 'imageUrl', 'linkType', 'linkUrl']))
+        || isCounterBump();
+
+      allow delete: if isAdmin()
+        || (adOwner() && resource.data.status == 'pending_payment');
+    }
+
+
+    // ─────────────────────────────────────────────
+    // CHATS & MESSAGES
+    // ─────────────────────────────────────────────
+
+    match /chats/{chatId} {
+      function isChatParticipant() {
+        return isSignedIn() && (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid);
+      }
+
+      allow read: if isChatParticipant() || isAdmin();
+      
+      allow create: if isSignedIn() 
+        && request.resource.data.buyerId == request.auth.uid;
+        
+      allow update: if isChatParticipant() || isAdmin();
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        function getChat() {
+          return get(/databases/$(database)/documents/chats/$(chatId)).data;
+        }
+        function isChatParticipantForMsg() {
+          return isSignedIn() && (getChat().buyerId == request.auth.uid || getChat().sellerId == request.auth.uid);
+        }
+
+        allow read: if isChatParticipantForMsg() || isAdmin();
+        allow create: if isChatParticipantForMsg() && request.resource.data.senderId == request.auth.uid;
+        allow update, delete: if isAdmin();
+      }
+    }
+
+
+    // ─────────────────────────────────────────────
     // DENY EVERYTHING ELSE
     // ─────────────────────────────────────────────
 

@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Link } from 'react-router-dom';
-import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap, Star, MessageCircle, Package, Share2, Check, ExternalLink } from 'lucide-react';
+import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap, Star, MessageCircle, Package, Share2, Check, ExternalLink, Megaphone, ArrowRight, GraduationCap } from 'lucide-react';
 
 const SellerDashboard = () => {
     const { currentUser, userRole, setUserRole } = useAuth();
@@ -265,7 +265,15 @@ const SellerDashboard = () => {
                         Seller Dashboard
                         {sellerData?.verified && <VerifiedBadge size={28} />}
                     </h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>Manage your products and store settings.</p>
+                    <p style={{ color: 'var(--text-secondary)', margin: '0 0 0.25rem 0' }}>Manage your products and store settings.</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                        <GraduationCap size={15} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                        <span>Campus: <strong style={{ color: 'var(--text)' }}>{sellerData?.schoolName || 'Western Delta University'}</strong></span>
+                        <span>•</span>
+                        <Link to={`/market?school=${encodeURIComponent(sellerData?.schoolName || 'Western Delta University')}`} style={{ color: 'var(--primary)', fontWeight: '700', textDecoration: 'none' }}>
+                            View Campus Market →
+                        </Link>
+                    </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem' }}>
@@ -277,8 +285,9 @@ const SellerDashboard = () => {
                                 className="btn btn-secondary"
                             >
                                 <UserCheck size={18} />
-                                {requestingVerif ? 'Requesting...' : 'Request Verification'}
+                                {requestingVerif ? 'Requesting...' : 'Get Verified – Free'}
                             </button>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textAlign: 'right' }}>No fees. We just confirm you're a student.</span>
                             <a href="https://wa.me/2347073544811" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textDecoration: 'underline' }}>Contact Support</a>
                         </div>
                     )}
@@ -293,6 +302,14 @@ const SellerDashboard = () => {
                         </div>
                     )}
 
+                    <Link to="/messages" className="btn btn-secondary" style={{ 
+                        padding: '1rem 1.5rem', 
+                        fontSize: '1rem', 
+                        borderRadius: '1.25rem',
+                        transition: 'all 0.2s'
+                    }}>
+                        <MessageCircle size={22} /> Messages
+                    </Link>
                     <Link to="/add-product" className="btn btn-primary" style={{ 
                         padding: '1rem 2rem', 
                         fontSize: '1rem', 
@@ -305,6 +322,26 @@ const SellerDashboard = () => {
                     </Link>
                 </div>
             </div>
+
+            {/* Promote store (paid banner ads — the only paid feature) */}
+            <Link to="/advertise" id="dashboard-promote-store" style={{
+                display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap',
+                padding: '1.1rem 1.35rem', marginBottom: '1.5rem',
+                borderRadius: 'var(--radius-xl)',
+                background: 'linear-gradient(135deg, #0B1B4D 0%, #1D4ED8 70%, #3B82F6 100%)',
+                color: '#fff', boxShadow: '0 10px 24px -10px rgba(29, 78, 216, 0.55)'
+            }}>
+                <div style={{ padding: '0.7rem', borderRadius: '0.9rem', background: 'rgba(255,255,255,0.15)', display: 'flex' }}>
+                    <Megaphone size={22} />
+                </div>
+                <div style={{ flex: 1, minWidth: '180px' }}>
+                    <div style={{ fontWeight: 800, fontSize: '1rem' }}>Promote your store on the homepage</div>
+                    <div style={{ fontSize: '0.825rem', opacity: 0.85 }}>Banner ads from ₦500/week. Posting and verification stay free.</div>
+                </div>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.55rem 1rem', borderRadius: '9999px', background: '#fff', color: '#1E3A8A', fontWeight: 800, fontSize: '0.825rem' }}>
+                    Advertise <ArrowRight size={15} />
+                </span>
+            </Link>
 
             {/* Gamification / Stats Section */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>

@@ -4,10 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Sparkles, UserCheck, Search, Heart } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Sparkles, UserCheck, Search, Heart, Megaphone, MessageCircle, GraduationCap } from 'lucide-react';
 
 const Navbar = () => {
-    const { isAuthenticated, isSeller, userRole, currentUser } = useAuth();
+    const { isAuthenticated, isSeller, isAdmin, userRole, currentUser } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
@@ -86,6 +86,9 @@ const Navbar = () => {
                             <Link to="/dashboard" className="nav-link">
                                 <LayoutDashboard size={16} /> Dashboard
                             </Link>
+                            <Link to="/schools" className="nav-link nav-link--muted">
+                                <GraduationCap size={16} /> Campuses
+                            </Link>
                             <Link to="/market" className="nav-link nav-link--muted">
                                 <Compass size={16} /> Browse
                             </Link>
@@ -97,6 +100,9 @@ const Navbar = () => {
                         <div className="hide-on-mobile app-navbar-buyer-links">
                             <Link to="/market" className="nav-link">
                                 <Compass size={16} /> Browse
+                            </Link>
+                            <Link to="/schools" className="nav-link nav-link--muted">
+                                <GraduationCap size={16} /> Campuses
                             </Link>
                             <Link to="/search" className="nav-link nav-link--muted">
                                 <Search size={16} /> Search
@@ -175,6 +181,9 @@ const Navbar = () => {
                                                     <Bookmark size={16} /> Saved Items
                                                     {savedCount > 0 && <span className="nav-badge nav-badge--inline">{savedCount > 99 ? '99+' : savedCount}</span>}
                                                 </Link>
+                                                <Link to="/schools" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <GraduationCap size={16} /> Campus Hub & Schools
+                                                </Link>
                                                 <div className="nav-dropdown-divider" />
                                                 <Link to="/waitlist" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
                                                     <UserCheck size={16} /> Join the Waitlist
@@ -193,16 +202,31 @@ const Navbar = () => {
                                                     <Bell size={16} /> Notifications
                                                     {unseenCount > 0 && <span className="nav-badge nav-badge--danger nav-badge--inline">{unseenCount > 99 ? '99+' : unseenCount}</span>}
                                                 </Link>
+                                                <Link to="/messages" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <MessageCircle size={16} /> Messages
+                                                </Link>
+                                                <Link to="/schools" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <GraduationCap size={16} /> Campus Hub & Schools
+                                                </Link>
                                                 <Link to="/add-product" onClick={() => setMenuOpen(false)} className="nav-dropdown-item nav-dropdown-item--highlight">
                                                     <PlusCircle size={16} /> Post Product
                                                 </Link>
                                                 <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
                                                     <LayoutDashboard size={16} /> My Dashboard
                                                 </Link>
+                                                <Link to="/advertise" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <Megaphone size={16} /> Promote My Store
+                                                </Link>
                                                 <Link to="/market" className="mobile-only nav-dropdown-item" onClick={() => setMenuOpen(false)}>
                                                     <Compass size={16} /> Browse Market
                                                 </Link>
                                             </>
+                                        )}
+
+                                        {isAdmin && (
+                                            <Link to="/admin/ads" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                <Megaphone size={16} /> Ads Manager
+                                            </Link>
                                         )}
 
                                         <Link to="/profile" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">

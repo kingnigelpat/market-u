@@ -1,41 +1,52 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import ImageUploader from '../components/ImageUploader';
 import { uploadImageToCloudinary } from '../utils/cloudinary';
 import { Save } from 'lucide-react';
+import { INSTITUTIONS, SUPPORTED_SCHOOL } from '../data/institutions';
 
 const AddProduct = () => {
-    const { currentUser } = useAuth();
+    const { currentUser, userSchoolName } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [sellerData, setSellerData] = useState(null);
-    const [formData, setFormData] = useState({
-        title: '',
-        price: '',
-        stock: '1',
-        description: '',
-        category: 'Electronics'
+    const [formData, setFormData] = useState(() => {
+        const querySchool = new URLSearchParams(location.search).get('school');
+        return {
+            title: '',
+            price: '',
+            stock: '1',
+            description: '',
+            category: 'Electronics',
+            schoolName: querySchool || ''
+        };
     });
     const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // Fetch full seller data to get phone number and verified status
+    // Fetch full seller data to get phone number, school, and verified status
     useEffect(() => {
         const fetchSellerData = async () => {
             if (currentUser) {
                 const sellerRef = doc(db, 'users', currentUser.uid);
                 const sellerSnap = await getDoc(sellerRef);
                 if (sellerSnap.exists()) {
-                    setSellerData(sellerSnap.data());
+                    const data = sellerSnap.data();
+                    setSellerData(data);
+                    setFormData(prev => ({
+                        ...prev,
+                        schoolName: prev.schoolName || data.schoolName || userSchoolName || SUPPORTED_SCHOOL
+                    }));
                 }
             }
         };
         fetchSellerData();
-    }, [currentUser]);
+    }, [currentUser, userSchoolName]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -87,6 +98,7 @@ const AddProduct = () => {
                 price: numericPrice,
                 stock: stockQuantity,
                 category: formData.category || 'Electronics',
+                schoolName: formData.schoolName || sellerData?.schoolName || userSchoolName || SUPPORTED_SCHOOL,
                 images: imageUrls,
                 createdAt: serverTimestamp()
             };
@@ -194,6 +206,26 @@ const AddProduct = () => {
                                 <option value="Hostels & Rooms">Hostels & Rooms</option>
                                 <option value="Other">Other</option>
                             </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="schoolName">Campus / Institution</label>
+                            <select
+                                id="schoolName"
+                                name="schoolName"
+                                value={formData.schoolName || ''}
+                                onChange={handleChange}
+                                style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                            >
+                                {INSTITUTIONS.map(inst => (
+                                    <option key={inst.name} value={inst.name}>
+                                        {inst.name} {inst.short ? `(${inst.short})` : ''}
+                                    </option>
+                                ))}
+                            </select>
+                            <small style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginTop: '0.35rem', display: 'block' }}>
+                                This listing will be published in this campus marketplace for student pickup.
+                            </small>
                         </div>
 
                         <div className="form-group">
