@@ -1,6 +1,6 @@
 import { getToken, onMessage } from 'firebase/messaging';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db } from '../firebase';
+import { auth, db } from '../firebase';
 
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
@@ -67,22 +67,45 @@ export async function requestNotificationPermission(userId, messagingInstance) {
 }
 
 /**
- * Sends a push notification to the seller via the Vercel serverless function.
- * Fetches seller's FCM tokens from Firestore, then calls /api/notify.
+ * Sends a push notification via the Vercel serverless function /api/notify.
+ * Authenticated with Firebase ID token.
  *
- * @param {string[]} fcmTokens - Array of seller's FCM tokens
- * @param {string} buyerName - Name of the interested buyer
- * @param {string} productName - Name of the product
+ * Can be called with:
+ *   sendPushNotification({ recipientUserId, type, buyerName, productName, text, productId, fcmTokens })
+ * or legacy:
+ *   sendPushNotification(fcmTokens, buyerName, productName)
  */
-export async function sendPushNotification(fcmTokens, buyerName, productName) {
-    if (!fcmTokens || fcmTokens.length === 0) return;
+export async function sendPushNotification(arg1, arg2, arg3) {
+    const payload = (arg1 && typeof arg1 === 'object' && !Array.isArray(arg1))
+        ? { ...arg1 }
+        : {
+            fcmTokens: arg1,
+            buyerName: arg2,
+            productName: arg3,
+            type: 'interest',
+        };
+
+    if (!payload.recipientUserId && (!payload.fcmTokens || payload.fcmTokens.length === 0)) {
+        return;
+    }
 
     try {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            console.warn('[FCM] Cannot send push notification: User not signed in.');
+            return;
+        }
+
+        const idToken = await currentUser.getIdToken();
         const res = await fetch('/api/notify', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fcmTokens, buyerName, productName }),
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`,
+            },
+            body: JSON.stringify(payload),
         });
+
         const data = await res.json();
         console.log('Push notification result:', data);
         return data;

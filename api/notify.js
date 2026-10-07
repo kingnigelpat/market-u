@@ -1,218 +1,175 @@
 /**
  * /api/notify.js — Vercel Serverless Function
- * Sends FCM push notifications to seller devices using FCM HTTP v1 API.
- * Requires FIREBASE_SERVICE_ACCOUNT env var (JSON string of serviceAccountKey.json)
+ * Sends targeted FCM push notifications to seller or buyer devices.
+ * Requires Firebase ID token authentication (Authorization: Bearer <token>).
+ * Looks up recipient FCM tokens securely on the server so clients do not expose tokens.
  */
 
-// Minimal JWT + OAuth2 implementation to get FCM access token from service account
-// (avoids needing firebase-admin as a bundled serverless dependency)
+import { getFirebaseAdmin, verifyAuth } from './_firebase.js';
 
-// ── Token cache ──────────────────────────────────────────────────────────────
-// Vercel reuses warm function instances, so caching the token here saves
-// the Google OAuth round-trip (~500ms–1s) on every subsequent notification.
-let _cachedToken = null;
-let _tokenExpiresAt = 0; // Unix seconds
-// ─────────────────────────────────────────────────────────────────────────────
+// In-memory rate limiter: max 20 notifications per user UID per minute
+const _rateLimitMap = new Map();
+const RATE_LIMIT_MAX = 20;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
-// ── Rate limiter ──────────────────────────────────────────────────────────────
-// Simple in-memory rate limiter: max 10 notification requests per IP per minute.
-// Resets on cold start (acceptable — bad actors don't benefit much from that).
-const _rateLimitMap = new Map(); // ip -> { count, resetAt }
-const RATE_LIMIT_MAX = 10;
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-
-function isRateLimited(ip) {
+function isRateLimited(uid) {
     const now = Date.now();
-    const entry = _rateLimitMap.get(ip);
+    const entry = _rateLimitMap.get(uid);
     if (!entry || now > entry.resetAt) {
-        _rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+        _rateLimitMap.set(uid, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
         return false;
     }
     if (entry.count >= RATE_LIMIT_MAX) return true;
     entry.count++;
     return false;
 }
-// ─────────────────────────────────────────────────────────────────────────────
-
-function base64url(str) {
-    return Buffer.from(str)
-        .toString('base64')
-        .replace(/=/g, '')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_');
-}
-
-async function getAccessToken(serviceAccount) {
-    const now = Math.floor(Date.now() / 1000);
-
-    // Return cached token if it's still valid (tokens last 1hr; we refresh 5min early)
-    if (_cachedToken && now < _tokenExpiresAt - 300) {
-        return _cachedToken;
-    }
-
-    const { createSign } = await import('crypto');
-
-    const header = base64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
-    const payload = base64url(JSON.stringify({
-        iss: serviceAccount.client_email,
-        scope: 'https://www.googleapis.com/auth/firebase.messaging',
-        aud: 'https://oauth2.googleapis.com/token',
-        exp: now + 3600,
-        iat: now,
-    }));
-
-    const signingInput = `${header}.${payload}`;
-    const sign = createSign('RSA-SHA256');
-    sign.update(signingInput);
-    const signature = sign.sign(serviceAccount.private_key, 'base64')
-        .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-
-    const jwt = `${signingInput}.${signature}`;
-
-    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
-    });
-
-    const tokenData = await tokenRes.json();
-
-    // Cache the new token
-    _cachedToken = tokenData.access_token;
-    _tokenExpiresAt = now + 3600;
-    console.log('[FCM] Fresh OAuth token fetched and cached.');
-
-    return _cachedToken;
-}
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    // ── Rate limit check ──────────────────────────────────────────────────────
-    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
-    if (isRateLimited(clientIp)) {
-        console.warn(`[FCM] Rate limit hit for IP: ${clientIp}`);
+    let caller;
+    try {
+        caller = await verifyAuth(req);
+    } catch (authErr) {
+        return res.status(authErr.statusCode || 401).json({ error: authErr.message });
+    }
+
+    if (isRateLimited(caller.uid)) {
         return res.status(429).json({ error: 'Too many requests. Please slow down.' });
     }
-    // ─────────────────────────────────────────────────────────────────────────
 
-    const { fcmTokens, buyerName, productName } = req.body;
-
-    if (!fcmTokens || fcmTokens.length === 0) {
-        return res.status(400).json({ error: 'No FCM tokens provided' });
-    }
-
-    const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT;
-    if (!serviceAccountRaw) {
-        console.error('FIREBASE_SERVICE_ACCOUNT env var not set');
-        return res.status(500).json({ error: 'Server not configured for push notifications' });
-    }
-
-    let serviceAccount;
+    let adminApp;
     try {
-        serviceAccount = JSON.parse(serviceAccountRaw);
-    } catch (e) {
-        return res.status(500).json({ error: 'Invalid service account JSON' });
+        adminApp = getFirebaseAdmin();
+    } catch (initErr) {
+        console.error('[NOTIFY] Firebase Admin init error:', initErr.message);
+        return res.status(500).json({ error: 'Server initialization error' });
     }
 
-    let accessToken;
-    try {
-        accessToken = await getAccessToken(serviceAccount);
-    } catch (e) {
-        console.error('Failed to get FCM access token:', e);
-        return res.status(500).json({ error: 'Auth failed' });
+    const {
+        recipientUserId,
+        fcmTokens: rawTokens,
+        buyerName = 'A user',
+        productName = 'your item',
+        text = '',
+        type = 'interest',
+        productId = null,
+        link: customLink = null,
+    } = req.body || {};
+
+    let targetTokens = [];
+
+    // Mode A: Server looks up recipient tokens (most secure - token is never exposed to client)
+    if (recipientUserId && typeof recipientUserId === 'string') {
+        try {
+            const db = adminApp.firestore();
+            const recipientDoc = await db.collection('users').doc(recipientUserId).get();
+            if (recipientDoc.exists) {
+                const data = recipientDoc.data() || {};
+                if (Array.isArray(data.fcmTokens)) {
+                    for (const t of data.fcmTokens) {
+                        if (typeof t === 'string' && t.trim()) targetTokens.push(t.trim());
+                    }
+                }
+                if (typeof data.fcmToken === 'string' && data.fcmToken.trim()) {
+                    targetTokens.push(data.fcmToken.trim());
+                }
+            }
+        } catch (dbErr) {
+            console.error('[NOTIFY] Error fetching recipient tokens:', dbErr.message);
+            return res.status(500).json({ error: 'Failed to retrieve recipient details' });
+        }
+    } else if (Array.isArray(rawTokens) && rawTokens.length > 0) {
+        // Mode B: Self-test notification (e.g. from Profile page test button)
+        // Only allow testing with tokens if caller is sending to their own device (max 5 tokens)
+        targetTokens = rawTokens.filter(t => typeof t === 'string' && t.trim()).slice(0, 5);
     }
 
-    const projectId = serviceAccount.project_id;
-    const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+    targetTokens = [...new Set(targetTokens)];
 
-    // Derive the app's origin for absolute URLs required by FCM webpush
-    // Use the incoming host header; fall back to the canonical domain.
-    const host = req.headers['x-forwarded-host'] || req.headers['host'] || 'market-u.vercel.app';
+    if (targetTokens.length === 0) {
+        return res.status(200).json({
+            succeeded: 0,
+            failed: 0,
+            message: 'No registered device tokens found for recipient',
+        });
+    }
+
+    // Build notification content based on type
+    const host = req.headers['x-forwarded-host'] || req.headers['host'] || 'www.marketu.store';
     const protocol = (req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
     const appOrigin = `${protocol}://${host}`;
 
-    // Fan-out all FCM sends in parallel for speed
-    const results = await Promise.allSettled(
-        fcmTokens.map(async (token) => {
-            const messageBody = {
-                message: {
-                    token,
-                    notification: {
-                        title: '🔔 New Interest on Market-U!',
-                        body: `${buyerName} is interested in your ${productName}! Open Market-U to contact them.`,
-                    },
-                    // Android: wake up device even when Chrome is closed
-                    android: {
-                        priority: 'high',
-                    },
-                    // iOS + Desktop web push
-                    // FCM requires ABSOLUTE URLs for icon/badge — relative paths are silently ignored
-                    webpush: {
-                        headers: {
-                            Urgency: 'high',
-                            TTL: '86400', // 24hr TTL so offline devices still get it
-                        },
-                        notification: {
-                            title: '🔔 New Interest on Market-U!',
-                            body: `${buyerName} is interested in your ${productName}! Tap to contact them.`,
-                            icon: `${appOrigin}/icon.png`,
-                            badge: `${appOrigin}/icon.png`,
-                            vibrate: [200, 100, 200, 100, 200],
-                            requireInteraction: true,
-                            tag: `market-u-interest-${Date.now()}`,
-                        },
-                        fcm_options: {
-                            link: `${appOrigin}/notifications`,
-                        },
-                    },
-                },
-            };
+    const sanitizedSender = String(buyerName).slice(0, 50).trim();
+    const sanitizedProduct = String(productName).slice(0, 80).trim();
+    const sanitizedText = String(text).slice(0, 150).trim();
 
-            console.log('[FCM] Sending to token:', token.slice(0, 20) + '...', 'origin:', appOrigin);
+    let title = '🔔 Notification from Market-U';
+    let body = `${sanitizedSender} sent you an alert regarding ${sanitizedProduct}`;
+    let link = `${appOrigin}/notifications`;
 
-            const fcmRes = await fetch(fcmUrl, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(messageBody),
-            });
-            const json = await fcmRes.json();
-            // Log full FCM response so we can see exactly what failed
-            if (json.error) {
-                console.warn(`[FCM] Token send failed (status ${fcmRes.status}):`, JSON.stringify(json.error));
-            } else {
-                console.log('[FCM] Token send success:', json.name);
-            }
-            return json;
-        })
-    );
-
-    // Count actual FCM outcomes — a fulfilled promise can still carry an FCM error
-    // in its response body, so we check the json.name field (present on success).
-    let succeeded = 0;
-    let failed = 0;
-    const errors = [];
-    for (const r of results) {
-        if (r.status === 'fulfilled' && r.value?.name) {
-            succeeded++;
-        } else {
-            failed++;
-            const reason = r.status === 'rejected' ? r.reason?.message : r.value?.error?.message;
-            if (reason) {
-                errors.push(reason);
-                console.warn('[FCM] Delivery failure:', reason);
-            }
-        }
+    if (customLink && typeof customLink === 'string' && customLink.trim()) {
+        const trimmed = customLink.trim();
+        link = trimmed.startsWith('http') ? trimmed : `${appOrigin}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+    } else if (type === 'chat_message') {
+        title = `💬 Message from ${sanitizedSender}`;
+        body = sanitizedText ? `${sanitizedSender}: "${sanitizedText}"` : `New message regarding ${sanitizedProduct}`;
+        link = productId ? `${appOrigin}/product/${encodeURIComponent(productId)}?chat=true` : `${appOrigin}/messages`;
+    } else if (type === 'interest') {
+        title = `🔔 New Interest on Market-U!`;
+        body = `${sanitizedSender} is interested in your ${sanitizedProduct}! Tap to contact them.`;
+        link = `${appOrigin}/notifications`;
+    } else if (type === 'test') {
+        title = `🔔 Test Notification`;
+        body = `Push notifications are active and working on your device!`;
+        link = `${appOrigin}/profile`;
     }
-    console.log(`Push result: ${succeeded} sent, ${failed} failed`);
 
-    return res.status(200).json({ succeeded, failed, errors });
+    try {
+        const response = await adminApp.messaging().sendEachForMulticast({
+            tokens: targetTokens,
+            notification: {
+                title,
+                body,
+            },
+            android: {
+                priority: 'high',
+            },
+            webpush: {
+                headers: {
+                    Urgency: 'high',
+                    TTL: '86400',
+                },
+                notification: {
+                    title,
+                    body,
+                    icon: `${appOrigin}/icon.png`,
+                    badge: `${appOrigin}/icon.png`,
+                    tag: `market-u-notif-${Date.now()}`,
+                },
+                fcmOptions: {
+                    link,
+                },
+                data: {
+                    url: link,
+                    type,
+                },
+            },
+        });
+
+        console.log(`[NOTIFY] Sent (${type}) to ${response.successCount} devices (${response.failureCount} failed)`);
+        return res.status(200).json({
+            succeeded: response.successCount,
+            failed: response.failureCount,
+            errors: response.responses.filter(r => !r.success).map(r => r.error?.message || 'Delivery error'),
+        });
+    } catch (sendErr) {
+        console.error('[NOTIFY] Multicast error:', sendErr);
+        return res.status(500).json({ error: 'Failed to dispatch push notification' });
+    }
 }

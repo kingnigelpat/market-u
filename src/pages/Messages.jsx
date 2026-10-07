@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, addDoc, orderBy, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, addDoc, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -397,27 +397,17 @@ const ActiveChatView = ({ chat, onBack }) => {
                 lastSenderId: currentUser.uid
             });
 
-            // If buyer has FCM tokens, notify them of seller reply
+            // Notify buyer of seller reply securely (server resolves buyer's tokens)
             if (chat.buyerId) {
-                try {
-                    const buyerDoc = await getDoc(doc(db, 'users', chat.buyerId));
-                    if (buyerDoc.exists()) {
-                        const buyerData = buyerDoc.data() || {};
-                        let fcmTokens = buyerData.fcmTokens || [];
-                        if (fcmTokens.length === 0 && buyerData.fcmToken) {
-                            fcmTokens = [buyerData.fcmToken];
-                        }
-                        if (fcmTokens.length > 0) {
-                            sendPushNotification(
-                                fcmTokens,
-                                userName || currentUser.displayName || 'Seller',
-                                chat.productName || 'Your inquired item'
-                            ).catch(e => console.warn('Could not notify buyer of reply:', e));
-                        }
-                    }
-                } catch (pushErr) {
-                    console.warn('Error fetching buyer tokens:', pushErr);
-                }
+                sendPushNotification({
+                    recipientUserId: chat.buyerId,
+                    type: 'chat_message',
+                    buyerName: userName || currentUser.displayName || 'Seller',
+                    productName: chat.productName || 'Your inquired item',
+                    text: msgText,
+                    productId: chat.productId || null,
+                    link: chat.productId ? `/product/${chat.productId}?chat=true` : '/notifications',
+                }).catch(e => console.warn('Could not notify buyer of reply:', e));
             }
         } catch (error) {
             console.error("Error sending seller message:", error);

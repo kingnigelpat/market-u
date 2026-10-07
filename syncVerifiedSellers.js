@@ -71,12 +71,10 @@ async function syncVerifiedSellers() {
   }
 
   console.log(`\n🎉 Sync complete! Updated ${totalUpdated} products.`);
-  // eslint-disable-next-line no-undef
   process.exit(0);
 }
 
 syncVerifiedSellers().catch((err) => {
   console.error("❌ Error:", err);
-  // eslint-disable-next-line no-undef
   process.exit(1);
 });

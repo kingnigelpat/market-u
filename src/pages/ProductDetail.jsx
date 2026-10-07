@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { doc, getDoc, deleteDoc, updateDoc, increment, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ArrowLeft, Trash2, Edit, Heart, Loader, AlertCircle, Bookmark, BookmarkCheck, XCircle, Share2, Check, ExternalLink, MessageCircle, GraduationCap } from 'lucide-react';
@@ -17,6 +17,7 @@ import ProductChat from '../components/ProductChat';
 const ProductDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { currentUser, isAuthenticated, userName, userPhone, enableNotifications } = useAuth();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -39,6 +40,14 @@ const ProductDetail = () => {
     const [showNotifPrompt, setShowNotifPrompt] = useState(false);
     const [showChat, setShowChat] = useState(false);
 
+    // Auto-open chat if navigated from notification (?chat=true)
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('chat') === 'true') {
+            setShowChat(true);
+        }
+    }, [location.search]);
+
     useEffect(() => {
         const fetchProduct = async () => {
             try {
@@ -56,17 +65,15 @@ const ProductDetail = () => {
                         } catch(e) { console.error('Error incrementing views', e); }
                     }
 
-                    // Fetch live seller verified status — users collection requires auth in Firestore rules
-                    if (currentUser) {
-                        try {
-                            const sellerRef = doc(db, 'users', productData.sellerId);
-                            const sellerSnap = await getDoc(sellerRef);
-                            if (sellerSnap.exists()) {
-                                productData.sellerVerified = Boolean(sellerSnap.data().verified) || Boolean(productData.sellerVerified);
-                            }
-                        } catch (e) {
-                            console.error("Could not fetch seller dynamically", e);
+                    // Fetch live seller verified status from public profile
+                    try {
+                        const sellerRef = doc(db, 'publicProfiles', productData.sellerId);
+                        const sellerSnap = await getDoc(sellerRef);
+                        if (sellerSnap.exists()) {
+                            productData.sellerVerified = Boolean(sellerSnap.data().verified) || Boolean(productData.sellerVerified);
                         }
+                    } catch (e) {
+                        console.warn("Could not fetch seller public profile", e);
                     }
 
                     setProduct(productData);
@@ -179,19 +186,15 @@ const ProductDetail = () => {
                 setAlreadyInterested(true);
                 setIsCanceled(false);
 
-                // Send real push notification to seller
-                try {
-                    const sellerDoc = await getDoc(doc(db, 'users', product.sellerId));
-                    const sellerData = sellerDoc.data() || {};
-                    let fcmTokens = sellerData.fcmTokens || [];
-                    if (fcmTokens.length === 0 && sellerData.fcmToken) {
-                        fcmTokens = [sellerData.fcmToken];
-                    }
-                    if (fcmTokens.length > 0) {
-                        await sendPushNotification(fcmTokens, buyerName, product.title);
-                    }
-                } catch (e) {
-                    console.warn('Could not send push notification:', e);
+                // Send push notification to seller securely (server looks up seller's tokens)
+                if (product.sellerId) {
+                    sendPushNotification({
+                        recipientUserId: product.sellerId,
+                        type: 'interest',
+                        buyerName,
+                        productName: product.title,
+                        productId: id,
+                    }).catch(e => console.warn('Push notification failed:', e));
                 }
             }
         } catch (error) {

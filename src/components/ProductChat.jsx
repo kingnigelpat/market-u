@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { collection, query, addDoc, serverTimestamp, orderBy, onSnapshot, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
+import { useState, useEffect, useRef } from 'react';
+import { collection, query, addDoc, serverTimestamp, orderBy, onSnapshot, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { X, Send, AlertTriangle, Store, Loader } from 'lucide-react';
+import { X, Send, Store, MessageCircle, Loader } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { sendPushNotification } from '../utils/notifications';
 
@@ -10,7 +10,6 @@ const ProductChat = ({ product, onClose }) => {
     // Deterministic chat ID: 1-to-1 conversation per product and buyer
     const chatId = product?.id && currentUser?.uid ? `${product.id}_${currentUser.uid}` : null;
     const [allMessages, setAllMessages] = useState([]);
-    const [clearedAt, setClearedAt] = useState(null);
     const [text, setText] = useState('');
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
@@ -18,25 +17,14 @@ const ProductChat = ({ product, onClose }) => {
     const messagesEndRef = useRef(null);
     const chatIdRef = useRef(null);
 
-    // Keep ref in sync for cleanup on unmount
+    const [chatReady, setChatReady] = useState(false);
+
+    // Keep ref in sync
     useEffect(() => {
         chatIdRef.current = chatId;
     }, [chatId]);
 
-    // Cleanup: clear buyer's chat view whenever they close or leave the page
-    useEffect(() => {
-        return () => {
-            if (chatIdRef.current) {
-                updateDoc(doc(db, 'chats', chatIdRef.current), {
-                    buyerClearedAt: serverTimestamp()
-                }).catch(err => {
-                    console.warn("Could not set buyerClearedAt on unmount:", err);
-                });
-            }
-        };
-    }, []);
-
-    // Ensure chat doc exists in Firestore
+    // Ensure chat doc exists in Firestore BEFORE starting listeners
     useEffect(() => {
         if (!chatId || !product?.id || !currentUser?.uid) return;
 
@@ -59,8 +47,13 @@ const ProductChat = ({ product, onClose }) => {
                         buyerClearedAt: null,
                     });
                 }
+                if (isMounted) {
+                    setChatReady(true);
+                }
             } catch (err) {
                 console.warn("Notice: Chat doc check:", err);
+                // Even on error, allow trying so user can see error state
+                if (isMounted) setChatReady(true);
             } finally {
                 if (isMounted) setLoading(false);
             }
@@ -70,24 +63,10 @@ const ProductChat = ({ product, onClose }) => {
         return () => { isMounted = false; };
     }, [chatId, product.id, product.sellerId, currentUser.uid, currentUser.displayName, userName, product.title, product.price, product.images, product.image]);
 
-    // Subscribe to chat metadata (buyerClearedAt) and messages
+    // Subscribe to messages subcollection ONLY AFTER chat doc is ready
     useEffect(() => {
-        if (!chatId) return;
+        if (!chatId || !chatReady) return;
 
-        // 1. Listen to chat doc to get buyerClearedAt
-        const unsubChat = onSnapshot(doc(db, 'chats', chatId), (chatSnap) => {
-            if (chatSnap.exists()) {
-                const data = chatSnap.data();
-                const cTime = data.buyerClearedAt?.toMillis
-                    ? data.buyerClearedAt.toMillis()
-                    : (data.buyerClearedAt?.seconds ? data.buyerClearedAt.seconds * 1000 : null);
-                setClearedAt(cTime);
-            }
-        }, (err) => {
-            console.error("Error listening to chat doc:", err);
-        });
-
-        // 2. Listen to messages subcollection
         const qMessages = query(
             collection(db, 'chats', chatId, 'messages'),
             orderBy('createdAt', 'asc')
@@ -109,21 +88,12 @@ const ProductChat = ({ product, onClose }) => {
         });
 
         return () => {
-            unsubChat();
             unsubMessages();
         };
-    }, [chatId]);
+    }, [chatId, chatReady]);
 
-    // Messages visible to buyer (filtered by buyerClearedAt)
-    const visibleMessages = useMemo(() => {
-        if (!clearedAt) return allMessages;
-        return allMessages.filter(msg => {
-            const msgTime = msg.createdAt?.toMillis
-                ? msg.createdAt.toMillis()
-                : (msg.createdAt?.seconds ? msg.createdAt.seconds * 1000 : (msg.createdAt ? new Date(msg.createdAt).getTime() : Infinity));
-            return msgTime > clearedAt;
-        });
-    }, [allMessages, clearedAt]);
+    // Messages visible in conversation
+    const visibleMessages = allMessages;
 
     const handleSend = async (e) => {
         e.preventDefault();
@@ -135,7 +105,7 @@ const ProductChat = ({ product, onClose }) => {
         setSendError('');
 
         try {
-            // Atomically ensure parent chat document exists and record last message
+            // Ensure parent chat document metadata is updated
             await setDoc(doc(db, 'chats', chatId), {
                 productId: product.id,
                 buyerId: currentUser.uid,
@@ -157,27 +127,17 @@ const ProductChat = ({ product, onClose }) => {
                 createdAt: serverTimestamp()
             });
 
-            // If seller has fcm tokens, send push notification
+            // Send push notification to seller securely (server looks up seller's tokens)
             if (product.sellerId) {
-                try {
-                    const sellerDoc = await getDoc(doc(db, 'users', product.sellerId));
-                    if (sellerDoc.exists()) {
-                        const sellerData = sellerDoc.data() || {};
-                        let fcmTokens = sellerData.fcmTokens || [];
-                        if (fcmTokens.length === 0 && sellerData.fcmToken) {
-                            fcmTokens = [sellerData.fcmToken];
-                        }
-                        if (fcmTokens.length > 0) {
-                            sendPushNotification(
-                                fcmTokens,
-                                userName || currentUser.displayName || 'A buyer',
-                                product.title
-                            ).catch(pushErr => console.warn('Push error on chat:', pushErr));
-                        }
-                    }
-                } catch (pushErr) {
-                    console.warn('Could not send push notification to seller:', pushErr);
-                }
+                sendPushNotification({
+                    recipientUserId: product.sellerId,
+                    type: 'chat_message',
+                    buyerName: userName || currentUser.displayName || 'Buyer',
+                    productName: product.title,
+                    text: msgText,
+                    productId: product.id,
+                    link: '/messages',
+                }).catch(pushErr => console.warn('Push error on chat:', pushErr));
             }
         } catch (error) {
             console.error("Error sending message:", error);
@@ -190,16 +150,7 @@ const ProductChat = ({ product, onClose }) => {
         }
     };
 
-    const handleClose = async () => {
-        if (chatId) {
-            try {
-                await updateDoc(doc(db, 'chats', chatId), {
-                    buyerClearedAt: serverTimestamp()
-                });
-            } catch (error) {
-                console.error("Error clearing chat history on close:", error);
-            }
-        }
+    const handleClose = () => {
         onClose();
     };
 
@@ -264,20 +215,20 @@ const ProductChat = ({ product, onClose }) => {
                 </button>
             </div>
 
-            {/* Warning Banner */}
+            {/* Live Chat Banner */}
             <div style={{
                 padding: '0.5rem 1rem',
-                backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                color: '#d97706',
+                backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                color: 'var(--primary)',
                 fontSize: '0.75rem',
                 fontWeight: '600',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                borderBottom: '1px solid rgba(245, 158, 11, 0.2)'
+                borderBottom: '1px solid rgba(37, 99, 235, 0.15)'
             }}>
-                <AlertTriangle size={14} style={{ flexShrink: 0 }} />
-                <span>Notice: Leaving or closing this chat clears your conversation history.</span>
+                <MessageCircle size={14} style={{ flexShrink: 0 }} />
+                <span>Connected with seller. Replies will be delivered directly here and via notification.</span>
             </div>
 
             {/* Messages Area */}

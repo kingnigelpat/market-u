@@ -103,23 +103,29 @@ const AddProduct = () => {
                 createdAt: serverTimestamp()
             };
 
-            await addDoc(collection(db, 'products'), productData);
+            const docRef = await addDoc(collection(db, 'products'), productData);
+            const newProductId = docRef.id;
 
-            // 🔔 Broadcast to all buyers — fire and forget (don't block the redirect)
-            fetch('/api/notify-new-listing', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    productTitle: formData.title,
-                    sellerName: sellerData.name || 'A seller',
-                    category: formData.category || 'Other',
-                    // productId is set after redirect — we pass it on the next line
-                }),
-            }).then(r => r.json()).then(d => {
-                console.log('[Notify] Broadcast result:', d);
-            }).catch(e => {
-                console.warn('[Notify] Broadcast failed (non-critical):', e);
-            });
+            // 🔔 Broadcast to all buyers with authenticated ID token & verified product ID
+            try {
+                const idToken = await currentUser.getIdToken();
+                fetch('/api/notify-new-listing', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`,
+                    },
+                    body: JSON.stringify({
+                        productId: newProductId,
+                    }),
+                }).then(r => r.json()).then(d => {
+                    console.log('[Notify] Broadcast result:', d);
+                }).catch(e => {
+                    console.warn('[Notify] Broadcast failed (non-critical):', e);
+                });
+            } catch (tokenErr) {
+                console.warn('[Notify] Could not retrieve auth token for broadcast:', tokenErr);
+            }
 
             // Redirect back to dashboard
             navigate('/dashboard');

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
 import VerifiedBadge from '../components/VerifiedBadge';
 import ReadOnlyRating from '../components/ReadOnlyRating';
-import { ArrowLeft, Share2, Check, Store, MapPin, Package, MessageCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Share2, Check, MapPin, Package, MessageCircle } from 'lucide-react';
 
 const SellerStore = () => {
     const { id } = useParams();
@@ -20,13 +20,29 @@ const SellerStore = () => {
         const fetchStoreData = async () => {
             setLoading(true);
             try {
-                // 1. Fetch seller profile
-                const sellerRef = doc(db, 'users', id);
-                const sellerSnap = await getDoc(sellerRef);
+                // 1. Fetch seller public profile
                 let sellerData = null;
+                try {
+                    const pubSnap = await getDoc(doc(db, 'publicProfiles', id));
+                    if (pubSnap.exists()) {
+                        sellerData = { id: pubSnap.id, ...pubSnap.data() };
+                    }
+                } catch {
+                    // Fall back to users doc if permitted
+                }
 
-                if (sellerSnap.exists()) {
-                    sellerData = { id: sellerSnap.id, ...sellerSnap.data() };
+                if (!sellerData) {
+                    try {
+                        const userSnap = await getDoc(doc(db, 'users', id));
+                        if (userSnap.exists()) {
+                            sellerData = { id: userSnap.id, ...userSnap.data() };
+                        }
+                    } catch {
+                        // Users doc is private
+                    }
+                }
+
+                if (sellerData) {
                     setSeller(sellerData);
                     document.title = `${sellerData.name || 'Seller'}'s Store | Market-U`;
                 }
@@ -45,6 +61,18 @@ const SellerStore = () => {
                     const timeB = b.createdAt?.seconds || 0;
                     return timeB - timeA;
                 });
+
+                // If seller profile was missing, build fallback info from products
+                if (!sellerData && items.length > 0) {
+                    const fallbackSeller = {
+                        id,
+                        name: items[0].sellerName || 'Seller',
+                        school: items[0].schoolName || 'Western Delta University',
+                        verified: items.some(p => !!p.sellerVerified),
+                    };
+                    setSeller(fallbackSeller);
+                    document.title = `${fallbackSeller.name}'s Store | Market-U`;
+                }
 
                 // If seller status is confirmed, ensure products have sellerVerified
                 if (sellerData?.verified) {

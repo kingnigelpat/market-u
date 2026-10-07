@@ -141,7 +141,7 @@ const AppContent = () => {
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
                             <Route path="/saved" element={<SavedItems />} />
                         </Route>
-                        <Route element={<ProtectedRoute allowedRoles={['admin', 'seller']} />}>
+                        <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                             <Route path="/admin/ads" element={<AdminAds />} />
                         </Route>
                     </Routes>

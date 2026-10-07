@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Bot, X, Send, ShoppingBag, HelpCircle, ChevronRight, ExternalLink, Sparkles, AlertCircle, ShieldCheck, ArrowRight, CheckCircle, RefreshCw } from 'lucide-react';
+import { Bot, X, Send, Sparkles, ArrowRight } from 'lucide-react';
 import { optimizeImage } from '../utils/cloudinary';
 import VerifiedBadge from './VerifiedBadge';
 

@@ -139,7 +139,9 @@ const trackOnce = (kind, adId) => {
     try {
         if (sessionStorage.getItem(key)) return;
         sessionStorage.setItem(key, '1');
-    } catch (_) { /* storage blocked — still track */ }
+    } catch {
+        /* storage blocked — still track */
+    }
     updateDoc(doc(db, ADS, adId), { [kind]: increment(1) }).catch(() => {});
 };
 

@@ -23,31 +23,64 @@ service cloud.firestore {
 
 
     // ─────────────────────────────────────────────
-    // USERS
+    // USERS (Private Account Information)
     // ─────────────────────────────────────────────
 
     match /users/{uid} {
+      // Least-privilege: user accounts (containing email, fcmTokens, etc.)
+      // can only be read by their owner or an administrator.
+      allow read: if isOwner(uid) || isAdmin();
 
-      // Keep profile access available to authenticated users,
-      // matching the existing application behavior.
-      allow read: if isSignedIn();
-
-      // User can create their own profile.
-      // They cannot create themselves as admin.
+      // User can create their initial profile on registration.
+      // They cannot grant themselves an admin role or pre-verified status.
       allow create: if isOwner(uid)
-        && request.resource.data.role in ['buyer', 'seller'];
+        && request.resource.data.role in ['buyer', 'seller']
+        && (!request.resource.data.keys().hasAny(['verified']) || request.resource.data.verified == false)
+        && (!request.resource.data.keys().hasAny(['sellerRequestStatus']) || request.resource.data.sellerRequestStatus == 'pending')
+        && (!request.resource.data.keys().hasAny(['verificationStatus']) || request.resource.data.verificationStatus == 'pending');
 
-      // Users can update their own profile,
-      // but cannot change their role.
-      // Admins can update any profile.
+      // Normal users can update non-privileged fields (e.g. name, phone, fcmTokens, bio).
+      // They CANNOT modify role or verified flag, and can only request 'pending' status.
+      // Admins can update any user record.
       allow update: if isAdmin()
         || (
           isOwner(uid)
-          && request.resource.data.role == resource.data.role
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'verified'])
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['sellerRequestStatus'])
+              || request.resource.data.sellerRequestStatus == 'pending'
+              || request.resource.data.sellerRequestStatus == resource.data.sellerRequestStatus)
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['verificationStatus'])
+              || request.resource.data.verificationStatus == 'pending'
+              || request.resource.data.verificationStatus == resource.data.verificationStatus)
         );
 
-      // Only admins can delete profiles.
-      allow delete: if isAdmin();
+      // Account owner or admin can delete the profile document.
+      allow delete: if isOwner(uid) || isAdmin();
+    }
+
+
+    // ─────────────────────────────────────────────
+    // PUBLIC PROFILES (Marketplace Facing Info)
+    // ─────────────────────────────────────────────
+
+    match /publicProfiles/{uid} {
+      // Public marketplace information (name, phone, school, verified, bio) is publicly readable.
+      allow read: if true;
+
+      // Created by account owner on registration or backfilled by admin/owner.
+      allow create: if (isOwner(uid)
+        && (!request.resource.data.keys().hasAny(['verified']) || request.resource.data.verified == false))
+        || isAdmin();
+
+      // Owner can update their profile information, but cannot self-verify or modify roles.
+      // Admins have full write privileges.
+      allow update: if isAdmin()
+        || (
+          isOwner(uid)
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['verified', 'role'])
+        );
+
+      allow delete: if isOwner(uid) || isAdmin();
     }
 
 
@@ -56,19 +89,40 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
 
     match /products/{productId} {
-
       // Marketplace browsing is public.
       allow read: if true;
 
       // Seller must own the product being created.
+      // Prevents forging the sellerVerified badge unless already verified in the users collection.
       allow create: if isSignedIn()
-        && request.auth.uid == request.resource.data.sellerId;
-
-      // Only owner or admin can update.
-      allow update: if isSignedIn()
+        && request.auth.uid == request.resource.data.sellerId
         && (
-          request.auth.uid == resource.data.sellerId
+          !request.resource.data.keys().hasAny(['sellerVerified'])
+          || request.resource.data.sellerVerified == false
+          || (
+            exists(/databases/$(database)/documents/users/$(request.auth.uid))
+            && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.verified == true
+          )
           || isAdmin()
+        );
+
+      // Sellers can update their own products, but cannot change sellerId or sellerVerified.
+      // Signed-in users can increment the views counter.
+      allow update: if isAdmin()
+        || (
+          isSignedIn()
+          && request.auth.uid == resource.data.sellerId
+          && (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['sellerId', 'sellerVerified'])
+            || (
+              request.resource.data.sellerVerified == resource.data.sellerVerified
+              && request.resource.data.sellerId == resource.data.sellerId
+            )
+          )
+        )
+        || (
+          isSignedIn()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views'])
         );
 
       // Only owner or admin can delete.
@@ -85,12 +139,14 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
 
     match /verification_requests/{reqId} {
-
       // Authenticated users can submit a verification request.
       allow create: if isSignedIn();
 
-      // Keep requests private.
-      allow read, update, delete: if isAdmin();
+      // Only request owner or admin can read.
+      allow read: if isSignedIn()
+        && (request.auth.uid == resource.data.userId || isAdmin());
+
+      allow update, delete: if isAdmin();
     }
 
 
@@ -99,7 +155,6 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
 
     match /ratings/{ratingId} {
-
       // Authenticated users can view ratings.
       allow read: if isSignedIn();
 
@@ -107,8 +162,7 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && request.resource.data.buyerId == request.auth.uid;
 
-      // Only the buyer who created the rating or an admin
-      // can modify/delete it.
+      // Only the buyer who created the rating or an admin can modify/delete it.
       allow update, delete: if isSignedIn()
         && (
           resource.data.buyerId == request.auth.uid
@@ -122,7 +176,6 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
 
     match /savedItems/{docId} {
-
       // User can read their own saved items.
       allow read: if isSignedIn()
         && resource.data.buyerId == request.auth.uid;
@@ -142,7 +195,6 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
 
     match /interests/{interestId} {
-
       // Buyer creates their own interest request.
       allow create: if isSignedIn()
         && request.resource.data.buyerId == request.auth.uid;
@@ -184,15 +236,15 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
 
     match /waitlist/{waitlistId} {
-
       // Authenticated users can create waitlist submissions.
       allow create: if request.auth != null;
 
       // The user who submitted the entry can read their own record.
-      // Admins can read all waitlist submissions.
+      // Admins can read and manage all waitlist submissions.
       allow read: if isSignedIn()
-        && (request.auth.uid == resource.data.userId
-          || isAdmin());
+        && (request.auth.uid == resource.data.userId || isAdmin());
+
+      allow update, delete: if isAdmin();
     }
 
 
@@ -201,7 +253,6 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
 
     match /campaigns/{campaignId} {
-
       // Banners are publicly visible on homepage.
       allow read: if true;
 
@@ -212,11 +263,9 @@ service cloud.firestore {
 
     // ─────────────────────────────────────────────
     // ADS (Paid homepage banners — ₦500 / week)
-    // Lifecycle: pending_payment → (admin) active → expired | rejected
     // ─────────────────────────────────────────────
 
     match /ads/{adId} {
-
       function adOwner() {
         return isSignedIn() && resource.data.ownerId == request.auth.uid;
       }
@@ -278,11 +327,15 @@ service cloud.firestore {
       }
 
       allow read: if isChatParticipant() || isAdmin();
-      
-      allow create: if isSignedIn() 
-        && request.resource.data.buyerId == request.auth.uid;
-        
-      allow update: if isChatParticipant() || isAdmin();
+
+      allow create: if isSignedIn()
+        && (request.resource.data.buyerId == request.auth.uid || request.resource.data.sellerId == request.auth.uid);
+
+      // Participants cannot change ownership or product linkage
+      allow update: if (isChatParticipant()
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['buyerId', 'sellerId', 'productId']))
+        || isAdmin();
+
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
@@ -296,10 +349,16 @@ service cloud.firestore {
           return isSignedIn() && chatExists() && (getChat().buyerId == request.auth.uid || getChat().sellerId == request.auth.uid);
         }
 
+        // Only verified chat participants or admin can read messages
         allow read: if isChatParticipantForMsg() || isAdmin();
-        allow create: if isSignedIn() 
-          && request.resource.data.senderId == request.auth.uid
-          && (isChatParticipantForMsg() || !chatExists());
+
+        // Chat document must exist first; sender must be an authenticated participant; senderId must match auth UID
+        allow create: if isSignedIn()
+          && chatExists()
+          && isChatParticipantForMsg()
+          && request.resource.data.senderId == request.auth.uid;
+
+        // Normal users cannot tamper with sent messages; admins have moderation power
         allow update, delete: if isAdmin();
       }
     }

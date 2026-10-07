@@ -17,7 +17,7 @@ try {
     if (saMatch) {
         serviceAccount = JSON.parse(saMatch[1]);
     }
-} catch (e) {
+} catch {
     // Fallback to serviceAccountKey.json
     serviceAccount = JSON.parse(fs.readFileSync(path.join(__dirname, 'serviceAccountKey.json'), 'utf-8'));
 }

@@ -9,13 +9,13 @@ import {
     deleteUser,
     signOut,
 } from 'firebase/auth';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import {
     User, Phone, Lock, Trash2, ArrowLeft,
     CheckCircle, AlertCircle, Eye, EyeOff, Save, ShieldAlert,
     Bell, Send, RefreshCw, LogOut, Palette, Sun, Moon
 } from 'lucide-react';
-import { requestNotificationPermission } from '../utils/notifications';
+import { requestNotificationPermission, sendPushNotification } from '../utils/notifications';
 import { getToken } from 'firebase/messaging';
 import PhoneNumberField from '../components/PhoneNumberField';
 
@@ -190,7 +190,6 @@ const Profile = () => {
         setCheckingNotifs(true);
         const hasNotif = 'Notification' in window;
         const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-        const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
 
         setIsIOSDevice(isIOS);
 
@@ -298,18 +297,14 @@ const Profile = () => {
 
     const sendFCMTest = async (token) => {
         try {
-            const res = await fetch('/api/notify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    fcmTokens: [token],
-                    buyerName: 'Test Buyer ⚡',
-                    productName: 'Your Listed Item'
-                }),
+            const data = await sendPushNotification({
+                fcmTokens: [token],
+                buyerName: 'Test Buyer ⚡',
+                productName: 'Your Listed Item',
+                type: 'test',
             });
 
-            const data = await res.json();
-            if (data.succeeded > 0) {
+            if (data?.succeeded > 0) {
                 setNotifStatus({
                     type: 'success',
                     msg: '🔔 Test notification sent! Lock your screen now to verify. (It should arrive in a few seconds)'
@@ -317,10 +312,10 @@ const Profile = () => {
             } else {
                 setNotifStatus({
                     type: 'error',
-                    msg: data.errors?.[0] || 'Notification delivery failed on server.'
+                    msg: data?.errors?.[0] || 'Notification delivery failed on server.'
                 });
             }
-        } catch (_e) {
+        } catch {
             setNotifStatus({ type: 'error', msg: 'Failed to hit notification API endpoint.' });
         } finally {
             setTestNotifLoading(false);
@@ -335,7 +330,13 @@ const Profile = () => {
         setSavingName(true);
         setNameStatus({ type: '', msg: '' });
         try {
-            await updateDoc(doc(db, 'users', currentUser.uid), { name: name.trim() });
+            const trimmed = name.trim();
+            await updateDoc(doc(db, 'users', currentUser.uid), { name: trimmed });
+            try {
+                await setDoc(doc(db, 'publicProfiles', currentUser.uid), { name: trimmed }, { merge: true });
+            } catch (err) {
+                console.warn('Could not sync name to public profile:', err);
+            }
             setNameStatus({ type: 'success', msg: 'Name updated! Refresh to see it in the navbar.' });
         } catch {
             setNameStatus({ type: 'error', msg: 'Failed to update name. Try again.' });
@@ -356,7 +357,13 @@ const Profile = () => {
         setSavingPhone(true);
         setPhoneStatus({ type: '', msg: '' });
         try {
-            await updateDoc(doc(db, 'users', currentUser.uid), { phone: cleaned });
+            const cleanedNum = cleaned;
+            await updateDoc(doc(db, 'users', currentUser.uid), { phone: cleanedNum });
+            try {
+                await setDoc(doc(db, 'publicProfiles', currentUser.uid), { phone: cleanedNum }, { merge: true });
+            } catch (err) {
+                console.warn('Could not sync phone to public profile:', err);
+            }
             setPhoneStatus({ type: 'success', msg: 'Phone number updated successfully.' });
         } catch {
             setPhoneStatus({ type: 'error', msg: 'Failed to update phone. Try again.' });

@@ -223,7 +223,7 @@ const Navbar = () => {
                                             </>
                                         )}
 
-                                        {(isAdmin || isSeller) && (
+                                        {isAdmin && (
                                             <Link to="/admin/ads" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
                                                 <Megaphone size={16} /> Ads & Broadcast Manager
                                             </Link>

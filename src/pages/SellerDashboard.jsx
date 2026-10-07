@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Link } from 'react-router-dom';
-import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap, Star, MessageCircle, Package, Share2, Check, ExternalLink, Megaphone, ArrowRight, GraduationCap, Bell, Send, Sparkles, AlertCircle } from 'lucide-react';
+import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap, Star, MessageCircle, Share2, Check, ExternalLink, Megaphone, ArrowRight, GraduationCap } from 'lucide-react';
 
 const SellerDashboard = () => {
-    const { currentUser, userRole, setUserRole, enableNotifications } = useAuth();
+    const { currentUser, userRole, setUserRole } = useAuth();
     const [products, setProducts] = useState([]);
     const [sellerData, setSellerData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -16,109 +16,6 @@ const SellerDashboard = () => {
     const [isUpgrading, setIsUpgrading] = useState(false);
     const [sellType, setSellType] = useState(null);
     const [shareToast, setShareToast] = useState(false);
-    const [broadcastMsg, setBroadcastMsg] = useState('Buy from Market-U today');
-    const [sendingBroadcast, setSendingBroadcast] = useState(false);
-    const [broadcastResult, setBroadcastResult] = useState(null);
-    const [deviceNotifEnabled, setDeviceNotifEnabled] = useState(() => {
-        return 'Notification' in window && Notification.permission === 'granted';
-    });
-    const [audienceData, setAudienceData] = useState(null);
-    const [showAudienceList, setShowAudienceList] = useState(false);
-    const [loadingAudience, setLoadingAudience] = useState(false);
-
-    const fetchAudience = async () => {
-        setLoadingAudience(true);
-        try {
-            const res = await fetch('/api/daily-reminder?action=subscribers');
-            if (res.ok) {
-                const data = await res.json();
-                setAudienceData(data);
-            }
-        } catch (err) {
-            console.error('Failed to fetch audience:', err);
-        } finally {
-            setLoadingAudience(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchAudience();
-    }, []);
-
-    const handleShareStore = async () => {
-        const storeUrl = `${window.location.origin}/seller/${currentUser.uid}`;
-        const sellerName = sellerData?.name || currentUser.displayName || 'My';
-        const shareText = `🛍️ Check out ${sellerName}'s campus store on Market-U! Browse my items:`;
-
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: `${sellerName}'s Store | Market-U`,
-                    text: shareText,
-                    url: storeUrl,
-                });
-                return;
-            } catch (err) {
-                if (err.name !== 'AbortError') console.warn('Share error:', err);
-            }
-        }
-
-        try {
-            await navigator.clipboard.writeText(storeUrl);
-            setShareToast(true);
-            setTimeout(() => setShareToast(false), 2500);
-        } catch (err) {
-            console.error('Clipboard error:', err);
-        }
-    };
-
-    const handleEnableDeviceNotifs = async () => {
-        try {
-            if (enableNotifications) {
-                await enableNotifications();
-            }
-            setDeviceNotifEnabled('Notification' in window && Notification.permission === 'granted');
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const handleSendBroadcast = async (e) => {
-        e.preventDefault();
-        if (!broadcastMsg.trim()) return;
-        if (!confirm(`Send "${broadcastMsg.trim()}" notification to ALL registered buyers right now?`)) return;
-
-        setSendingBroadcast(true);
-        setBroadcastResult(null);
-        try {
-            const res = await fetch('/api/daily-reminder', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: broadcastMsg.trim() }),
-            });
-            const data = await res.json();
-            if (res.ok) {
-                setBroadcastResult({
-                    type: 'success',
-                    text: data.total > 0
-                        ? `✅ Broadcast sent! ${data.succeeded} devices received the notification (${data.failed} failed/expired out of ${data.total}).`
-                        : `ℹ️ Broadcast processed. Note: 0 buyer devices registered yet in the database. When users allow notifications on Market-U, they will receive it automatically.`
-                });
-            } else {
-                setBroadcastResult({
-                    type: 'error',
-                    text: `❌ Error (${res.status}): ${data.error || 'Failed to send broadcast'}`
-                });
-            }
-        } catch (err) {
-            setBroadcastResult({
-                type: 'error',
-                text: `❌ Network error: ${err.message || 'Could not reach serverless endpoint'}`
-            });
-        } finally {
-            setSendingBroadcast(false);
-        }
-    };
     useEffect(() => {
         const fetchDashboardData = async () => {
             setLoading(true);
@@ -162,30 +59,19 @@ const SellerDashboard = () => {
                     return timeB - timeA;
                 });
 
-                // ✅ AUTO-SYNC: If seller's verified status has changed,
-                // batch-update ALL their products so badges stay in sync.
+                // Sync verified display in local state with live seller status
                 if (currentSellerData) {
                     const liveVerified = !!currentSellerData.verified;
-                    const outOfSync = productsData.filter(p => !!p.sellerVerified !== liveVerified);
-                    if (outOfSync.length > 0) {
-                        const batch = writeBatch(db);
-                        outOfSync.forEach(p => {
-                            batch.update(doc(db, 'products', p.id), { sellerVerified: liveVerified });
-                        });
-                        await batch.commit();
-                        // Update local state too
-                        productsData = productsData.map(p => ({ ...p, sellerVerified: liveVerified }));
-                    }
+                    productsData = productsData.map(p => ({ ...p, sellerVerified: liveVerified }));
                 }
 
                 setProducts(productsData);
 
-                // If user has products or seller data indicates seller, ensure userRole is aligned in context
+                // Align userRole in context only if explicitly approved or assigned
                 const fetchedRole = (currentSellerData?.role || '').trim().toLowerCase();
                 const shouldUpgrade =
                     fetchedRole === 'seller' ||
-                    currentSellerData?.sellerRequestStatus === 'approved' ||
-                    productsData.length > 0;
+                    currentSellerData?.sellerRequestStatus === 'approved';
                 if (shouldUpgrade && fetchedRole !== 'admin') {
                     if (setUserRole) setUserRole('seller');
                 }
@@ -236,6 +122,36 @@ const SellerDashboard = () => {
         }
     };
 
+    const handleShareStore = async () => {
+        if (!currentUser) return;
+        const storeUrl = `${window.location.origin}/store/${currentUser.uid}`;
+        const sellerName = sellerData?.name || 'Seller';
+        const shareText = `🛍️ Explore ${sellerName}'s campus store on Market-U! Check out my listings and deals:`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `${sellerName}'s Store | Market-U`,
+                    text: shareText,
+                    url: storeUrl,
+                });
+                return;
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.warn('Share sheet cancelled or failed:', err);
+                }
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(storeUrl);
+            setShareToast(true);
+            setTimeout(() => setShareToast(false), 2500);
+        } catch {
+            alert(`Store link: ${storeUrl}`);
+        }
+    };
+
     const calculateRealisticViews = () => {
         if (!products || products.length === 0) return 0;
         
@@ -278,8 +194,7 @@ const SellerDashboard = () => {
         normalizedRole === 'admin' || 
         sellerRole === 'seller' || 
         sellerRole === 'admin' || 
-        sellerData?.sellerRequestStatus === 'approved' || 
-        products.length > 0;
+        sellerData?.sellerRequestStatus === 'approved';
 
     if (!isActuallySeller) {
         const sellerRequestPending = sellerData?.sellerRequestStatus === 'pending';
@@ -419,214 +334,7 @@ const SellerDashboard = () => {
                 </span>
             </Link>
 
-            {/* Daily Buyer Push Notification Card */}
-            <div style={{
-                background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%)',
-                border: '1px solid rgba(99, 102, 241, 0.35)',
-                borderRadius: 'var(--radius-xl)',
-                padding: '1.35rem 1.5rem',
-                marginBottom: '1.75rem',
-                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 0 15px rgba(99, 102, 241, 0.1)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1.1rem'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
-                    <div style={{
-                        width: '46px',
-                        height: '46px',
-                        borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#fff',
-                        flexShrink: 0,
-                        boxShadow: '0 4px 14px rgba(245, 158, 11, 0.45)'
-                    }}>
-                        <Bell size={24} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: '220px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.3rem' }}>
-                            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#fff' }}>
-                                Daily Buyer Push Broadcast
-                            </h2>
-                            <span style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.35rem',
-                                background: 'rgba(99, 102, 241, 0.25)',
-                                border: '1px solid rgba(99, 102, 241, 0.45)',
-                                color: '#a5b4fc',
-                                fontSize: '0.75rem',
-                                fontWeight: 700,
-                                padding: '0.2rem 0.65rem',
-                                borderRadius: '9999px'
-                            }}>
-                                ⏰ Automated: 11:00 AM WAT Daily
-                            </span>
-                        </div>
-                        <p style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.75)', margin: 0, lineHeight: 1.5 }}>
-                            All registered buyers receive a daily reminder on their phones & laptops to visit Market-U and buy campus items. You can also send an instant broadcast right now.
-                        </p>
-                    </div>
-                </div>
 
-                {/* Audience stats */}
-                <div style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: 'var(--radius-lg)',
-                    padding: '0.75rem 1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '0.5rem'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <span style={{ fontSize: '0.9rem', color: '#a5b4fc', fontWeight: 700 }}>
-                            👥 Audience: {audienceData
-                                ? `${audienceData.totalSubscribers} students subscribed (${audienceData.totalTokens} active devices)`
-                                : loadingAudience ? 'Checking subscribers...' : 'Audience data ready'}
-                        </span>
-                    </div>
-                    {audienceData && audienceData.subscribers?.length > 0 && (
-                        <button
-                            type="button"
-                            onClick={() => setShowAudienceList(prev => !prev)}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                color: '#38bdf8',
-                                fontSize: '0.8rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                textDecoration: 'underline'
-                            }}
-                        >
-                            {showAudienceList ? '▲ Hide List' : `▼ View Subscribers (${audienceData.totalSubscribers})`}
-                        </button>
-                    )}
-                </div>
-
-                {/* Collapsible Subscribers List */}
-                {showAudienceList && audienceData?.subscribers && (
-                    <div style={{
-                        background: 'rgba(15, 23, 42, 0.9)',
-                        border: '1px solid rgba(99, 102, 241, 0.25)',
-                        borderRadius: 'var(--radius-lg)',
-                        padding: '0.85rem 1rem',
-                        maxHeight: '240px',
-                        overflowY: 'auto'
-                    }}>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: '0.6rem' }}>
-                            Students who accepted push notifications ({audienceData.subscribers.length}):
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                            {audienceData.subscribers.map((sub, i) => (
-                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.825rem', padding: '0.35rem 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                                    <div style={{ minWidth: 0, paddingRight: '0.5rem' }}>
-                                        <strong style={{ color: '#fff', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{sub.name}</strong>
-                                        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>{sub.email} • {sub.schoolName}</span>
-                                    </div>
-                                    <span style={{ background: 'rgba(99, 102, 241, 0.25)', color: '#c7d2fe', padding: '0.15rem 0.55rem', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: 700, flexShrink: 0 }}>
-                                        {sub.tokensCount} device{sub.tokensCount > 1 ? 's' : ''}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Device permission reminder for tester */}
-                {!deviceNotifEnabled && (
-                    <div style={{
-                        background: 'rgba(245, 158, 11, 0.12)',
-                        border: '1px solid rgba(245, 158, 11, 0.3)',
-                        borderRadius: 'var(--radius-lg)',
-                        padding: '0.75rem 1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '0.75rem',
-                        flexWrap: 'wrap'
-                    }}>
-                        <span style={{ fontSize: '0.825rem', color: '#fcd34d', fontWeight: 600 }}>
-                            🔔 Enable notifications on this device first so you can test and receive the alert!
-                        </span>
-                        <button
-                            type="button"
-                            onClick={handleEnableDeviceNotifs}
-                            className="btn btn-secondary"
-                            style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', fontWeight: 700 }}
-                        >
-                            Enable Alerts on This Phone/PC
-                        </button>
-                    </div>
-                )}
-
-                <form onSubmit={handleSendBroadcast} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <div style={{ flex: 1, minWidth: '240px' }}>
-                        <input
-                            type="text"
-                            value={broadcastMsg}
-                            onChange={(e) => setBroadcastMsg(e.target.value)}
-                            placeholder="Notification text (e.g. Buy from Market-U today)"
-                            style={{
-                                width: '100%',
-                                padding: '0.75rem 1rem',
-                                borderRadius: 'var(--radius-lg)',
-                                background: 'rgba(255, 255, 255, 0.08)',
-                                border: '1px solid rgba(255, 255, 255, 0.15)',
-                                color: '#fff',
-                                fontSize: '0.925rem',
-                                fontWeight: 600,
-                                outline: 'none'
-                            }}
-                            required
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={sendingBroadcast}
-                        className="btn btn-primary"
-                        style={{
-                            padding: '0.75rem 1.4rem',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            fontWeight: 700,
-                            whiteSpace: 'nowrap'
-                        }}
-                        id="dashboard-send-broadcast-btn"
-                    >
-                        {sendingBroadcast ? 'Sending Broadcast...' : (
-                            <>
-                                <Send size={16} /> Send Broadcast Now
-                            </>
-                        )}
-                    </button>
-                </form>
-
-                {broadcastResult && (
-                    <div style={{
-                        padding: '0.85rem 1rem',
-                        borderRadius: 'var(--radius-md)',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.6rem',
-                        background: broadcastResult.type === 'success' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                        border: `1px solid ${broadcastResult.type === 'success' ? 'rgba(34, 197, 94, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
-                        color: broadcastResult.type === 'success' ? '#4ade80' : '#f87171'
-                    }}>
-                        {broadcastResult.type === 'success' ? <Sparkles size={16} /> : <AlertCircle size={16} />}
-                        <span>{broadcastResult.text}</span>
-                    </div>
-                )}
-            </div>
 
             {/* Gamification / Stats Section */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>

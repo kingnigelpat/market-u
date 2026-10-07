@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { auth, db, messagingReady } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot, collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { requestNotificationPermission, listenForForegroundMessages } from '../utils/notifications';
 import { SUPPORTED_SCHOOL } from '../data/institutions';
 
@@ -34,7 +34,9 @@ export function AuthProvider({ children }) {
                 // Create & immediately suspend a silent AudioContext to unlock future plays
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 ctx.resume().then(() => ctx.close()).catch(() => {});
-            } catch (_) {}
+            } catch {
+                // Ignore audio context unlock error
+            }
             document.removeEventListener('click', prime);
             document.removeEventListener('touchstart', prime);
         };
@@ -67,23 +69,8 @@ export function AuthProvider({ children }) {
                         // Treat approved seller request as seller
                         if (role !== 'admin' && (role === 'seller' || data.sellerRequestStatus === 'approved')) {
                             role = 'seller';
-                        }
-
-                        // Fallback check: if role isn't seller or admin, verify if they already have product listings
-                        if (role !== 'seller' && role !== 'admin') {
-                            try {
-                                const prodQ = query(
-                                    collection(db, 'products'),
-                                    where('sellerId', '==', user.uid),
-                                    limit(1)
-                                );
-                                const prodSnap = await getDocs(prodQ);
-                                if (!prodSnap.empty) {
-                                    role = 'seller';
-                                }
-                            } catch (_) {
-                                // Silent catch if rules or offline restrict
-                            }
+                        } else if (role !== 'admin') {
+                            role = 'buyer';
                         }
 
                         const resolvedRole = role || 'buyer';

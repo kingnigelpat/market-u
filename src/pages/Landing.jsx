@@ -40,7 +40,7 @@ const parseQuery = (text) => {
 };
 
 const Landing = () => {
-  const { currentUser, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const [searchInput, setSearchInput] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -53,7 +53,7 @@ const Landing = () => {
       setIsSearching(true);
       setHasSearched(true);
 
-      const { keyword, budget } = parseQuery(searchInput);
+      const { budget } = parseQuery(searchInput);
 
       try {
         const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(100));

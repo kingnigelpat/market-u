@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { INSTITUTIONS, SUPPORTED_SCHOOL } from '../data/institutions';
+import { INSTITUTIONS } from '../data/institutions';
 
 /**
  * SchoolSelector

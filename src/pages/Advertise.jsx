@@ -128,7 +128,9 @@ const Advertise = () => {
             await navigator.clipboard.writeText(AD_BANK_DETAILS.accountNumber);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        } catch (_) { /* ignore */ }
+        } catch {
+            /* ignore */
+        }
     };
 
     const PaymentBox = ({ ad }) => (

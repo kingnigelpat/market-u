@@ -6,7 +6,6 @@ import { doc, setDoc, collection, query, where, getDocs, addDoc, serverTimestamp
 import { UserPlus, Rocket } from 'lucide-react';
 import PhoneNumberField from '../components/PhoneNumberField';
 import SchoolSelector from '../components/SchoolSelector';
-import { SUPPORTED_SCHOOL } from '../data/institutions';
 import { useAuth } from '../context/AuthContext';
 
 const Register = () => {
@@ -74,7 +73,7 @@ const Register = () => {
                 displayName: trimmedName
             });
 
-            // 3. Save user details to Firestore — always include schoolName
+            // 3. Save private user details to Firestore
             await setDoc(doc(db, 'users', user.uid), {
                 name: trimmedName,
                 email: trimmedEmail,
@@ -84,6 +83,19 @@ const Register = () => {
                 createdAt: new Date(),
                 verified: false // Sellers start unverified
             });
+
+            // 3b. Create public profile for marketplace & store viewing
+            try {
+                await setDoc(doc(db, 'publicProfiles', user.uid), {
+                    name: trimmedName,
+                    phone: trimmedPhone,
+                    schoolName: selectedSchool.name,
+                    verified: false,
+                    createdAt: new Date()
+                });
+            } catch (pubErr) {
+                console.warn('Could not initialize public profile:', pubErr);
+            }
 
             // Optimistically update role in context so destination page sees correct role immediately
             setUserRole(formData.role);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Bell, BellRing, X, Sparkles } from 'lucide-react';
 
 /**

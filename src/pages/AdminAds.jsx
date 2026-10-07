@@ -5,6 +5,8 @@ import { subscribeToAllAds, approveAd, rejectAd, endAdNow, getEffectiveStatus, g
 import { optimizeImage } from '../utils/cloudinary';
 import { formatNaira } from '../config/ads';
 
+import { useAuth } from '../context/AuthContext';
+
 const TABS = [
     { key: 'pending_payment', label: 'Pending' },
     { key: 'active', label: 'Live' },
@@ -19,6 +21,7 @@ const fmtDate = (ts) => {
 };
 
 const AdminAds = () => {
+    const { currentUser } = useAuth();
     const [ads, setAds] = useState([]);
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState('pending_payment');
@@ -31,9 +34,15 @@ const AdminAds = () => {
     const [loadingAudience, setLoadingAudience] = useState(false);
 
     const fetchAudience = async () => {
+        if (!currentUser) return;
         setLoadingAudience(true);
         try {
-            const res = await fetch('/api/daily-reminder?action=subscribers');
+            const idToken = await currentUser.getIdToken();
+            const res = await fetch('/api/daily-reminder?action=subscribers', {
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                },
+            });
             if (res.ok) {
                 const data = await res.json();
                 setAudienceData(data);
@@ -46,20 +55,27 @@ const AdminAds = () => {
     };
 
     useEffect(() => {
-        fetchAudience();
-    }, []);
+        if (currentUser) {
+            fetchAudience();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentUser]);
 
     const handleSendBroadcast = async (e) => {
         e.preventDefault();
-        if (!broadcastMsg.trim()) return;
+        if (!broadcastMsg.trim() || !currentUser) return;
         if (!confirm(`Send "${broadcastMsg.trim()}" notification to ALL registered buyers right now?`)) return;
 
         setSendingBroadcast(true);
         setBroadcastResult(null);
         try {
+            const idToken = await currentUser.getIdToken();
             const res = await fetch('/api/daily-reminder', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
                 body: JSON.stringify({ body: broadcastMsg.trim() }),
             });
             const data = await res.json();
