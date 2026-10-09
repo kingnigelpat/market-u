@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import Navbar from './components/Navbar.jsx';
 import BottomNavigation from './components/BottomNavigation.jsx';
@@ -32,7 +32,6 @@ const About = lazyRetry(() => import('./pages/About.jsx'));
 const Home = lazyRetry(() => import('./pages/Home.jsx'));
 const Login = lazyRetry(() => import('./pages/Login.jsx'));
 const Register = lazyRetry(() => import('./pages/Register.jsx'));
-const Waitlist = lazyRetry(() => import('./pages/Waitlist.jsx'));
 const ProductDetail = lazyRetry(() => import('./pages/ProductDetail.jsx'));
 const SellerDashboard = lazyRetry(() => import('./pages/SellerDashboard.jsx'));
 const AddProduct = lazyRetry(() => import('./pages/AddProduct.jsx'));
@@ -112,7 +111,7 @@ const AppContent = () => {
                         <Route path="/market" element={<Home />} />
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
-                        <Route path="/waitlist" element={<Waitlist />} />
+                        <Route path="/waitlist" element={<Navigate to="/schools" replace />} />
                         <Route path="/product/:id" element={<ProductDetail />} />
                         <Route path="/seller/:id" element={<SellerStore />} />
                         <Route path="/advertise" element={<Advertise />} />

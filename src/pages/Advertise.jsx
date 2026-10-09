@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import {
-    Megaphone, Upload, Store, Package, Globe, CheckCircle2, Copy, MessageCircle,
+    Megaphone, Upload, Store, Package, Globe, CheckCircle2, MessageCircle,
     Eye, MousePointerClick, Clock, Image as ImageIcon, Sparkles, ShieldCheck, Target, X
 } from 'lucide-react';
 import { db } from '../firebase';
@@ -12,7 +12,7 @@ import { createAd, subscribeToMyAds, updateAdPaymentRef, getEffectiveStatus, get
 import { SUPPORTED_SCHOOL } from '../data/institutions';
 import {
     AD_PRICE_PER_WEEK, AD_MAX_WEEKS, AD_MAX_IMAGE_BYTES, AD_ALLOWED_IMAGE_TYPES,
-    AD_RECOMMENDED_SIZE, AD_BANK_DETAILS, hasBankDetails, SUPPORT_WHATSAPP, formatNaira
+    AD_RECOMMENDED_SIZE, SUPPORT_WHATSAPP, formatNaira
 } from '../config/ads';
 
 const STATUS_META = {
@@ -23,7 +23,7 @@ const STATUS_META = {
 };
 
 const whatsappLink = (ad) => {
-    const msg = `Hi MarketU 👋 I just booked a banner ad.\n\nAd ID: ${ad.id}\nTitle: ${ad.title}\nDuration: ${ad.weeks} week(s)\nAmount: ${formatNaira(ad.amount)}\n\nHere is my payment proof:`;
+    const msg = `Hi Admin 👋 I just booked a banner ad on Market-U.\n\nAd ID: ${ad.id}\nTitle: ${ad.title}\nDuration: ${ad.weeks} week(s)\nAmount: ${formatNaira(ad.amount)}\n\nPlease send me your account details so I can make payment and send the receipt screenshot here.`;
     return `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(msg)}`;
 };
 
@@ -46,7 +46,8 @@ const Advertise = () => {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [justCreated, setJustCreated] = useState(null);
-    const [copied, setCopied] = useState(false);
+    const [markingDoneId, setMarkingDoneId] = useState(null);
+    const [doneConfirmedIds, setDoneConfirmedIds] = useState({});
     const fileRef = useRef(null);
 
     useEffect(() => {
@@ -123,46 +124,109 @@ const Advertise = () => {
         }
     };
 
-    const copyAccount = async () => {
+    const handleMarkDone = async (adId) => {
+        setMarkingDoneId(adId);
         try {
-            await navigator.clipboard.writeText(AD_BANK_DETAILS.accountNumber);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch {
-            /* ignore */
+            await updateAdPaymentRef(adId, 'Receipt screenshot sent on WhatsApp');
+            setDoneConfirmedIds((prev) => ({ ...prev, [adId]: true }));
+        } catch (err) {
+            console.error('Failed to update ad payment ref:', err);
+        } finally {
+            setMarkingDoneId(null);
         }
     };
 
-    const PaymentBox = ({ ad }) => (
-        <div className="adv-pay">
-            <div className="adv-pay-amount">
-                <span>Amount to pay</span>
-                <strong>{formatNaira(ad.amount)}</strong>
-                <small>{ad.weeks} week{ad.weeks > 1 ? 's' : ''} · Ad ID <code>{ad.id.slice(0, 8)}</code></small>
-            </div>
-            {hasBankDetails() ? (
-                <div className="adv-bank">
-                    <div><span>Bank</span><strong>{AD_BANK_DETAILS.bankName}</strong></div>
-                    <div>
-                        <span>Account number</span>
-                        <strong className="adv-acct">
-                            {AD_BANK_DETAILS.accountNumber}
-                            <button type="button" onClick={copyAccount} className="adv-copy" aria-label="Copy account number">
-                                {copied ? <CheckCircle2 size={15} /> : <Copy size={15} />}
-                            </button>
-                        </strong>
+    const PaymentBox = ({ ad }) => {
+        const isDone = Boolean(ad.paymentRef || doneConfirmedIds[ad.id]);
+
+        if (isDone) {
+            return (
+                <div className="adv-pay-done-box">
+                    <div className="adv-pay-done-icon">
+                        <CheckCircle2 size={36} color="#10B981" />
                     </div>
-                    <div><span>Account name</span><strong>{AD_BANK_DETAILS.accountName}</strong></div>
+                    <div className="adv-pay-done-info">
+                        <h3>Receipt submitted! 🎉</h3>
+                        <p>
+                            You're all set! Our team will review your receipt screenshot on WhatsApp and activate <strong>"{ad.title}"</strong> shortly.
+                        </p>
+                        <div className="adv-pay-done-actions">
+                            <a href={whatsappLink(ad)} target="_blank" rel="noopener noreferrer" className="btn btn-secondary adv-sm-btn">
+                                <MessageCircle size={15} /> Open WhatsApp Chat
+                            </a>
+                        </div>
+                    </div>
                 </div>
-            ) : (
-                <p className="adv-muted">Tap the button below and we'll send you payment details on WhatsApp.</p>
-            )}
-            <a href={whatsappLink(ad)} target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp adv-wa" id={`ad-whatsapp-${ad.id}`}>
-                <MessageCircle size={18} /> I've paid – send proof on WhatsApp
-            </a>
-            <p className="adv-muted adv-small">Your banner goes live as soon as we confirm payment (usually within a few hours).</p>
-        </div>
-    );
+            );
+        }
+
+        return (
+            <div className="adv-pay">
+                <div className="adv-pay-amount">
+                    <span>Amount to pay</span>
+                    <strong>{formatNaira(ad.amount)}</strong>
+                    <small>{ad.weeks} week{ad.weeks > 1 ? 's' : ''} · Ad ID <code>{ad.id.slice(0, 8)}</code></small>
+                </div>
+
+                <div className="adv-pay-steps">
+                    <div className="adv-pay-step">
+                        <span className="adv-step-num">1</span>
+                        <div className="adv-step-content">
+                            <strong>Message Admin for Account Details</strong>
+                            <p>Tap below to message the admin on WhatsApp and request the account number.</p>
+                            <a
+                                href={whatsappLink(ad)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-whatsapp adv-wa"
+                                id={`ad-whatsapp-${ad.id}`}
+                            >
+                                <MessageCircle size={18} /> Message Admin for Account Number
+                            </a>
+                        </div>
+                    </div>
+
+                    <div className="adv-pay-step">
+                        <span className="adv-step-num">2</span>
+                        <div className="adv-step-content">
+                            <strong>Transfer &amp; Send Receipt Screenshot</strong>
+                            <p>
+                                Transfer <strong>{formatNaira(ad.amount)}</strong> to the account provided, then send a screenshot of the payment receipt directly in that WhatsApp chat.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="adv-pay-step">
+                        <span className="adv-step-num">3</span>
+                        <div className="adv-step-content">
+                            <strong>Click "Done" Once Sent</strong>
+                            <p>Once you've sent your receipt screenshot to the admin on WhatsApp, click done below.</p>
+                            <button
+                                type="button"
+                                onClick={() => handleMarkDone(ad.id)}
+                                disabled={markingDoneId === ad.id}
+                                className="btn btn-primary adv-done-btn"
+                                id={`ad-done-${ad.id}`}
+                            >
+                                {markingDoneId === ad.id ? (
+                                    'Saving…'
+                                ) : (
+                                    <>
+                                        <CheckCircle2 size={18} /> Done / I've Sent Receipt
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <p className="adv-muted adv-small">
+                    <Clock size={13} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '4px' }} />
+                    Your banner goes live as soon as admin confirms receipt (usually within a few hours).
+                </p>
+            </div>
+        );
+    };
 
     return (
         <div className="adv-page">
@@ -364,17 +428,42 @@ const Advertise = () => {
                                                         <p className="adv-reject">Reason: {ad.rejectionReason}</p>
                                                     )}
                                                     {status === 'pending_payment' && (
-                                                        <div className="adv-row-pay">
-                                                            <input
-                                                                defaultValue={ad.paymentRef || ''}
-                                                                placeholder="Transfer reference (optional)"
-                                                                onBlur={(e) => e.target.value !== (ad.paymentRef || '') && updateAdPaymentRef(ad.id, e.target.value).catch(() => {})}
-                                                                maxLength={60}
-                                                            />
-                                                            <a href={whatsappLink(ad)} target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp">
-                                                                <MessageCircle size={15} /> Send proof
-                                                            </a>
-                                                        </div>
+                                                        ad.paymentRef || doneConfirmedIds[ad.id] ? (
+                                                            <div className="adv-row-submitted">
+                                                                <div className="adv-submitted-tag">
+                                                                    <CheckCircle2 size={14} />
+                                                                    <span>Receipt submitted · Awaiting admin review</span>
+                                                                </div>
+                                                                <a href={whatsappLink(ad)} target="_blank" rel="noopener noreferrer" className="adv-wa-link">
+                                                                    <MessageCircle size={13} /> Chat Admin
+                                                                </a>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="adv-row-pay">
+                                                                <span className="adv-row-pay-note">
+                                                                    Message admin on WhatsApp for account number &amp; send receipt screenshot:
+                                                                </span>
+                                                                <div className="adv-row-pay-btns">
+                                                                    <a href={whatsappLink(ad)} target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp adv-sm-btn">
+                                                                        <MessageCircle size={14} /> Message Admin for Account
+                                                                    </a>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleMarkDone(ad.id)}
+                                                                        disabled={markingDoneId === ad.id}
+                                                                        className="btn btn-primary adv-sm-btn"
+                                                                    >
+                                                                        {markingDoneId === ad.id ? (
+                                                                            'Saving…'
+                                                                        ) : (
+                                                                            <>
+                                                                                <CheckCircle2 size={14} /> Done / I've Sent Receipt
+                                                                            </>
+                                                                        )}
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )
                                                     )}
                                                 </div>
                                             </div>
@@ -497,26 +586,33 @@ const Advertise = () => {
                 .adv-pay-amount strong { font-family: var(--font-display); font-size: 2rem; line-height: 1.1; }
                 .adv-pay-amount small { font-size: 0.78rem; opacity: 0.85; }
                 .adv-pay-amount code { background: rgba(255,255,255,0.18); padding: 0.05rem 0.35rem; border-radius: 4px; }
-                .adv-bank { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; padding: 1rem 1.25rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
-                .adv-bank span { display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
-                .adv-bank strong { font-size: 1rem; }
-                .adv-acct { display: inline-flex; align-items: center; gap: 0.4rem; font-variant-numeric: tabular-nums; }
-                .adv-copy { color: var(--primary); display: inline-flex; }
-                .adv-wa { justify-self: start; padding: 0.8rem 1.3rem; }
+                
+                .adv-pay-steps { display: flex; flex-direction: column; gap: 0.75rem; }
+                .adv-pay-step { display: flex; gap: 0.85rem; align-items: flex-start; padding: 0.9rem 1rem; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); }
+                .adv-step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; font-weight: 800; flex-shrink: 0; margin-top: 0.1rem; }
+                .adv-step-content { flex: 1; display: flex; flex-direction: column; gap: 0.3rem; }
+                .adv-step-content strong { font-size: 0.95rem; color: var(--text); }
+                .adv-step-content p { font-size: 0.85rem; color: var(--text-secondary); margin: 0; line-height: 1.45; }
+                .adv-wa { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.65rem 1.1rem; border-radius: var(--radius-md); font-weight: 700; font-size: 0.88rem; margin-top: 0.4rem; width: fit-content; text-decoration: none; }
+                .adv-done-btn { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.65rem 1.2rem; border-radius: var(--radius-md); font-weight: 700; font-size: 0.88rem; margin-top: 0.4rem; width: fit-content; background: #10B981; border: 1px solid #10B981; color: #fff; cursor: pointer; transition: background 0.2s; }
+                .adv-done-btn:hover { background: #059669; }
+                .adv-done-btn:disabled { opacity: 0.7; cursor: wait; }
 
-                .adv-list { display: flex; flex-direction: column; gap: 0.75rem; }
-                .adv-row { display: flex; gap: 1rem; padding: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
-                .adv-row-img { width: 120px; aspect-ratio: 3 / 1.4; object-fit: cover; border-radius: var(--radius-md); flex-shrink: 0; background: #0F172A; }
-                .adv-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.4rem; }
-                .adv-row-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-                .adv-row-top strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-                .adv-status { font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); white-space: nowrap; }
-                .adv-row-stats { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; font-size: 0.8rem; color: var(--text-secondary); }
-                .adv-row-stats span { display: inline-flex; align-items: center; gap: 0.25rem; }
-                .adv-reject { font-size: 0.8rem; color: var(--danger); }
-                .adv-row-pay { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem; }
-                .adv-row-pay input { flex: 1; min-width: 160px; font-size: 0.85rem; padding: 0.45rem 0.7rem; }
-                .adv-row-pay .btn { padding: 0.45rem 0.9rem; font-size: 0.8rem; }
+                .adv-pay-done-box { display: flex; gap: 1rem; align-items: flex-start; padding: 1.25rem; border-radius: var(--radius-xl); background: rgba(16, 185, 129, 0.08); border: 1.5px solid rgba(16, 185, 129, 0.35); }
+                .adv-pay-done-icon { flex-shrink: 0; margin-top: 0.2rem; }
+                .adv-pay-done-info { display: flex; flex-direction: column; gap: 0.4rem; }
+                .adv-pay-done-info h3 { margin: 0; font-size: 1.2rem; font-family: var(--font-display); color: var(--text); }
+                .adv-pay-done-info p { margin: 0; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; }
+                .adv-pay-done-actions { margin-top: 0.35rem; }
+
+                .adv-sm-btn { padding: 0.45rem 0.85rem; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; border-radius: var(--radius-md); cursor: pointer; text-decoration: none; }
+                .adv-row-submitted { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem; padding: 0.45rem 0.75rem; border-radius: var(--radius-md); background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); }
+                .adv-submitted-tag { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 700; color: #10B981; }
+                .adv-wa-link { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; font-weight: 600; color: #25D366; text-decoration: none; }
+                .adv-wa-link:hover { text-decoration: underline; }
+                .adv-row-pay { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.4rem; }
+                .adv-row-pay-note { font-size: 0.78rem; color: var(--text-secondary); }
+                .adv-row-pay-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
 
                 @media (max-width: 860px) {
                     .adv-grid { grid-template-columns: 1fr; }

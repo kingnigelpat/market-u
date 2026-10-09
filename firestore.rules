@@ -231,21 +231,6 @@ service cloud.firestore {
     }
 
 
-    // ─────────────────────────────────────────────
-    // WAITLIST
-    // ─────────────────────────────────────────────
-
-    match /waitlist/{waitlistId} {
-      // Authenticated users can create waitlist submissions.
-      allow create: if request.auth != null;
-
-      // The user who submitted the entry can read their own record.
-      // Admins can read and manage all waitlist submissions.
-      allow read: if isSignedIn()
-        && (request.auth.uid == resource.data.userId || isAdmin());
-
-      allow update, delete: if isAdmin();
-    }
 
 
     // ─────────────────────────────────────────────

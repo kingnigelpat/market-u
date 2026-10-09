@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react';
 import { optimizeImage } from '../utils/cloudinary';
 import { trackAdImpression, trackAdClick } from '../utils/adService';
 
-const AUTO_ADVANCE_MS = 6000;
+const AUTO_ADVANCE_MS = 2000;
 
 const shuffle = (arr) => {
     const a = [...arr];

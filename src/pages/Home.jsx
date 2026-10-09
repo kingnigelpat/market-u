@@ -61,8 +61,14 @@ const Home = () => {
         if (querySchool) {
             setSelectedCampus(querySchool);
             localStorage.setItem('marketu_selected_campus', querySchool);
+        } else if (userSchoolName && userSchoolName !== DEFAULT_CAMPUS) {
+            const saved = localStorage.getItem('marketu_selected_campus');
+            if (!saved || saved === DEFAULT_CAMPUS) {
+                setSelectedCampus(userSchoolName);
+                localStorage.setItem('marketu_selected_campus', userSchoolName);
+            }
         }
-    }, [location.search]);
+    }, [location.search, userSchoolName]);
 
     const handleSelectCampus = (campusName) => {
         setSelectedCampus(campusName);

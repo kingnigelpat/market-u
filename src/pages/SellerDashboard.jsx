@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap, Star, MessageCircle, Share2, Check, ExternalLink, Megaphone, ArrowRight, GraduationCap } from 'lucide-react';
 
 const SellerDashboard = () => {
-    const { currentUser, userRole, setUserRole } = useAuth();
+    const { currentUser, userRole, setUserRole, userSchoolName } = useAuth();
     const [products, setProducts] = useState([]);
     const [sellerData, setSellerData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -259,9 +259,9 @@ const SellerDashboard = () => {
                     <p style={{ color: 'var(--text-secondary)', margin: '0 0 0.25rem 0' }}>Manage your products and store settings.</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
                         <GraduationCap size={15} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-                        <span>Campus: <strong style={{ color: 'var(--text)' }}>{sellerData?.schoolName || 'Western Delta University'}</strong></span>
+                        <span>Campus: <strong style={{ color: 'var(--text)' }}>{sellerData?.schoolName || localStorage.getItem('marketu_selected_campus') || userSchoolName || 'Western Delta University'}</strong></span>
                         <span>•</span>
-                        <Link to={`/market?school=${encodeURIComponent(sellerData?.schoolName || 'Western Delta University')}`} style={{ color: 'var(--primary)', fontWeight: '700', textDecoration: 'none' }}>
+                        <Link to={`/market?school=${encodeURIComponent(sellerData?.schoolName || localStorage.getItem('marketu_selected_campus') || userSchoolName || 'Western Delta University')}`} style={{ color: 'var(--primary)', fontWeight: '700', textDecoration: 'none' }}>
                             View Campus Market →
                         </Link>
                     </div>

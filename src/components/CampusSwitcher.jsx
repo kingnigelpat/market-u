@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { INSTITUTIONS, POPULAR_SCHOOLS, searchInstitutions, DEFAULT_CAMPUS } from '../data/institutions';
-import { GraduationCap, ChevronDown, Search, X, Check, Globe, Sparkles } from 'lucide-react';
+import { INSTITUTIONS, POPULAR_SCHOOLS, searchInstitutions, DEFAULT_CAMPUS, getAddSchoolWhatsAppUrl } from '../data/institutions';
+import { GraduationCap, ChevronDown, Search, X, Check, Globe, Sparkles, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const CampusSwitcher = ({ selectedCampus, onSelectCampus, showDirectoryLink = true }) => {
@@ -187,10 +187,19 @@ const CampusSwitcher = ({ selectedCampus, onSelectCampus, showDirectoryLink = tr
                         <div className="campus-list-wrap">
                             {filteredInstitutions.length === 0 ? (
                                 <div className="campus-empty-state">
-                                    <p style={{ fontWeight: '700', marginBottom: '0.25rem' }}>No school found</p>
-                                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                                        Try searching with a shorter name or common abbreviation
+                                    <p style={{ fontWeight: '700', marginBottom: '0.25rem' }}>No school found matching &quot;{search}&quot;</p>
+                                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                                        Don&apos;t see your campus listed yet?
                                     </p>
+                                    <a
+                                        href={getAddSchoolWhatsAppUrl(search)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn btn-secondary"
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8125rem', color: '#16a34a' }}
+                                    >
+                                        <MessageCircle size={15} /> Message Admin to Add Your School
+                                    </a>
                                 </div>
                             ) : (
                                 filteredInstitutions.map((inst) => {
@@ -230,17 +239,41 @@ const CampusSwitcher = ({ selectedCampus, onSelectCampus, showDirectoryLink = tr
                         </div>
 
                         {/* Footer */}
-                        <div className="campus-modal-footer">
-                            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                                Covering 220+ Nigerian institutions
-                            </span>
-                            <Link
-                                to="/schools"
-                                onClick={() => setOpen(false)}
-                                className="campus-view-all-link"
+                        <div className="campus-modal-footer" style={{ flexDirection: 'column', gap: '0.75rem', alignItems: 'stretch' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                                    10 Active Campuses
+                                </span>
+                                <Link
+                                    to="/schools"
+                                    onClick={() => setOpen(false)}
+                                    className="campus-view-all-link"
+                                >
+                                    Open Schools Dashboard →
+                                </Link>
+                            </div>
+                            <a
+                                href={getAddSchoolWhatsAppUrl(search)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.45rem',
+                                    padding: '0.55rem 0.875rem',
+                                    backgroundColor: 'rgba(37, 211, 102, 0.08)',
+                                    color: '#16a34a',
+                                    borderRadius: 'var(--radius-lg)',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: '700',
+                                    textDecoration: 'none',
+                                    border: '1px solid rgba(37, 211, 102, 0.25)',
+                                }}
                             >
-                                Open Schools Dashboard →
-                            </Link>
+                                <MessageCircle size={15} />
+                                <span>Don&apos;t see your school? Message Admin to add it</span>
+                            </a>
                         </div>
                     </div>
                 </div>

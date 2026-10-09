@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { INSTITUTIONS } from '../data/institutions';
+import { INSTITUTIONS, getAddSchoolWhatsAppUrl } from '../data/institutions';
+import { MessageCircle } from 'lucide-react';
 
 /**
  * SchoolSelector
@@ -274,10 +275,53 @@ const SchoolSelector = ({ value, onChange, error }) => {
                                     onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                                 >
                                     <span>{inst.name}</span>
+                                    {inst.supported && (
+                                        <span style={{
+                                            fontSize: '0.7rem',
+                                            padding: '0.2rem 0.45rem',
+                                            borderRadius: '999px',
+                                            backgroundColor: 'var(--primary)',
+                                            color: 'white',
+                                            fontWeight: '700',
+                                            marginLeft: '0.5rem',
+                                            whiteSpace: 'nowrap',
+                                            flexShrink: 0,
+                                        }}>
+                                            ✓ Supported
+                                        </span>
+                                    )}
                                 </button>
                             ))}
                         </div>
                     )}
+
+                    {/* Don't see your school? Message Admin */}
+                    <div style={{
+                        padding: '0.75rem 1rem',
+                        backgroundColor: 'rgba(37, 99, 235, 0.04)',
+                        borderTop: '1px solid var(--border)',
+                        textAlign: 'center',
+                        position: 'sticky',
+                        bottom: 0,
+                    }}>
+                        <a
+                            href={getAddSchoolWhatsAppUrl(query)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.4rem',
+                                fontSize: '0.8125rem',
+                                fontWeight: '700',
+                                color: '#16a34a',
+                                textDecoration: 'none',
+                            }}
+                        >
+                            <MessageCircle size={15} />
+                            <span>Don't see your school? Message Admin to add it</span>
+                        </a>
+                    </div>
                 </div>
             )}
 

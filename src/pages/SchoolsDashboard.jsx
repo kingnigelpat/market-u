@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebase';
-import { INSTITUTIONS, DEFAULT_CAMPUS, searchInstitutions } from '../data/institutions';
 import { useNavigate, Link } from 'react-router-dom';
+import { INSTITUTIONS, DEFAULT_CAMPUS, searchInstitutions, getAddSchoolWhatsAppUrl } from '../data/institutions';
 import { useAuth } from '../context/AuthContext';
 import {
     GraduationCap,
@@ -206,11 +206,22 @@ const SchoolsDashboard = () => {
                         <GraduationCap size={44} style={{ color: 'var(--text-tertiary)', margin: '0 auto 1rem' }} />
                         <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem' }}>No schools matched your search</h3>
                         <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9375rem' }}>
-                            Try searching by full university name, state, or acronym (like UNILAG, UNIBEN, OAU).
+                            Can't find your campus? You can message the admin on WhatsApp to add it!
                         </p>
-                        <button onClick={() => { setSearch(''); setActiveTab('all'); }} className="btn btn-primary">
-                            Reset Filters
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <button onClick={() => { setSearch(''); setActiveTab('all'); }} className="btn btn-secondary">
+                                Reset Filters
+                            </button>
+                            <a
+                                href={getAddSchoolWhatsAppUrl(search)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-primary"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                            >
+                                <MessageCircle size={16} /> Message Admin to Add Your School
+                            </a>
+                        </div>
                     </div>
                 ) : (
                     <div className="schools-grid">

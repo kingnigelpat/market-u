@@ -185,9 +185,6 @@ const Navbar = () => {
                                                     <GraduationCap size={16} /> Campus Hub & Schools
                                                 </Link>
                                                 <div className="nav-dropdown-divider" />
-                                                <Link to="/waitlist" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
-                                                    <UserCheck size={16} /> Join the Waitlist
-                                                </Link>
                                                 <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="nav-dropdown-item nav-dropdown-item--highlight">
                                                     <ShieldCheck size={16} /> Become a Seller
                                                     <span className="nav-free-badge">FREE</span>
