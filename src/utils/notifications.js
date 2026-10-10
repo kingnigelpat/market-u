@@ -257,7 +257,7 @@ export function playNotificationSound() {
  */
 export function listenForForegroundMessages(messagingInstance, onReceive) {
     if (!messagingInstance) return () => {};
-    return onMessage(messagingInstance, (payload) => {
+    return onMessage(messagingInstance, async (payload) => {
         console.log('[FCM] Foreground message:', payload);
         const { title, body } = payload.notification || {};
 
@@ -265,12 +265,36 @@ export function listenForForegroundMessages(messagingInstance, onReceive) {
         playNotificationSound();
 
         if (Notification.permission === 'granted' && title) {
-            new Notification(title, {
+            const notifOptions = {
                 body,
                 icon: '/icon.png',
                 badge: '/icon.png',
                 vibrate: [200, 100, 200],
-            });
+                data: payload.data || {},
+            };
+
+            // Mobile Chrome (Android) requires ServiceWorkerRegistration.showNotification()
+            let shown = false;
+            try {
+                if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+                    const reg = (await navigator.serviceWorker.getRegistration('/')) ||
+                                (await navigator.serviceWorker.ready);
+                    if (reg && 'showNotification' in reg) {
+                        await reg.showNotification(title, notifOptions);
+                        shown = true;
+                    }
+                }
+            } catch (swErr) {
+                console.warn('[FCM] SW showNotification error:', swErr);
+            }
+
+            if (!shown) {
+                try {
+                    new Notification(title, notifOptions);
+                } catch (winErr) {
+                    console.warn('[FCM] window Notification constructor failed:', winErr);
+                }
+            }
         }
 
         if (onReceive) onReceive(payload);

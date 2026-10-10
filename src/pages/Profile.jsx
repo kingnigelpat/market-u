@@ -202,7 +202,7 @@ const Profile = () => {
         setNotifPermission(currentPerm);
 
         // If granted, check if FCM token is registered for this device
-        if (currentPerm === 'granted' && currentUser && (userRole === 'seller' || userRole === 'admin')) {
+        if (currentPerm === 'granted' && currentUser) {
             try {
                 let reg = await navigator.serviceWorker.getRegistration('/');
                 if (!reg && typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
@@ -625,7 +625,13 @@ const Profile = () => {
             </Section>
 
             {/* ── Push Notifications ── */}
-            <Section icon={<Bell size={18} />} title="Push Notifications" subtitle="Receive instant alerts on your phone when buyers express interest">
+            <Section 
+                icon={<Bell size={18} />} 
+                title="Push Notifications" 
+                subtitle={userRole === 'seller' || userRole === 'admin' 
+                    ? "Receive instant alerts on your phone when buyers express interest" 
+                    : "Receive instant alerts for campus items, daily deals, and messages"}
+            >
                 <style>{`
                     @keyframes profile-spin {
                         0% { transform: rotate(0deg); }
@@ -711,111 +717,107 @@ const Profile = () => {
                             </div>
                         </div>
 
-                        {/* Interactive UI based on role and status */}
-                        {userRole !== 'seller' && userRole !== 'admin' ? (
-                            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                                Note: Push notifications are currently only active for sellers to receive instant buyer interest alerts. Switch to a seller account to enable.
-                            </p>
-                        ) : (
-                            <div>
-                                {/* Permission default: Show setup button */}
-                                {notifPermission === 'default' && (
-                                    <div>
-                                        <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                                            Allow notification permissions in your browser to receive real-time push alerts whenever buyers express interest in your items — even when your phone is locked or screen is off.
-                                        </p>
-                                        <button
-                                            type="button"
-                                            onClick={handleEnableNotifs}
-                                            className="btn btn-primary"
-                                            style={{ gap: '0.5rem', width: '100%', justifyContent: 'center', padding: '0.875rem' }}
-                                        >
-                                            <Bell size={16} /> Enable Push Notifications
-                                        </button>
-                                    </div>
-                                )}
+                        {/* Interactive UI based on status */}
+                        <div>
+                            {/* Permission default: Show setup button */}
+                            {notifPermission === 'default' && (
+                                <div>
+                                    <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                        {userRole === 'seller' || userRole === 'admin'
+                                            ? 'Allow notification permissions in your browser to receive real-time push alerts whenever buyers express interest in your items — even when your phone is locked or screen is off.'
+                                            : 'Allow notification permissions in your browser to receive real-time push alerts for campus deals, daily items, and chat messages — even when your screen is off.'}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={handleEnableNotifs}
+                                        className="btn btn-primary"
+                                        style={{ gap: '0.5rem', width: '100%', justifyContent: 'center', padding: '0.875rem' }}
+                                    >
+                                        <Bell size={16} /> Enable Push Notifications
+                                    </button>
+                                </div>
+                            )}
 
-                                {/* Permission denied: Show browser reset instructions */}
-                                {notifPermission === 'denied' && (
-                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                                        <p style={{ color: 'var(--danger)', fontWeight: '700', margin: '0 0 0.5rem 0' }}>
-                                            Notifications are blocked by your browser settings.
-                                        </p>
-                                        <p style={{ margin: '0 0 1rem 0' }}>
-                                            To unblock:
-                                        </p>
-                                        <ol style={{ margin: '0 0 1.25rem 0', paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                            <li>Click the settings/lock icon in your browser address bar next to the URL.</li>
-                                            <li>Find <strong>Notifications</strong> and change it to <strong>Allow</strong>.</li>
-                                            <li>Click the refresh button below to re-verify status.</li>
-                                        </ol>
-                                        <button
-                                            type="button"
-                                            onClick={checkNotificationStatus}
-                                            className="btn btn-secondary"
-                                            style={{ gap: '0.5rem', width: '100%', justifyContent: 'center' }}
-                                        >
-                                            <RefreshCw size={16} /> Refresh Status
-                                        </button>
-                                    </div>
-                                )}
+                            {/* Permission denied: Show browser reset instructions */}
+                            {notifPermission === 'denied' && (
+                                <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                                    <p style={{ color: 'var(--danger)', fontWeight: '700', margin: '0 0 0.5rem 0' }}>
+                                        Notifications are blocked by your browser settings.
+                                    </p>
+                                    <p style={{ margin: '0 0 1rem 0' }}>
+                                        To unblock:
+                                    </p>
+                                    <ol style={{ margin: '0 0 1.25rem 0', paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        <li>Click the settings/lock icon in your browser address bar next to the URL.</li>
+                                        <li>Find <strong>Notifications</strong> and change it to <strong>Allow</strong>.</li>
+                                        <li>Click the refresh button below to re-verify status.</li>
+                                    </ol>
+                                    <button
+                                        type="button"
+                                        onClick={checkNotificationStatus}
+                                        className="btn btn-secondary"
+                                        style={{ gap: '0.5rem', width: '100%', justifyContent: 'center' }}
+                                    >
+                                        <RefreshCw size={16} /> Refresh Status
+                                    </button>
+                                </div>
+                            )}
 
-                                {/* Permission unsupported: Show PWA guidance */}
-                                {notifPermission === 'unsupported' && (
-                                    <div>
-                                        {isIOSDevice ? (
-                                            <div>
-                                                <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                                                    Apple iOS requires you to **Install the app** (Add to Home Screen) before you can receive push notifications on your iPhone.
-                                                </p>
-                                                <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                                                    Please tap the Share icon in Safari, select <strong>"Add to Home Screen"</strong>, then open the installed app from your home screen to enable notifications.
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                                                Push notifications are not supported on this browser or device. Try using Google Chrome or Microsoft Edge.
+                            {/* Permission unsupported: Show PWA guidance */}
+                            {notifPermission === 'unsupported' && (
+                                <div>
+                                    {isIOSDevice ? (
+                                        <div>
+                                            <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                                                Apple iOS requires you to **Install the app** (Add to Home Screen) before you can receive push notifications on your iPhone.
                                             </p>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Permission granted: Show testing actions */}
-                                {notifPermission === 'granted' && (
-                                    <div>
-                                        <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                                            Notifications are fully active on this browser! You can verify it works by sending a test push notification to this device.
+                                            <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                                                Please tap the Share icon in Safari, select <strong>"Add to Home Screen"</strong>, then open the installed app from your home screen to enable notifications.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                            Push notifications are not supported on this browser or device. Try using Google Chrome or Microsoft Edge.
                                         </p>
-                                        
-                                        <button
-                                            type="button"
-                                            onClick={handleSendTestNotif}
-                                            disabled={testNotifLoading}
-                                            className="btn btn-primary"
-                                            style={{
-                                                gap: '0.5rem', 
-                                                width: '100%', 
-                                                justifyContent: 'center', 
-                                                padding: '0.875rem',
-                                                backgroundColor: testNotifCountdown !== null ? '#D97706' : 'var(--primary)'
-                                            }}
-                                        >
-                                            {testNotifCountdown !== null ? (
-                                                <>
-                                                    <RefreshCw size={16} className="profile-spin-icon" />
-                                                    Lock screen now! Sending in {testNotifCountdown}s...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Send size={16} />
-                                                    {testNotifLoading ? 'Sending...' : 'Send Test Push Notification'}
-                                                </>
-                                            )}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Permission granted: Show testing actions */}
+                            {notifPermission === 'granted' && (
+                                <div>
+                                    <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                        Notifications are fully active on this browser! You can verify it works by sending a test push notification to this device.
+                                    </p>
+                                    
+                                    <button
+                                        type="button"
+                                        onClick={handleSendTestNotif}
+                                        disabled={testNotifLoading}
+                                        className="btn btn-primary"
+                                        style={{
+                                            gap: '0.5rem', 
+                                            width: '100%', 
+                                            justifyContent: 'center', 
+                                            padding: '0.875rem',
+                                            backgroundColor: testNotifCountdown !== null ? '#D97706' : 'var(--primary)'
+                                        }}
+                                    >
+                                        {testNotifCountdown !== null ? (
+                                            <>
+                                                <RefreshCw size={16} className="profile-spin-icon" />
+                                                Lock screen now! Sending in {testNotifCountdown}s...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send size={16} />
+                                                {testNotifLoading ? 'Sending...' : 'Send Test Push Notification'}
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </Section>

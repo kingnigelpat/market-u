@@ -96,9 +96,8 @@ export function AuthProvider({ children }) {
                                     requestNotificationPermission(user.uid, msg);
                                     if (unlistenForegroundRef.current) unlistenForegroundRef.current();
                                     unlistenForegroundRef.current = listenForForegroundMessages(msg, null);
-                                } else if (resolvedRole === 'seller' || resolvedRole === 'admin') {
-                                    // 🔔 Seller/Admin who hasn't allowed yet — prompt them
-                                    // (Buyers are handled by the Trojan Horse modal on save)
+                                } else {
+                                    // 🔔 User hasn't allowed yet — prompt them (buyers, sellers, admins)
                                     requestNotificationPermission(user.uid, msg);
                                     if (unlistenForegroundRef.current) unlistenForegroundRef.current();
                                     unlistenForegroundRef.current = listenForForegroundMessages(msg, null);

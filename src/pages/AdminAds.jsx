@@ -436,22 +436,27 @@ const AdminAds = () => {
                 }
                 .aa-bc-input {
                     width: 100%;
-                    padding: 0.75rem 1rem;
+                    padding: 0.85rem 1.15rem;
                     border-radius: var(--radius-lg);
-                    background: var(--surface-elevated);
-                    border: 1px solid var(--border);
-                    color: #fff;
-                    font-size: 0.9rem;
-                    font-weight: 600;
+                    background: rgba(15, 23, 42, 0.75);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    color: #ffffff;
+                    font-size: 0.925rem;
+                    font-weight: 500;
                     outline: none;
-                    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+                    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+                }
+                .aa-bc-input::placeholder {
+                    color: rgba(255, 255, 255, 0.45);
+                    font-weight: 400;
                 }
                 .aa-bc-input:focus {
-                    border-color: var(--primary);
-                    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+                    border-color: #6366f1;
+                    background: rgba(15, 23, 42, 0.95);
+                    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
                 }
                 .aa-bc-btn {
-                    padding: 0.75rem 1.4rem;
+                    padding: 0.85rem 1.4rem;
                     display: inline-flex;
                     align-items: center;
                     gap: 0.45rem;
@@ -507,7 +512,12 @@ const AdminAds = () => {
                 .aa-reason { color: var(--danger); font-style: italic; }
                 .aa-actions { display: flex; gap: 0.5rem; }
                 .aa-actions .btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
-                @media (max-width: 760px) { .aa-card { grid-template-columns: 1fr; } }
+                @media (max-width: 760px) {
+                    .aa-card { grid-template-columns: 1fr; }
+                    .aa-broadcast-card { padding: 1.15rem 1rem; }
+                    .aa-bc-input-wrap { min-width: 100%; }
+                    .aa-bc-btn { width: 100%; justify-content: center; }
+                }
             `}</style>
         </div>
     );
