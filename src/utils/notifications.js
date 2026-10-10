@@ -1,55 +1,12 @@
-import { getToken, onMessage } from 'firebase/messaging';
-import { getInstallations, getToken as getInstallationsToken, deleteInstallations } from 'firebase/installations';
+import { getToken, deleteToken, onMessage } from 'firebase/messaging';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BNyeNx7BCbygob2RSXQ4a_69vbOZryrQh0WH0CEN-k51xzEJ0iQsE-MwtKoqmbJF0oW5u1jCNqe-SsbTlAnxnsE';
 
 /**
- * Actively clears Firebase IndexedDB stores so that stale or rejected installation
- * auth tokens cannot be reused by the SDK. This clears the stores directly without
- * getting blocked by existing open database connections.
- */
-async function clearFirebaseIndexedDBCaches() {
-    if (typeof window === 'undefined' || !window.indexedDB) return;
-
-    const clearStore = (dbName, storeName) => new Promise((resolve) => {
-        try {
-            const req = window.indexedDB.open(dbName);
-            req.onsuccess = () => {
-                const idb = req.result;
-                try {
-                    if (idb.objectStoreNames.contains(storeName)) {
-                        const tx = idb.transaction(storeName, 'readwrite');
-                        tx.objectStore(storeName).clear();
-                        tx.oncomplete = () => { idb.close(); resolve(); };
-                        tx.onerror = () => { idb.close(); resolve(); };
-                    } else {
-                        idb.close();
-                        resolve();
-                    }
-                } catch {
-                    idb.close();
-                    resolve();
-                }
-            };
-            req.onerror = () => resolve();
-            req.onblocked = () => resolve();
-        } catch {
-            resolve();
-        }
-    });
-
-    await Promise.allSettled([
-        clearStore('firebase-installations-database', 'firebase-installations-store'),
-        clearStore('firebase-messaging-database', 'firebase-messaging-store'),
-        clearStore('firebase-messaging-database', 'firebase-messaging-fid-registration-store'),
-    ]);
-}
-
-/**
  * Safely fetches an FCM token, automatically recovering if the client has a stale
- * or desynchronized Firebase Installations auth token in IndexedDB.
+ * or desynchronized push subscription.
  */
 export async function getOrRefreshFcmToken(messagingInstance, registration) {
     if (!messagingInstance) return null;
@@ -61,6 +18,15 @@ export async function getOrRefreshFcmToken(messagingInstance, registration) {
                 (await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' }));
     }
 
+    if (navigator.serviceWorker?.ready) {
+        try {
+            const readyReg = await navigator.serviceWorker.ready;
+            if (readyReg) swReg = readyReg;
+        } catch {
+            // Ignore service worker ready resolution error
+        }
+    }
+
     try {
         return await getToken(messagingInstance, {
             vapidKey,
@@ -68,16 +34,18 @@ export async function getOrRefreshFcmToken(messagingInstance, registration) {
         });
     } catch (err) {
         const errMsg = String(err?.message || '');
-        const isAuthCredentialError =
+        const isAuthOrIdbError =
             errMsg.includes('token-subscribe-failed') ||
             errMsg.includes('authentication credential') ||
             errMsg.includes('OAuth 2') ||
+            errMsg.includes('IDBDatabase') ||
+            errMsg.includes('connection is closing') ||
             err?.code === 'messaging/token-subscribe-failed';
 
-        if (isAuthCredentialError) {
-            console.warn('[FCM] Stale or mismatched push subscription detected in browser. Unsubscribing pushManager and purging cache...', err);
+        if (isAuthOrIdbError) {
+            console.warn('[FCM] Stale or mismatched push subscription detected in browser. Unsubscribing stale push subscription and refreshing token...', err);
 
-            // 1. Unsubscribe any existing stale push subscription from the browser's PushManager
+            // 1. Unsubscribe any stale browser PushManager subscription
             // Stale subscriptions registered under an old/different applicationServerKey cause 401 UNAUTHENTICATED
             try {
                 if (swReg?.pushManager) {
@@ -91,32 +59,25 @@ export async function getOrRefreshFcmToken(messagingInstance, registration) {
                 console.warn('[FCM] PushManager unsubscribe warning:', subErr);
             }
 
-            // 2. Force Firebase Installations to drop bad token
+            // 2. Tell Firebase Messaging SDK to cleanly delete its local registration record
             try {
-                if (messagingInstance.app) {
-                    const installations = getInstallations(messagingInstance.app);
-                    await getInstallationsToken(installations, true).catch(() => {});
-                    await deleteInstallations(installations).catch(() => {});
-                }
-            } catch (e) {
-                console.warn('[FCM] Installations reset warning:', e);
+                await deleteToken(messagingInstance).catch(() => {});
+            } catch (delErr) {
+                console.warn('[FCM] deleteToken warning:', delErr);
             }
 
-            // 3. Purge IndexedDB records directly so Firebase starts fresh
-            await clearFirebaseIndexedDBCaches();
+            // 3. Small pause to allow pushManager state to settle
+            await new Promise((resolve) => setTimeout(resolve, 500));
 
-            // 4. Wait 1 second for the browser's PushManager and IndexedDB to settle
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
-            // 5. Retry token retrieval with clean push subscription & installation state
+            // 4. Retry token retrieval cleanly
             try {
                 return await getToken(messagingInstance, {
                     vapidKey,
                     serviceWorkerRegistration: swReg,
                 });
             } catch (retryErr) {
-                console.warn('[FCM] First retry failed, attempting final backoff retry in 2s...', retryErr);
-                await new Promise((resolve) => setTimeout(resolve, 2000));
+                console.warn('[FCM] Retry after unsubscribe failed, trying once more in 1s...', retryErr);
+                await new Promise((resolve) => setTimeout(resolve, 1000));
                 return await getToken(messagingInstance, {
                     vapidKey,
                     serviceWorkerRegistration: swReg,
