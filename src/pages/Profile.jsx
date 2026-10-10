@@ -9,14 +9,13 @@ import {
     deleteUser,
     signOut,
 } from 'firebase/auth';
-import { doc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, setDoc, arrayUnion } from 'firebase/firestore';
 import {
     User, Phone, Lock, Trash2, ArrowLeft,
     CheckCircle, AlertCircle, Eye, EyeOff, Save, ShieldAlert,
     Bell, Send, RefreshCw, LogOut, Palette, Sun, Moon
 } from 'lucide-react';
-import { requestNotificationPermission, sendPushNotification } from '../utils/notifications';
-import { getToken } from 'firebase/messaging';
+import { requestNotificationPermission, sendPushNotification, getOrRefreshFcmToken } from '../utils/notifications';
 import PhoneNumberField from '../components/PhoneNumberField';
 
 // ── Tiny reusable alert ────────────────────────────────────────────────────────
@@ -205,15 +204,24 @@ const Profile = () => {
         // If granted, check if FCM token is registered for this device
         if (currentPerm === 'granted' && currentUser && (userRole === 'seller' || userRole === 'admin')) {
             try {
-                const reg = await navigator.serviceWorker.getRegistration('/');
+                let reg = await navigator.serviceWorker.getRegistration('/');
+                if (!reg && typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+                    reg = await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' });
+                }
                 const msg = await messagingReady; // await the promise — raw `messaging` may still be null
-                if (reg && msg) {
-                    const token = await getToken(msg, {
-                        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-                        serviceWorkerRegistration: reg,
-                    });
+                if (msg) {
+                    const token = await getOrRefreshFcmToken(msg, reg);
                     if (token) {
                         setFcmTokenActive(true);
+                        // Ensure user profile in Firestore has this token
+                        try {
+                            await updateDoc(doc(db, 'users', currentUser.uid), {
+                                fcmToken: token,
+                                fcmTokens: arrayUnion(token)
+                            });
+                        } catch (syncErr) {
+                            console.warn('[FCM] Firestore token sync warning:', syncErr);
+                        }
                     }
                 }
             } catch (e) {
@@ -255,23 +263,21 @@ const Profile = () => {
         setTestNotifLoading(true);
 
         try {
-            const reg = await navigator.serviceWorker.getRegistration('/');
-            if (!reg) {
-                throw new Error('Service Worker registration not found. Please refresh the page.');
+            let reg = await navigator.serviceWorker.getRegistration('/');
+            if (!reg && typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+                reg = await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' });
             }
             const msg = await messagingReady; // await the promise — raw `messaging` may still be null
             if (!msg) {
                 throw new Error('Firebase Messaging not supported or not loaded.');
             }
 
-            const token = await getToken(msg, {
-                vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-                serviceWorkerRegistration: reg,
-            });
+            const token = await getOrRefreshFcmToken(msg, reg);
 
             if (!token) {
                 throw new Error('Could not retrieve FCM token for this device.');
             }
+            setFcmTokenActive(true);
 
             // Start a 3-second countdown
             let count = 3;
@@ -675,9 +681,33 @@ const Profile = () => {
                             
                             <div>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Device Connection</span>
-                                <span style={{ fontWeight: '700', fontSize: '0.875rem', color: 'var(--text)' }}>
-                                    {notifPermission === 'granted' && fcmTokenActive ? 'Registered 📱' : notifPermission === 'granted' ? 'Syncing...' : 'Disconnected'}
-                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span style={{ fontWeight: '700', fontSize: '0.875rem', color: 'var(--text)' }}>
+                                        {notifPermission === 'granted' && fcmTokenActive ? 'Registered 📱' : notifPermission === 'granted' ? 'Syncing...' : 'Disconnected'}
+                                    </span>
+                                    {notifPermission === 'granted' && !fcmTokenActive && (
+                                        <button
+                                            type="button"
+                                            onClick={() => checkNotificationStatus()}
+                                            disabled={checkingNotifs}
+                                            title="Retry syncing FCM token"
+                                            style={{
+                                                padding: '0.2rem 0.5rem',
+                                                fontSize: '0.725rem',
+                                                borderRadius: '6px',
+                                                border: '1px solid var(--border)',
+                                                background: 'var(--card-bg, #fff)',
+                                                color: 'var(--text)',
+                                                cursor: 'pointer',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.25rem'
+                                            }}
+                                        >
+                                            <RefreshCw size={12} className={checkingNotifs ? 'animate-spin' : ''} /> Sync
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

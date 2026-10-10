@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Sparkles, UserCheck, Search, Heart, Megaphone, MessageCircle, GraduationCap } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Sparkles, Search, Heart, Megaphone, MessageCircle, GraduationCap } from 'lucide-react';
 
 const Navbar = () => {
     const { isAuthenticated, isSeller, isAdmin, userRole, currentUser } = useAuth();

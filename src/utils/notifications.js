@@ -1,8 +1,105 @@
 import { getToken, onMessage } from 'firebase/messaging';
+import { getInstallations, getToken as getInstallationsToken, deleteInstallations } from 'firebase/installations';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
-const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BNyeNx7BCbygob2RSXQ4a_69vbOZryrQh0WH0CEN-k51xzEJ0iQsE-MwtKoqmbJF0oW5u1jCNqe-SsbTlAnxnsE';
+
+/**
+ * Actively clears Firebase IndexedDB stores so that stale or rejected installation
+ * auth tokens cannot be reused by the SDK. This clears the stores directly without
+ * getting blocked by existing open database connections.
+ */
+async function clearFirebaseIndexedDBCaches() {
+    if (typeof window === 'undefined' || !window.indexedDB) return;
+
+    const clearStore = (dbName, storeName) => new Promise((resolve) => {
+        try {
+            const req = window.indexedDB.open(dbName);
+            req.onsuccess = () => {
+                const idb = req.result;
+                try {
+                    if (idb.objectStoreNames.contains(storeName)) {
+                        const tx = idb.transaction(storeName, 'readwrite');
+                        tx.objectStore(storeName).clear();
+                        tx.oncomplete = () => { idb.close(); resolve(); };
+                        tx.onerror = () => { idb.close(); resolve(); };
+                    } else {
+                        idb.close();
+                        resolve();
+                    }
+                } catch {
+                    idb.close();
+                    resolve();
+                }
+            };
+            req.onerror = () => resolve();
+            req.onblocked = () => resolve();
+        } catch {
+            resolve();
+        }
+    });
+
+    await Promise.allSettled([
+        clearStore('firebase-installations-database', 'firebase-installations-store'),
+        clearStore('firebase-messaging-database', 'firebase-messaging-store'),
+        clearStore('firebase-messaging-database', 'firebase-messaging-fid-registration-store'),
+    ]);
+}
+
+/**
+ * Safely fetches an FCM token, automatically recovering if the client has a stale
+ * or desynchronized Firebase Installations auth token in IndexedDB.
+ */
+export async function getOrRefreshFcmToken(messagingInstance, registration) {
+    if (!messagingInstance) return null;
+    const vapidKey = VAPID_KEY;
+
+    let swReg = registration;
+    if (!swReg && typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+        swReg = (await navigator.serviceWorker.getRegistration('/')) ||
+                (await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' }));
+    }
+
+    try {
+        return await getToken(messagingInstance, {
+            vapidKey,
+            serviceWorkerRegistration: swReg,
+        });
+    } catch (err) {
+        const errMsg = String(err?.message || '');
+        const isAuthCredentialError =
+            errMsg.includes('token-subscribe-failed') ||
+            errMsg.includes('authentication credential') ||
+            errMsg.includes('OAuth 2') ||
+            err?.code === 'messaging/token-subscribe-failed';
+
+        if (isAuthCredentialError) {
+            console.warn('[FCM] Stale installation credentials detected in browser. Resetting installation cache and retrying...', err);
+            
+            try {
+                if (messagingInstance.app) {
+                    const installations = getInstallations(messagingInstance.app);
+                    // Force refresh token from Google server (removes bad local cache if 401)
+                    await getInstallationsToken(installations, true).catch(() => {});
+                    await deleteInstallations(installations).catch(() => {});
+                }
+            } catch (e) {
+                console.warn('[FCM] installations reset warning:', e);
+            }
+
+            // Purge IndexedDB records directly so Firebase starts fresh
+            await clearFirebaseIndexedDBCaches();
+
+            // Retry token retrieval with clean installation state
+            return await getToken(messagingInstance, {
+                vapidKey,
+                serviceWorkerRegistration: swReg,
+            });
+        }
+        throw err;
+    }
+}
 
 /**
  * Requests notification permission from the browser.
@@ -13,8 +110,8 @@ const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
  * @param {object} messagingInstance - The Firebase messaging instance
  */
 export async function requestNotificationPermission(userId, messagingInstance) {
-    if (!messagingInstance || !userId) return;
-    if (!('Notification' in window)) return;
+    if (!messagingInstance || !userId) return null;
+    if (!('Notification' in window)) return null;
 
     // iOS only supports web push for INSTALLED PWAs (Add to Home Screen).
     // If we're on iOS Safari (not standalone), skip silently —
@@ -25,33 +122,36 @@ export async function requestNotificationPermission(userId, messagingInstance) {
         window.matchMedia('(display-mode: standalone)').matches;
     if (isIOS && !isStandalone) {
         console.log('[FCM] iOS detected but not installed as PWA — skipping notification setup.');
-        return;
+        return null;
     }
 
     try {
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
             console.log('Notification permission denied.');
-            return;
+            return null;
         }
 
         // Reuse an existing active SW registration if available — avoids a forced
         // network update round-trip on every call which added ~300–500ms of latency.
-        const existingRegistration = await navigator.serviceWorker.getRegistration('/');
-        const registration = existingRegistration ?? await navigator.serviceWorker.register('/sw.js', {
-            scope: '/',
-            updateViaCache: 'none',
-        });
-
-        // Only force-update when there is genuinely no active worker yet
-        if (!existingRegistration || !existingRegistration.active) {
-            await registration.update();
+        let registration = await navigator.serviceWorker.getRegistration('/');
+        if (!registration) {
+            registration = await navigator.serviceWorker.register('/sw.js', {
+                scope: '/',
+                updateViaCache: 'none',
+            });
         }
 
-        const token = await getToken(messagingInstance, {
-            vapidKey: VAPID_KEY,
-            serviceWorkerRegistration: registration,
-        });
+        if (navigator.serviceWorker.ready) {
+            try {
+                const readyReg = await navigator.serviceWorker.ready;
+                if (readyReg) registration = readyReg;
+            } catch {
+                // Ignore service worker ready resolution error
+            }
+        }
+
+        const token = await getOrRefreshFcmToken(messagingInstance, registration);
 
         if (token) {
             // Save to BOTH fields: fcmToken (old, backward compat) + fcmTokens array (new, multi-device)
@@ -60,9 +160,11 @@ export async function requestNotificationPermission(userId, messagingInstance) {
                 fcmTokens: arrayUnion(token)
             });
             console.log('FCM token saved for user:', userId);
+            return token;
         }
     } catch (error) {
         console.warn('Error requesting notification permission / FCM token:', error);
+        throw error;
     }
 }
 
