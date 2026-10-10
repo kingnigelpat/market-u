@@ -75,27 +75,53 @@ export async function getOrRefreshFcmToken(messagingInstance, registration) {
             err?.code === 'messaging/token-subscribe-failed';
 
         if (isAuthCredentialError) {
-            console.warn('[FCM] Stale installation credentials detected in browser. Resetting installation cache and retrying...', err);
-            
+            console.warn('[FCM] Stale or mismatched push subscription detected in browser. Unsubscribing pushManager and purging cache...', err);
+
+            // 1. Unsubscribe any existing stale push subscription from the browser's PushManager
+            // Stale subscriptions registered under an old/different applicationServerKey cause 401 UNAUTHENTICATED
+            try {
+                if (swReg?.pushManager) {
+                    const existingSub = await swReg.pushManager.getSubscription();
+                    if (existingSub) {
+                        console.log('[FCM] Unsubscribing stale PushSubscription:', existingSub.endpoint);
+                        await existingSub.unsubscribe().catch(() => {});
+                    }
+                }
+            } catch (subErr) {
+                console.warn('[FCM] PushManager unsubscribe warning:', subErr);
+            }
+
+            // 2. Force Firebase Installations to drop bad token
             try {
                 if (messagingInstance.app) {
                     const installations = getInstallations(messagingInstance.app);
-                    // Force refresh token from Google server (removes bad local cache if 401)
                     await getInstallationsToken(installations, true).catch(() => {});
                     await deleteInstallations(installations).catch(() => {});
                 }
             } catch (e) {
-                console.warn('[FCM] installations reset warning:', e);
+                console.warn('[FCM] Installations reset warning:', e);
             }
 
-            // Purge IndexedDB records directly so Firebase starts fresh
+            // 3. Purge IndexedDB records directly so Firebase starts fresh
             await clearFirebaseIndexedDBCaches();
 
-            // Retry token retrieval with clean installation state
-            return await getToken(messagingInstance, {
-                vapidKey,
-                serviceWorkerRegistration: swReg,
-            });
+            // 4. Wait 1 second for the browser's PushManager and IndexedDB to settle
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+
+            // 5. Retry token retrieval with clean push subscription & installation state
+            try {
+                return await getToken(messagingInstance, {
+                    vapidKey,
+                    serviceWorkerRegistration: swReg,
+                });
+            } catch (retryErr) {
+                console.warn('[FCM] First retry failed, attempting final backoff retry in 2s...', retryErr);
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                return await getToken(messagingInstance, {
+                    vapidKey,
+                    serviceWorkerRegistration: swReg,
+                });
+            }
         }
         throw err;
     }
