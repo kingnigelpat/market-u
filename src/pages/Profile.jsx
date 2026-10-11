@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { auth, db, messagingReady } from '../firebase';
 import {
@@ -41,15 +41,22 @@ function Alert({ type, message }) {
 }
 
 // ── Section card wrapper ───────────────────────────────────────────────────────
-function Section({ icon, title, subtitle, children, danger }) {
+function Section({ id, icon, title, subtitle, children, danger, highlight }) {
     return (
-        <div style={{
-            backgroundColor: 'var(--surface)',
-            border: `1px solid ${danger ? 'rgba(239,68,68,0.2)' : 'var(--border)'}`,
-            borderRadius: 'var(--radius-xl)',
-            overflow: 'hidden',
-            marginBottom: '1.25rem',
-        }}>
+        <div 
+            id={id}
+            style={{
+                backgroundColor: 'var(--surface)',
+                border: highlight 
+                    ? '2px solid var(--primary)' 
+                    : `1px solid ${danger ? 'rgba(239,68,68,0.2)' : 'var(--border)'}`,
+                boxShadow: highlight ? '0 0 24px rgba(37,99,235,0.25)' : 'none',
+                borderRadius: 'var(--radius-xl)',
+                overflow: 'hidden',
+                marginBottom: '1.25rem',
+                transition: 'all 0.3s ease',
+            }}
+        >
             {/* Section header */}
             <div style={{
                 display: 'flex', alignItems: 'center', gap: '0.75rem',
@@ -134,6 +141,23 @@ function PasswordInput({ id, value, onChange, placeholder }) {
 const Profile = () => {
     const { currentUser, userName, userPhone, userRole } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const isWelcome = new URLSearchParams(location.search).get('welcome') === 'true';
+    const [highlightNotifs, setHighlightNotifs] = useState(false);
+
+    useEffect(() => {
+        if (location.hash === '#notifications' || isWelcome) {
+            setHighlightNotifs(true);
+            const timer = setTimeout(() => {
+                const el = document.getElementById('push-notifications');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 350);
+            return () => clearTimeout(timer);
+        }
+    }, [location.hash, isWelcome]);
 
     // App Theme / Background State
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
@@ -513,6 +537,89 @@ const Profile = () => {
                 </button>
             </div>
 
+            {/* ── Welcome Checklist for New Users ── */}
+            {isWelcome && (
+                <div style={{
+                    backgroundColor: 'rgba(37, 99, 235, 0.06)',
+                    border: '1.5px solid var(--primary)',
+                    borderRadius: 'var(--radius-xl)',
+                    padding: '1.5rem',
+                    marginBottom: '1.75rem',
+                    boxShadow: '0 8px 30px rgba(37, 99, 235, 0.12)',
+                    animation: 'fadeInUp 0.3s ease'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                        <div>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: 'var(--primary)', color: '#fff', fontSize: '0.75rem', fontWeight: '800', padding: '0.2rem 0.6rem', borderRadius: '99px', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                                🎉 Account Activated
+                            </div>
+                            <h2 style={{ fontSize: '1.35rem', fontWeight: '900', margin: '0 0 0.35rem 0', letterSpacing: '-0.02em' }}>
+                                Welcome to Market-U! Here is what to do next:
+                            </h2>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, maxWidth: '640px', lineHeight: 1.5 }}>
+                                Follow these quick steps to get instant WhatsApp leads, price updates, and campus deal alerts directly on your device.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                        gap: '1rem',
+                        marginTop: '1.25rem',
+                        paddingTop: '1.25rem',
+                        borderTop: '1px solid rgba(37, 99, 235, 0.15)'
+                    }}>
+                        <div style={{
+                            backgroundColor: 'var(--surface)',
+                            padding: '1rem',
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px solid var(--border)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                                <span style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: '800' }}>1</span>
+                                <strong style={{ fontSize: '0.9rem', color: 'var(--text)' }}>Activate Notifications</strong>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '0.825rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                                Scroll down to <strong>Push Notifications</strong> below, click <strong>"Enable Push Notifications"</strong>, and tap <strong>"Allow"</strong> when your browser prompts you.
+                            </p>
+                        </div>
+
+                        <div style={{
+                            backgroundColor: 'var(--surface)',
+                            padding: '1rem',
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px solid var(--border)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                                <span style={{ width: '24px', height: '24px', borderRadius: '#10B981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: '800' }}>2</span>
+                                <strong style={{ fontSize: '0.9rem', color: 'var(--text)' }}>Test Your Device</strong>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '0.825rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                                Click <strong>"Send Test Push Notification"</strong>. Lock your phone or screen to watch your first live alert arrive!
+                            </p>
+                        </div>
+
+                        <div style={{
+                            backgroundColor: 'var(--surface)',
+                            padding: '1rem',
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px solid var(--border)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                                <span style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#8B5CF6', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: '800' }}>3</span>
+                                <strong style={{ fontSize: '0.9rem', color: 'var(--text)' }}>{userRole === 'seller' ? 'Post Items & Sell' : 'Discover Campus Deals'}</strong>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '0.825rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                                {userRole === 'seller'
+                                    ? 'Tap "Post Item" to list products with photos. When students click interested, your phone will alert you instantly.'
+                                    : 'Save items and browse listings tailored strictly to your university campus!'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ── App Theme & Background ── */}
             <Section icon={<Palette size={18} />} title="App Theme & Background" subtitle="Customize overall app theme and background mode">
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -626,6 +733,8 @@ const Profile = () => {
 
             {/* ── Push Notifications ── */}
             <Section 
+                id="push-notifications"
+                highlight={highlightNotifs}
                 icon={<Bell size={18} />} 
                 title="Push Notifications" 
                 subtitle={userRole === 'seller' || userRole === 'admin' 

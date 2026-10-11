@@ -134,6 +134,7 @@ const AppContent = () => {
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin']} />}>
                             <Route path="/messages" element={<Messages />} />
                         </Route>
+                        <Route path="/settings" element={<Navigate to="/profile" replace />} />
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
                             <Route path="/profile" element={<Profile />} />
                         </Route>

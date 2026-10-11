@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Bell, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react';
 import PhoneNumberField from '../components/PhoneNumberField';
 import SchoolSelector from '../components/SchoolSelector';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +26,8 @@ const Register = () => {
     const [schoolError, setSchoolError] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+    const [registeredData, setRegisteredData] = useState(null);
 
     const navigate = useNavigate();
 
@@ -102,8 +104,13 @@ const Register = () => {
             // Optimistically update role in context so destination page sees correct role immediately
             setUserRole(formData.role);
 
-            // 4. Navigate directly to their school's marketplace
-            navigate(`/?school=${encodeURIComponent(selectedSchool.name)}`);
+            // 4. Show Welcome Guidance Modal to lead user to Settings & Push Notifications
+            setRegisteredData({
+                name: trimmedName,
+                schoolName: selectedSchool.name,
+                role: formData.role
+            });
+            setShowWelcomeModal(true);
         } catch (err) {
             if (err.code === 'auth/email-already-in-use') {
                 setError('An account with this email already exists. Please log in instead.');
@@ -266,6 +273,153 @@ const Register = () => {
                     Already have an account? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: '700' }}>Log in</Link>
                 </div>
             </div>
+
+            {/* ── Post-Registration Guidance Modal ── */}
+            {showWelcomeModal && registeredData && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                    backdropFilter: 'blur(6px)',
+                    zIndex: 99999,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1.25rem',
+                    animation: 'fadeIn 0.25s ease'
+                }}>
+                    <div style={{
+                        backgroundColor: 'var(--surface, #fff)',
+                        borderRadius: 'var(--radius-xl)',
+                        width: '100%',
+                        maxWidth: '480px',
+                        padding: '2rem',
+                        boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+                        border: '1px solid var(--border)',
+                        textAlign: 'center',
+                        position: 'relative',
+                        animation: 'slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                    }}>
+                        <div style={{
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, var(--primary), #6366F1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 1.25rem',
+                            boxShadow: '0 8px 24px -4px rgba(37,99,235,0.4)',
+                            color: '#fff'
+                        }}>
+                            <Bell size={30} />
+                        </div>
+
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.8rem', fontWeight: '800', marginBottom: '0.75rem' }}>
+                            <CheckCircle2 size={14} /> Account Created!
+                        </div>
+
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: '900', margin: '0 0 0.5rem 0', letterSpacing: '-0.02em', color: 'var(--text)' }}>
+                            Welcome to Market-U, {registeredData.name}!
+                        </h2>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: '0 0 1.5rem 0', lineHeight: 1.5 }}>
+                            Your account is ready for <strong>{registeredData.schoolName}</strong>. Complete your setup in <strong>Account Settings</strong>:
+                        </p>
+
+                        <div style={{
+                            textAlign: 'left',
+                            backgroundColor: 'var(--bg, #f8fafc)',
+                            borderRadius: 'var(--radius-lg)',
+                            padding: '1.25rem',
+                            border: '1px solid var(--border)',
+                            marginBottom: '1.75rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1rem'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                <div style={{ width: '26px', height: '26px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '800', flexShrink: 0 }}>
+                                    1
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '700', color: 'var(--text)' }}>
+                                        Activate Push Notifications
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                                        Turn on browser notifications so you receive instant alerts on your phone whenever buyers WhatsApp you or prices drop.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                <div style={{ width: '26px', height: '26px', borderRadius: '50%', backgroundColor: '#10B981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '800', flexShrink: 0 }}>
+                                    2
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '700', color: 'var(--text)' }}>
+                                        Push a Live Test Alert
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                                        In Settings, tap <em>"Send Test Push Notification"</em> to test and verify your device receives push alerts immediately.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                <div style={{ width: '26px', height: '26px', borderRadius: '50%', backgroundColor: '#8B5CF6', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '800', flexShrink: 0 }}>
+                                    3
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '700', color: 'var(--text)' }}>
+                                        {registeredData.role === 'seller' ? 'Post Items for Free' : 'Start Campus Shopping'}
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                                        {registeredData.role === 'seller' 
+                                            ? 'Upload photos of your textbooks, gadget, or dorm items and start receiving direct inquiries.'
+                                            : 'Explore deals, message sellers, and get verified student items.'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/profile?welcome=true#notifications')}
+                                className="btn btn-primary"
+                                style={{
+                                    width: '100%',
+                                    padding: '0.875rem 1.25rem',
+                                    fontSize: '1rem',
+                                    fontWeight: '700',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem',
+                                    boxShadow: '0 8px 20px -4px rgba(37,99,235,0.4)'
+                                }}
+                            >
+                                <Bell size={18} />
+                                Go to Settings & Activate Notifications
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => navigate(`/?school=${encodeURIComponent(registeredData.schoolName)}`)}
+                                className="btn btn-secondary"
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem 1.25rem',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '600',
+                                    justifyContent: 'center',
+                                    color: 'var(--text-secondary)'
+                                }}
+                            >
+                                Skip to Marketplace
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

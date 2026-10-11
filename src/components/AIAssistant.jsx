@@ -57,6 +57,11 @@ const FAQ_INTENTS = {
     response: 'You can manage your profile, phone number, password, and notification settings directly on your **Account Settings** page.',
     action: { label: 'Go to Profile', path: '/profile' },
   },
+  notifications: {
+    keywords: ['notification', 'notifications', 'push notification', 'push notifications', 'enable notifications', 'activate notifications', 'alerts', 'turn on notifications'],
+    response: 'Stay updated with instant push notifications for buyer interests, chats, and campus deals! 🔔\n\n1️⃣ Open **Account Settings**.\n2️⃣ Scroll to **Push Notifications**.\n3️⃣ Tap **"Enable Push Notifications"** and choose **"Allow"**.\n4️⃣ Tap **"Send Test Push Notification"** to test your device!',
+    action: { label: 'Open Notification Settings', path: '/profile?welcome=true#notifications' },
+  },
 };
 
 const INITIAL_MESSAGE = {
