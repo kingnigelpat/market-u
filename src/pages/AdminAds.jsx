@@ -24,7 +24,9 @@ const fmtDate = (ts) => {
 const toInputDate = (ts) => {
     if (!ts) return '';
     const d = typeof ts.toDate === 'function' ? ts.toDate() : new Date(ts);
-    return isNaN(d) ? '' : d.toISOString().slice(0, 10);
+    if (isNaN(d)) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
 const AdminAds = () => {

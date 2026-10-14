@@ -19,7 +19,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(bot|facebookexternalhit|whatsapp|twitterbot|slackbot|telegrambot|applebot|linkedinbot|discordbot|pinterest|embedly).*"
+          "value": ".*(bot|Bot|facebookexternalhit|whatsapp|WhatsApp|twitterbot|slackbot|telegrambot|applebot|linkedinbot|discordbot|pinterest|embedly).*"
         }
       ],
       "destination": "/api/og?id=:id"
@@ -30,7 +30,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(bot|facebookexternalhit|whatsapp|twitterbot|slackbot|telegrambot|applebot|linkedinbot|discordbot|pinterest|embedly).*"
+          "value": ".*(bot|Bot|facebookexternalhit|whatsapp|WhatsApp|twitterbot|slackbot|telegrambot|applebot|linkedinbot|discordbot|pinterest|embedly).*"
         }
       ],
       "destination": "/api/og?store=:id"
@@ -41,7 +41,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(bot|facebookexternalhit|whatsapp|twitterbot|slackbot|telegrambot|applebot|linkedinbot|discordbot|pinterest|embedly).*"
+          "value": ".*(bot|Bot|facebookexternalhit|whatsapp|WhatsApp|twitterbot|slackbot|telegrambot|applebot|linkedinbot|discordbot|pinterest|embedly).*"
         }
       ],
       "destination": "/api/og?store=:id"

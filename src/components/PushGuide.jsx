@@ -120,7 +120,7 @@ const PushGuide = () => {
             )}
 
             <style>{`
-                .push-guide { position: fixed; z-index: 1500; right: 1rem; bottom: 5.5rem; width: min(360px, calc(100vw - 2rem));
+                .push-guide { position: fixed; z-index: 1500; right: 1rem; bottom: 10rem; width: min(360px, calc(100vw - 2rem));
                     background: var(--surface-elevated); border: 1px solid var(--border); border-radius: var(--radius-xl);
                     box-shadow: var(--shadow-xl); padding: 1rem 1.1rem; animation: fadeInUp 0.35s ease; }
                 .pg-close { position: absolute; top: 0.6rem; right: 0.6rem; background: none; border: none; color: var(--text-secondary); cursor: pointer; }
@@ -135,7 +135,6 @@ const PushGuide = () => {
                 .pg-btn { width: 100%; margin-top: 0.85rem; justify-content: center; }
                 .pg-warn { margin-top: 0.75rem; font-size: 0.78rem; font-weight: 600; color: var(--warning); }
                 .pg-ok { margin-top: 0.75rem; font-weight: 700; color: var(--success); }
-                @media (min-width: 900px) { .push-guide { bottom: 1.5rem; } }
             `}</style>
         </aside>
     );

@@ -103,10 +103,8 @@ const AddProduct = () => {
                 createdAt: serverTimestamp()
             };
 
-            const docRef = await addDoc(collection(db, 'products'), productData);
-            const newProductId = docRef.id;
+            await addDoc(collection(db, 'products'), productData);
 
-            void newProductId;
             // Push notifications are admin-only now — no automatic broadcast on new listings.
 
             // Redirect back to dashboard

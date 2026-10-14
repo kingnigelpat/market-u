@@ -250,7 +250,7 @@ const SellerDashboard = () => {
 
     return (
         <div className="container" style={{ paddingTop: '1rem' }}>
-            {sellerData && !sellerData.verified && (
+            {sellerData && !sellerData.verified && sellerRole !== 'admin' && (
                 <div role="alert" id="unverified-warning" style={{
                     display: 'flex', gap: '0.75rem', alignItems: 'flex-start', padding: '1rem 1.25rem', marginBottom: '1.5rem',
                     borderRadius: 'var(--radius-xl)', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.4)',
