@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
@@ -106,26 +106,8 @@ const AddProduct = () => {
             const docRef = await addDoc(collection(db, 'products'), productData);
             const newProductId = docRef.id;
 
-            // 🔔 Broadcast to all buyers with authenticated ID token & verified product ID
-            try {
-                const idToken = await currentUser.getIdToken();
-                fetch('/api/notify-new-listing', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${idToken}`,
-                    },
-                    body: JSON.stringify({
-                        productId: newProductId,
-                    }),
-                }).then(r => r.json()).then(d => {
-                    console.log('[Notify] Broadcast result:', d);
-                }).catch(e => {
-                    console.warn('[Notify] Broadcast failed (non-critical):', e);
-                });
-            } catch (tokenErr) {
-                console.warn('[Notify] Could not retrieve auth token for broadcast:', tokenErr);
-            }
+            void newProductId;
+            // Push notifications are admin-only now — no automatic broadcast on new listings.
 
             // Redirect back to dashboard
             navigate('/dashboard');
@@ -141,6 +123,14 @@ const AddProduct = () => {
         <div className="container" style={{ padding: '0 0 2rem 0' }}>
             <div style={{ maxWidth: '600px', margin: '0 auto' }}>
                 <h1 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '1.5rem' }}>Add New Product</h1>
+
+                {sellerData && !sellerData.verified && (
+                    <div role="alert" id="add-product-unverified-warning" style={{ padding: '0.9rem 1.1rem', marginBottom: '1.25rem', borderRadius: 'var(--radius-lg)', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.4)', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                        ⚠️ <strong style={{ color: 'var(--danger)' }}>You are not verified.</strong> Go to your{' '}
+                        <Link to="/dashboard" style={{ color: 'var(--primary)', fontWeight: 700 }}>Dashboard</Link> and tap "Get Verified".
+                        Unverified sellers' products will be deleted after <strong>48 hours</strong>.
+                    </div>
+                )}
 
                 <div className="card mobile-card-padding">
                     {error && (

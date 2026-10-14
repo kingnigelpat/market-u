@@ -133,6 +133,18 @@ export async function endAdNow(adId) {
     await updateDoc(doc(db, ADS, adId), { status: 'expired', endDate: Timestamp.now() });
 }
 
+/** Admin: edit ad content / target school (works on live ads too). */
+export async function updateAd(adId, fields) {
+    const allowed = ['title', 'subtitle', 'imageUrl', 'linkUrl', 'schoolName', 'advertiserName'];
+    const patch = {};
+    allowed.forEach((k) => { if (fields[k] !== undefined) patch[k] = fields[k]; });
+    if (fields.endDate instanceof Date && !isNaN(fields.endDate)) {
+        patch.endDate = Timestamp.fromDate(fields.endDate);
+    }
+    patch.updatedAt = serverTimestamp();
+    await updateDoc(doc(db, ADS, adId), patch);
+}
+
 // ── Analytics (once per browser session per ad) ─────────────────────────────
 const trackOnce = (kind, adId) => {
     const key = `ad_${kind}_${adId}`;

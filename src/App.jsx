@@ -9,6 +9,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx';
 
 import AIAssistant from './components/AIAssistant.jsx';
 import IOSInstallBanner from './components/IOSInstallBanner.jsx';
+import PushGuide from './components/PushGuide.jsx';
 
 // Resilient lazy-loader that auto-reloads if a new build invalidated old bundle hashes
 const lazyRetry = (componentImport) =>
@@ -114,6 +115,7 @@ const AppContent = () => {
                         <Route path="/waitlist" element={<Navigate to="/schools" replace />} />
                         <Route path="/product/:id" element={<ProductDetail />} />
                         <Route path="/seller/:id" element={<SellerStore />} />
+                        <Route path="/store/:id" element={<SellerStore />} />
                         <Route path="/advertise" element={<Advertise />} />
                         <Route path="/schools" element={<SchoolsDashboard />} />
                         <Route path="/campuses" element={<SchoolsDashboard />} />
@@ -151,6 +153,7 @@ const AppContent = () => {
             <AIAssistant />
 
             <IOSInstallBanner />
+            <PushGuide />
         </div>
     );
 };

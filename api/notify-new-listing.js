@@ -91,13 +91,12 @@ export default async function handler(req, res) {
         }
         productData = prodDoc.data();
 
-        // Enforce ownership
-        if (productData.sellerId !== caller.uid) {
-            // Check if caller is admin
+        // Admin-only: sellers can no longer trigger broadcasts
+        {
             const callerDoc = await db.collection('users').doc(caller.uid).get();
             const callerRole = callerDoc.data()?.role;
             if (callerRole !== 'admin') {
-                return res.status(403).json({ error: 'Forbidden. You can only broadcast your own listings.' });
+                return res.status(403).json({ error: 'Forbidden. Only admins can send broadcasts.' });
             }
         }
     } catch (dbErr) {

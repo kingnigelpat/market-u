@@ -5,7 +5,11 @@
  */
 
 export default async function handler(req, res) {
-  const { id } = req.query;
+  const { id, store } = req.query;
+
+  if (store) {
+    return renderStore(res, String(store));
+  }
 
   const defaultMeta = {
     title: 'Market-U | Campus Marketplace',
@@ -75,8 +79,72 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;');
 }
 
-function renderHtml(res, meta, id) {
-  const targetUrl = id ? `/product/${encodeURIComponent(id)}` : '/';
+async function renderStore(res, sellerId) {
+  const storePath = `/seller/${encodeURIComponent(sellerId)}`;
+  const meta = {
+    title: 'Campus Store | Market-U',
+    description: 'Browse this student store on Market-U — the trusted campus marketplace.',
+    image: 'https://marketu.store/og-preview.jpg',
+    url: `https://marketu.store${storePath}`,
+  };
+
+  try {
+    const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'market-u-391e1';
+    const base = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`;
+
+    let sellerName = '';
+    let school = '';
+    try {
+      const profRes = await fetch(`${base}/publicProfiles/${encodeURIComponent(sellerId)}`);
+      if (profRes.ok) {
+        const pf = (await profRes.json()).fields || {};
+        sellerName = pf.name?.stringValue || '';
+        school = pf.school?.stringValue || '';
+      }
+    } catch { /* ignore */ }
+
+    const qRes = await fetch(`${base}:runQuery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: 'products' }],
+          where: { fieldFilter: { field: { fieldPath: 'sellerId' }, op: 'EQUAL', value: { stringValue: sellerId } } },
+          limit: 20,
+        },
+      }),
+    });
+
+    let count = 0;
+    if (qRes.ok) {
+      const rows = (await qRes.json()).filter(r => r.document);
+      count = rows.length;
+      // Pick the newest product with a valid image
+      rows.sort((a, b) => {
+        const ta = a.document.fields?.createdAt?.timestampValue || '';
+        const tb = b.document.fields?.createdAt?.timestampValue || '';
+        return tb.localeCompare(ta);
+      });
+      for (const r of rows) {
+        const f = r.document.fields || {};
+        if (!sellerName) sellerName = f.sellerName?.stringValue || '';
+        const img = f.images?.arrayValue?.values?.[0]?.stringValue;
+        if (img && /^https?:\/\//.test(img)) { meta.image = img; break; }
+      }
+    }
+
+    const name = sellerName || 'Student Seller';
+    meta.title = `${name}'s Store | Market-U`;
+    meta.description = `🛍️ Shop ${count ? count + ' item' + (count === 1 ? '' : 's') : 'listings'} from ${name}${school ? ' at ' + school : ''} on Market-U.`;
+  } catch (error) {
+    console.error('Error generating store OG meta:', error);
+  }
+
+  return renderHtml(res, meta, null, storePath);
+}
+
+function renderHtml(res, meta, id, pathOverride) {
+  const targetUrl = pathOverride || (id ? `/product/${encodeURIComponent(id)}` : '/');
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');

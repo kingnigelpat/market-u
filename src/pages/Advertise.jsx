@@ -9,7 +9,7 @@ import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { uploadImageToCloudinary, optimizeImage } from '../utils/cloudinary';
 import { createAd, subscribeToMyAds, updateAdPaymentRef, getEffectiveStatus, getDaysLeft } from '../utils/adService';
-import { SUPPORTED_SCHOOL } from '../data/institutions';
+import { SUPPORTED_SCHOOL, POPULAR_SCHOOLS } from '../data/institutions';
 import {
     AD_PRICE_PER_WEEK, AD_MAX_WEEKS, AD_MAX_IMAGE_BYTES, AD_ALLOWED_IMAGE_TYPES,
     AD_RECOMMENDED_SIZE, SUPPORT_WHATSAPP, formatNaira
@@ -28,8 +28,9 @@ const whatsappLink = (ad) => {
 };
 
 const Advertise = () => {
-    const { currentUser, isAuthenticated, isSeller, userName, userSchoolName } = useAuth();
-    const schoolName = userSchoolName || SUPPORTED_SCHOOL;
+    const { currentUser, isAuthenticated, isSeller, isAdmin, userName, userSchoolName } = useAuth();
+    const [adminSchool, setAdminSchool] = useState(userSchoolName || SUPPORTED_SCHOOL);
+    const schoolName = isAdmin ? adminSchool : (userSchoolName || SUPPORTED_SCHOOL);
 
     const [advertiserType, setAdvertiserType] = useState(isSeller ? 'seller' : 'business');
     const [advertiserName, setAdvertiserName] = useState('');
@@ -303,6 +304,17 @@ const Advertise = () => {
                                 </label>
                                 <input id="adv-name" value={advertiserName} maxLength={40}
                                     onChange={(e) => setAdvertiserName(e.target.value)} placeholder="e.g. Tolu's Kicks" />
+
+                                {isAdmin && (
+                                    <>
+                                        <label className="adv-label" htmlFor="adv-school">Target school <span className="adv-hint">(admin)</span></label>
+                                        <select id="adv-school" value={adminSchool} onChange={(e) => setAdminSchool(e.target.value)}>
+                                            {[...new Set([adminSchool, ...POPULAR_SCHOOLS])].map((s) => (
+                                                <option key={s} value={s}>{s}</option>
+                                            ))}
+                                        </select>
+                                    </>
+                                )}
 
                                 <label className="adv-label">Banner image <span className="adv-hint">({AD_RECOMMENDED_SIZE}, max 2 MB)</span></label>
                                 <div

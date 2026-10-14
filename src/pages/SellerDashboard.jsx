@@ -250,6 +250,19 @@ const SellerDashboard = () => {
 
     return (
         <div className="container" style={{ paddingTop: '1rem' }}>
+            {sellerData && !sellerData.verified && (
+                <div role="alert" id="unverified-warning" style={{
+                    display: 'flex', gap: '0.75rem', alignItems: 'flex-start', padding: '1rem 1.25rem', marginBottom: '1.5rem',
+                    borderRadius: 'var(--radius-xl)', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.4)',
+                }}>
+                    <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>⚠️</span>
+                    <div style={{ fontSize: '0.875rem', lineHeight: 1.5 }}>
+                        <strong style={{ color: 'var(--danger)' }}>Your account is not verified.</strong>{' '}
+                        Verify now (it's free) using the <strong>"Get Verified"</strong> button on this dashboard.
+                        If you are not verified within <strong>48 hours</strong> of posting, your products will be deleted.
+                    </div>
+                </div>
+            )}
             <div className="responsive-header" style={{ marginBottom: '2rem' }}>
                 <div>
                     <h1 style={{ fontSize: '2rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

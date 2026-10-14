@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, XCircle, ExternalLink, Eye, MousePointerClick, Clock, StopCircle, Megaphone, Wallet, Bell, Send, Sparkles, AlertCircle } from 'lucide-react';
-import { subscribeToAllAds, approveAd, rejectAd, endAdNow, getEffectiveStatus, getDaysLeft } from '../utils/adService';
+import { CheckCircle2, XCircle, ExternalLink, Eye, MousePointerClick, Clock, StopCircle, Megaphone, Wallet, Bell, Send, Sparkles, AlertCircle, Pencil, Save } from 'lucide-react';
+import { subscribeToAllAds, approveAd, rejectAd, endAdNow, updateAd, getEffectiveStatus, getDaysLeft } from '../utils/adService';
+import { POPULAR_SCHOOLS } from '../data/institutions';
 import { optimizeImage } from '../utils/cloudinary';
 import { formatNaira } from '../config/ads';
 
@@ -20,12 +21,20 @@ const fmtDate = (ts) => {
     return d.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
+const toInputDate = (ts) => {
+    if (!ts) return '';
+    const d = typeof ts.toDate === 'function' ? ts.toDate() : new Date(ts);
+    return isNaN(d) ? '' : d.toISOString().slice(0, 10);
+};
+
 const AdminAds = () => {
     const { currentUser } = useAuth();
     const [ads, setAds] = useState([]);
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState('pending_payment');
     const [busyId, setBusyId] = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const [editForm, setEditForm] = useState({});
     const [broadcastMsg, setBroadcastMsg] = useState('Buy from Market-U today');
     const [sendingBroadcast, setSendingBroadcast] = useState(false);
     const [broadcastResult, setBroadcastResult] = useState(null);
@@ -134,6 +143,35 @@ const AdminAds = () => {
         if (!confirm(`End "${ad.title}" now?`)) return;
         run(ad.id, () => endAdNow(ad.id));
     };
+    const startEdit = (ad) => {
+        setEditingId(ad.id);
+        setEditForm({
+            title: ad.title || '',
+            subtitle: ad.subtitle || '',
+            imageUrl: ad.imageUrl || '',
+            linkUrl: ad.linkUrl || '',
+            schoolName: ad.schoolName || '',
+            advertiserName: ad.advertiserName || '',
+            endDate: toInputDate(ad.endDate),
+        });
+    };
+    const saveEdit = (ad) => {
+        const f = editForm;
+        if (!f.title.trim()) { alert('Title is required'); return; }
+        run(ad.id, async () => {
+            await updateAd(ad.id, {
+                title: f.title.trim().slice(0, 80),
+                subtitle: f.subtitle.trim(),
+                imageUrl: f.imageUrl.trim(),
+                linkUrl: f.linkUrl.trim(),
+                schoolName: f.schoolName,
+                advertiserName: f.advertiserName.trim(),
+                endDate: f.endDate ? new Date(f.endDate + 'T23:59:59') : undefined,
+            });
+            setEditingId(null);
+        });
+    };
+    const setField = (k) => (e) => setEditForm((p) => ({ ...p, [k]: e.target.value }));
 
     const list = grouped[tab] || [];
 
@@ -324,6 +362,9 @@ const AdminAds = () => {
                                             {ad.rejectionReason && <span className="aa-reason">“{ad.rejectionReason}”</span>}
                                         </div>
                                         <div className="aa-actions">
+                                            <button className="btn btn-secondary" disabled={busyId === ad.id} onClick={() => (editingId === ad.id ? setEditingId(null) : startEdit(ad))} id={`aa-edit-${ad.id}`}>
+                                                <Pencil size={16} /> {editingId === ad.id ? 'Cancel' : 'Edit'}
+                                            </button>
                                             {tab === 'pending_payment' && (
                                                 <>
                                                     <button className="btn btn-secondary" disabled={busyId === ad.id} onClick={() => onReject(ad)} id={`aa-reject-${ad.id}`}>
@@ -346,6 +387,28 @@ const AdminAds = () => {
                                             )}
                                         </div>
                                     </div>
+                                    {editingId === ad.id && (
+                                        <div className="aa-edit">
+                                            <label>Title<input value={editForm.title} maxLength={80} onChange={setField('title')} /></label>
+                                            <label>Subtitle<input value={editForm.subtitle} onChange={setField('subtitle')} /></label>
+                                            <label>Advertiser name<input value={editForm.advertiserName} onChange={setField('advertiserName')} /></label>
+                                            <label>Image URL<input value={editForm.imageUrl} onChange={setField('imageUrl')} /></label>
+                                            <label>Link URL<input value={editForm.linkUrl} onChange={setField('linkUrl')} /></label>
+                                            <label>School
+                                                <select value={editForm.schoolName} onChange={setField('schoolName')}>
+                                                    {[...new Set([editForm.schoolName, ...POPULAR_SCHOOLS].filter(Boolean))].map((s) => (
+                                                        <option key={s} value={s}>{s}</option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                            {ad.startDate && (
+                                                <label>End date<input type="date" value={editForm.endDate} onChange={setField('endDate')} /></label>
+                                            )}
+                                            <button className="btn btn-primary" disabled={busyId === ad.id} onClick={() => saveEdit(ad)} id={`aa-save-${ad.id}`}>
+                                                <Save size={16} /> Save changes
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </article>
                         );
@@ -510,7 +573,11 @@ const AdminAds = () => {
                 .aa-perf { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.85rem; color: var(--text-secondary); }
                 .aa-perf span { display: inline-flex; align-items: center; gap: 0.3rem; }
                 .aa-reason { color: var(--danger); font-style: italic; }
-                .aa-actions { display: flex; gap: 0.5rem; }
+                .aa-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+                .aa-edit { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; padding: 1rem; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); }
+                .aa-edit label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); }
+                .aa-edit input, .aa-edit select { padding: 0.6rem 0.8rem; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface-elevated); color: var(--text); font-size: 0.875rem; text-transform: none; font-weight: 500; }
+                .aa-edit .btn { align-self: end; justify-content: center; }
                 .aa-actions .btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
                 @media (max-width: 760px) {
                     .aa-card { grid-template-columns: 1fr; }

@@ -25,6 +25,28 @@
       "destination": "/api/og?id=:id"
     },
     {
+      "source": "/seller/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(bot|facebookexternalhit|whatsapp|twitterbot|slackbot|telegrambot|applebot|linkedinbot|discordbot|pinterest|embedly).*"
+        }
+      ],
+      "destination": "/api/og?store=:id"
+    },
+    {
+      "source": "/store/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(bot|facebookexternalhit|whatsapp|twitterbot|slackbot|telegrambot|applebot|linkedinbot|discordbot|pinterest|embedly).*"
+        }
+      ],
+      "destination": "/api/og?store=:id"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
