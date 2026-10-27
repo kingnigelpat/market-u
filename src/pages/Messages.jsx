@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, MessageCircle, Send, ShoppingBag, ExternalLink, User, ChevronRight } from 'lucide-react';
 import { sendPushNotification } from '../utils/notifications';
+import { logEvent } from '../utils/analyticsService';
 
 const formatTime = (ts) => {
     if (!ts) return '';
@@ -395,6 +396,15 @@ const ActiveChatView = ({ chat, onBack }) => {
                 updatedAt: serverTimestamp(),
                 lastMessage: msgText,
                 lastSenderId: currentUser.uid
+            });
+
+            // Log seller_replied analytics event
+            logEvent({
+                eventType: 'seller_replied',
+                userId: currentUser.uid,
+                sellerId: currentUser.uid,
+                productId: chat.productId || null,
+                metadata: { chatId: chat.id, buyerId: chat.buyerId }
             });
 
             // Notify buyer of seller reply securely (server resolves buyer's tokens)

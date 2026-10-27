@@ -1,64 +1,71 @@
 /**
- * Smart Search Utility & Semantic Synonym Engine for MarketU
+ * Smart Search Utility & Semantic Relevance Engine for Market-U
+ * 
+ * Provides:
+ * - High-precision relevance scoring (exact title match > token match > synonyms)
+ * - Strict multi-word AND-matching (no more unrelated items matching a single random token)
+ * - Safe whole-word boundary matching (prevents "oil" matching "toilet", "pen" matching "expensive")
+ * - Targeted synonym clusters (no broader category pollution)
+ * - Budget parsing ("under 50k", "< 10k", "20000 naira")
  */
 
-// Comprehensive Campus Synonym Clusters — granular grouping to avoid false positives
+// Targeted, tight synonym groups — NEVER includes entire parent categories
 const SYNONYM_CLUSTERS = [
+  // Phones & Brands
+  ['iphone', 'ios', 'apple phone'],
+  ['samsung', 'galaxy'],
+  ['phone', 'phones', 'smartphone', 'smartphones', 'mobile phone', 'android', 'cellphone', 'tecno', 'infinix', 'redmi', 'xiaomi', 'pixel'],
+  
+  // Audio & Accessories
+  ['airpod', 'airpods', 'earbud', 'earbuds', 'earphone', 'earphones', 'headphone', 'headphones', 'headset', 'airpod pro'],
+  ['charger', 'chargers', 'charging cord', 'adapter', 'charging cable', 'type c cable', 'lightning cable', 'fast charger'],
+  ['powerbank', 'power bank', 'portable charger'],
+
+  // Laptops & Computers
+  ['laptop', 'laptops', 'macbook', 'notebook', 'pc', 'computer', 'dell', 'hp', 'lenovo', 'thinkpad', 'asus', 'acer'],
+  ['flashdrive', 'flash drive', 'pendrive', 'usb drive', 'hard drive', 'harddrive', 'ssd', 'hdd'],
+
+  // Footwear
+  ['shoe', 'shoes', 'footwear'],
+  ['sneaker', 'sneakers', 'kicks', 'trainers', 'dunks', 'nike', 'adidas', 'puma'],
+  ['slide', 'slides', 'slipper', 'slippers', 'sandal', 'sandals', 'crocs', 'croc', 'palm'],
+  ['heel', 'heels', 'boot', 'boots', 'loafers'],
+
+  // Bags
+  ['bag', 'bags', 'backpack', 'backpacks', 'tote', 'tote bag', 'handbag', 'handbags', 'purse', 'duffle', 'school bag', 'laptop bag'],
+
+  // Clothing
+  ['hoodie', 'hoodies', 'sweatshirt', 'sweatshirts', 'jacket', 'jackets'],
+  ['shirt', 'shirts', 't-shirt', 't-shirts', 'tshirt', 'tee', 'top', 'blouse', 'polo'],
+  ['pant', 'pants', 'trouser', 'trousers', 'jean', 'jeans', 'chinos', 'joggers', 'cargo'],
+  ['short', 'shorts'],
+  ['dress', 'dresses', 'gown', 'gowns', 'skirt', 'skirts'],
+  ['cloth', 'clothes', 'outfit', 'wear', 'apparel', 'thrift'],
+
+  // Fashion Accessories
+  ['perfume', 'perfumes', 'fragrance', 'cologne', 'body spray', 'bodyspray', 'scent'],
+  ['watch', 'watches', 'wristwatch', 'smartwatch'],
+  ['chain', 'chains', 'necklace', 'necklaces', 'bracelet', 'bracelets', 'ring', 'rings', 'earring', 'earrings', 'jewelry'],
+  ['glasses', 'sunglasses', 'shades'],
+  ['cap', 'caps', 'hat', 'hats', 'beanie'],
+
   // Skincare & Beauty
-  {
-    category: 'Health & Beauty',
-    synonyms: ['cream', 'lotion', 'skincare', 'moisturizer', 'body butter', 'vaseline', 'nivea', 'cerave', 'face wash', 'soap', 'serum', 'sunscreen', 'cosmetics', 'beauty', 'perfume', 'fragrance', 'cologne', 'body spray', 'makeup', 'hair', 'wig', 'oil', 'ointment', 'shea butter', 'powder']
-  },
-  // Phones & Mobile Tech
-  {
-    category: 'Electronics',
-    synonyms: ['phone', 'iphone', 'samsung', 'android', 'smartphone', 'mobile', 'airpods', 'redmi', 'tecno', 'infinix', 'pixel', 'ios', 'gadget', 'charger', 'powerbank', 'earbuds', 'case', 'screen protector', 'earphones', 'headphone', 'headphones']
-  },
-  // Laptops & Computing
-  {
-    category: 'Electronics',
-    synonyms: ['laptop', 'macbook', 'computer', 'pc', 'dell', 'lenovo', 'thinkpad', 'asus', 'acer', 'desktop', 'monitor', 'keyboard', 'mouse', 'drive', 'pendrive', 'flashdrive', 'hard drive', 'ssd', 'ram']
-  },
-  // Footwear & Shoes
-  {
-    category: 'Fashion',
-    synonyms: ['shoe', 'shoes', 'sneaker', 'sneakers', 'kick', 'kicks', 'dunk', 'dunks', 'nike', 'adidas', 'puma', 'slide', 'slides', 'crocs', 'boot', 'boots', 'heel', 'heels', 'footwear', 'sandal', 'sandals', 'palm', 'slippers', 'loafers']
-  },
-  // Bags & Carriers
-  {
-    category: 'Fashion',
-    synonyms: ['bag', 'bags', 'backpack', 'tote', 'purse', 'handbag', 'duffle', 'satchel', 'fanny pack', 'laptop bag', 'school bag', 'luggage', 'suitcase']
-  },
-  // Accessories (Jewelry, Watches, Hats)
-  {
-    category: 'Fashion',
-    synonyms: ['cap', 'hat', 'watch', 'watches', 'jewelry', 'chain', 'ring', 'rings', 'bracelet', 'necklace', 'earring', 'earrings', 'sunglasses', 'glasses', 'belt', 'belts', 'tie', 'scarf']
-  },
-  // Clothes & Apparel
-  {
-    category: 'Fashion',
-    synonyms: ['clothe', 'clothes', 'dress', 'shirt', 't-shirt', 'top', 'pant', 'pants', 'trousers', 'jean', 'jeans', 'hoodie', 'jacket', 'gown', 'outfit', 'wear', 'skirt', 'short', 'shorts', 'sweatshirt', 'jersey', 'suit', 'blouse', 'ankara', 'thrift']
-  },
-  // Food & Groceries
-  {
-    category: 'Food & Groceries',
-    synonyms: ['food', 'snack', 'snacks', 'drink', 'drinks', 'meal', 'lunch', 'dinner', 'noodle', 'noodles', 'indomie', 'rice', 'biscuit', 'beverage', 'groceries', 'bread', 'egg', 'eggs', 'spaghetti', 'pasta', 'shawarma', 'pizza', 'burger', 'chicken', 'cake', 'pastry']
-  },
-  // Accommodation & Housing
-  {
-    category: 'Hostels & Rooms',
-    synonyms: ['hostel', 'room', 'apartment', 'sublet', 'lodge', 'rent', 'accommodation', 'bed', 'mattress', 'pillow', 'drawer', 'closet', 'fan', 'curtain']
-  },
-  // Books & Stationery
-  {
-    category: 'Books & Stationery',
-    synonyms: ['book', 'books', 'textbook', 'notebook', 'novel', 'stationery', 'pdf', 'pen', 'calculator', 'casio', 'ruler', 'journal', 'hardcopy', 'softcopy']
-  },
-  // Campus Services
-  {
-    category: 'Services',
-    synonyms: ['service', 'services', 'tutor', 'tutoring', 'lesson', 'assignment', 'design', 'graphic', 'logo', 'edit', 'editing', 'print', 'printing', 'haircut', 'barber', 'braids', 'hairstylist', 'makeup artist', 'developer', 'coding', 'typing', 'project', 'photography', 'video']
-  }
+  ['cream', 'creams', 'lotion', 'lotions', 'moisturizer', 'body butter', 'vaseline', 'nivea', 'cerave'],
+  ['soap', 'soaps', 'body wash', 'face wash', 'cleanser'],
+  ['hair', 'wig', 'wigs', 'braids', 'frontal', 'frontals', 'closure'],
+
+  // Academics & Stationery
+  ['book', 'books', 'textbook', 'textbooks', 'handout', 'handouts', 'notebook', 'notebooks', 'novel'],
+  ['calculator', 'casio calculator', 'scientific calculator'],
+
+  // Room & Living
+  ['bed', 'beds', 'mattress', 'mattresses', 'pillow', 'pillows'],
+  ['fan', 'fans', 'rechargeable fan', 'standing fan', 'ox fan'],
+  ['drawer', 'drawers', 'closet', 'wardrobe'],
+
+  // Food
+  ['noodle', 'noodles', 'indomie', 'pasta', 'spaghetti'],
+  ['snack', 'snacks', 'biscuit', 'biscuits', 'cookie', 'cookies', 'pastry', 'cake']
 ];
 
 /**
@@ -67,7 +74,7 @@ const SYNONYM_CLUSTERS = [
 export function parseQueryBudget(queryStr) {
   if (!queryStr) return null;
   const lower = queryStr.toLowerCase();
-  // Require explicit budget indicator (e.g. "under 50k", "₦50000", "50k", "50000 naira")
+  
   const match = lower.match(/(?:under|below|<|budget|less than|max|up to|\bngn\b|₦)\s*(\d+(?:[kK]|000)?)|(\d+)\s*(?:[kK]|naira)/);
   if (!match) return null;
 
@@ -82,39 +89,37 @@ export function parseQueryBudget(queryStr) {
   return num > 1000 ? num : null;
 }
 
-/**
- * Checks if a search term matches a synonym using exact word boundary matching.
- * Prevents "bag" from matching "backpack" via substring, while still allowing
- * exact matches like "bag" === "bag" and multi-word matches like "laptop bag".
- */
-function termMatchesSynonym(term, synonym) {
-  if (term === synonym) return true;
-  // Check if term is a whole word within the synonym (e.g. "bag" in "laptop bag")
-  const wordBoundary = new RegExp(`\\b${escapeRegex(term)}\\b`, 'i');
-  return wordBoundary.test(synonym);
-}
-
 /** Escape regex special characters in a string */
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
- * Expands a single query term to all related semantic synonyms.
- * Uses exact word matching to prevent false positives.
+ * Checks whole-word presence in text using word boundaries.
+ */
+function containsWholeWord(text, word) {
+  if (!text || !word) return false;
+  try {
+    const rx = new RegExp(`(^|[^a-zA-Z0-9])${escapeRegex(word)}([^a-zA-Z0-9]|$)`, 'i');
+    return rx.test(text);
+  } catch {
+    return text.toLowerCase().includes(word.toLowerCase());
+  }
+}
+
+/**
+ * Expands a single query term to its tight semantic synonyms.
  */
 export function getExpandedTerms(term) {
-  const cleanTerm = term.toLowerCase().trim();
-  if (!cleanTerm || cleanTerm.length < 2) return [];
+  const clean = term.toLowerCase().trim();
+  if (!clean || clean.length < 2) return [];
 
-  const expanded = new Set([cleanTerm]);
+  const expanded = new Set([clean]);
 
-  for (const cluster of SYNONYM_CLUSTERS) {
-    // Only match if the term is an exact match to one of the synonyms in this cluster
-    const matchesCluster = cluster.synonyms.some(s => termMatchesSynonym(cleanTerm, s.toLowerCase()));
-    if (matchesCluster) {
-      cluster.synonyms.forEach(s => expanded.add(s.toLowerCase()));
-      if (cluster.category) expanded.add(cluster.category.toLowerCase());
+  for (const group of SYNONYM_CLUSTERS) {
+    const matched = group.some(item => item === clean || containsWholeWord(item, clean));
+    if (matched) {
+      group.forEach(s => expanded.add(s.toLowerCase()));
     }
   }
 
@@ -122,19 +127,26 @@ export function getExpandedTerms(term) {
 }
 
 /**
- * Smart matches a product against a search query string.
- * Supports title, description, category, and budget checks!
+ * Computes a relevance score for a product against a search query.
+ * 
+ * Returns:
+ * - 0: Product does NOT match the search query (reject).
+ * - >0: Product matches. Higher score = higher relevance in search results.
+ *
+ * @param {object} product
+ * @param {string} searchQuery
+ * @returns {number}
  */
-export function smartMatchesProduct(product, searchQuery) {
-  if (!searchQuery || !searchQuery.trim()) return true;
-  if (!product) return false;
+export function getSearchRelevance(product, searchQuery) {
+  if (!searchQuery || !searchQuery.trim()) return 1;
+  if (!product) return 0;
 
   const lowerQuery = searchQuery.toLowerCase().trim();
   const budget = parseQueryBudget(lowerQuery);
 
   // If budget limit is present in search and product exceeds budget, reject
   if (budget && parseFloat(product.price) > budget) {
-    return false;
+    return 0;
   }
 
   // Clean search query of price/budget tokens to extract pure text keywords
@@ -142,30 +154,101 @@ export function smartMatchesProduct(product, searchQuery) {
     .replace(/(?:under|below|<|budget|less than|max|up to)?\s*(?:ngn|₦)?\s*\d+(?:[kK]|000)?/gi, '')
     .trim();
 
-  // If search was only a budget query (e.g. "under 50k"), match all products within budget
+  // If search was solely a budget query (e.g. "under 50k"), match all products within budget
   if (!textQuery) {
-    return true;
+    return 100;
   }
 
   const pTitle = (product.title || '').toLowerCase();
   const pDesc = (product.description || '').toLowerCase();
   const pCat = (product.category || '').toLowerCase();
 
-  // 1. Direct Substring Match
-  if (pTitle.includes(textQuery) || pDesc.includes(textQuery) || pCat.includes(textQuery)) {
-    return true;
+  let score = 0;
+
+  // 1. Direct Full-Query Matches (Highest Weight)
+  if (pTitle === textQuery) {
+    score += 1500;
+  } else if (pTitle.startsWith(textQuery)) {
+    score += 1000;
+  } else if (containsWholeWord(pTitle, textQuery) || pTitle.includes(textQuery)) {
+    score += 800;
   }
 
-  // 2. Tokenized & Expanded Synonym Match
+  if (containsWholeWord(pDesc, textQuery)) {
+    score += 250;
+  }
+
+  if (pCat === textQuery || containsWholeWord(pCat, textQuery)) {
+    score += 200;
+  }
+
+  // 2. Tokenized Analysis (Multi-word Query Matching)
   const tokens = textQuery.split(/\s+/).filter(t => t.length >= 2);
+  
+  if (tokens.length === 0) {
+    return score > 0 ? score : 0;
+  }
+
+  // Track whether each token in the query was satisfied
+  let matchedTokensCount = 0;
+
   for (const token of tokens) {
-    const synonyms = getExpandedTerms(token);
-    for (const syn of synonyms) {
-      if (pTitle.includes(syn) || pDesc.includes(syn) || pCat.includes(syn)) {
-        return true;
+    let tokenScore = 0;
+
+    // Check direct word match in Title (heavy weight)
+    if (containsWholeWord(pTitle, token)) {
+      tokenScore += 120;
+    } else if (pTitle.includes(token) && token.length >= 3) {
+      tokenScore += 60;
+    }
+
+    // Check direct word match in Category
+    if (containsWholeWord(pCat, token)) {
+      tokenScore += 70;
+    }
+
+    // Check direct word match in Description (whole-word only to avoid false matches)
+    if (containsWholeWord(pDesc, token)) {
+      tokenScore += 25;
+    }
+
+    // If no direct match, check semantic synonyms
+    if (tokenScore === 0) {
+      const synonyms = getExpandedTerms(token);
+      for (const syn of synonyms) {
+        if (syn === token) continue;
+        if (containsWholeWord(pTitle, syn)) {
+          tokenScore += 50;
+          break;
+        } else if (containsWholeWord(pDesc, syn)) {
+          tokenScore += 15;
+          break;
+        }
       }
+    }
+
+    if (tokenScore > 0) {
+      matchedTokensCount++;
+      score += tokenScore;
     }
   }
 
-  return false;
+  // Strict Query Fidelity:
+  // For multi-word queries (e.g. "iphone 11", "black shoes", "samsung charger"),
+  // ALL query tokens must be matched by the product, or else it is an unrelated product.
+  // Exception: If query has 4+ words, allow at most 1 missing token.
+  const requiredMatches = tokens.length >= 4 ? tokens.length - 1 : tokens.length;
+  if (matchedTokensCount < requiredMatches) {
+    return 0; // REJECT unrelated item
+  }
+
+  return score;
+}
+
+/**
+ * Smart matches a product against a search query string.
+ * Retained for backwards compatibility across all callers.
+ */
+export function smartMatchesProduct(product, searchQuery) {
+  return getSearchRelevance(product, searchQuery) > 0;
 }

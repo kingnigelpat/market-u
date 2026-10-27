@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import InstallGuideModal from '../components/InstallGuideModal';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
-import { smartMatchesProduct } from '../utils/smartSearch';
+import { smartMatchesProduct, getSearchRelevance } from '../utils/smartSearch';
 import { subscribeToActiveCampaign, DEFAULT_CAMPAIGN, getActiveDiscoveryCollections } from '../utils/campaignService';
 import EnableNotificationsBanner from '../components/EnableNotificationsBanner';
 import AdCarousel from '../components/AdCarousel';
@@ -181,8 +181,12 @@ const Home = () => {
     }, [products, selectedCampus]);
 
     const filteredProducts = useMemo(() => {
+        const query = searchTerm.trim();
+        const hasSearch = Boolean(query);
+
         return campusProducts.filter(product => {
-            const matchesSearch = smartMatchesProduct(product, searchTerm);
+            const matchesSearch = hasSearch ? smartMatchesProduct(product, query) : true;
+            if (!matchesSearch) return false;
             
             let matchesCollection = true;
             if (activeCollectionKey) {
@@ -194,8 +198,15 @@ const Home = () => {
 
             const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
             const matchesVerified = !verifiedOnly || Boolean(product.sellerVerified) === true;
-            return matchesSearch && matchesCategory && matchesVerified && matchesCollection;
+            return matchesCategory && matchesVerified && matchesCollection;
         }).sort((a, b) => {
+            if (hasSearch) {
+                const scoreA = getSearchRelevance(a, query);
+                const scoreB = getSearchRelevance(b, query);
+                if (scoreB !== scoreA) {
+                    return scoreB - scoreA;
+                }
+            }
             return (b.views || 0) - (a.views || 0);
         });
     }, [campusProducts, searchTerm, activeCollectionKey, discoveryCollections, categoryFilter, verifiedOnly]);

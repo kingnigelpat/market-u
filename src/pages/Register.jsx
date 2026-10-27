@@ -3,10 +3,11 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { UserPlus, Bell, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react';
+import { UserPlus, Bell, CheckCircle2 } from 'lucide-react';
 import PhoneNumberField from '../components/PhoneNumberField';
 import SchoolSelector from '../components/SchoolSelector';
 import { useAuth } from '../context/AuthContext';
+import { generateReferralCode, recordSignupReferral, GIVEAWAY_ENABLED } from '../utils/referralService';
 
 const Register = () => {
     const { setUserRole } = useAuth();
@@ -19,7 +20,8 @@ const Register = () => {
             email: '',
             phone: '',
             password: '',
-            role: params.get('role') === 'seller' ? 'seller' : 'buyer'
+            role: params.get('role') === 'seller' ? 'seller' : 'buyer',
+            promoCode: (params.get('ref') || params.get('promo') || '').toUpperCase()
         };
     });
     const [selectedSchool, setSelectedSchool] = useState(null);
@@ -72,6 +74,9 @@ const Register = () => {
                 displayName: trimmedName
             });
 
+            const userReferralCode = generateReferralCode(user.uid);
+            const trimmedPromo = GIVEAWAY_ENABLED && formData.promoCode ? formData.promoCode.trim().toUpperCase() : '';
+
             // 3. Save private user details to Firestore
             await setDoc(doc(db, 'users', user.uid), {
                 name: trimmedName,
@@ -79,6 +84,8 @@ const Register = () => {
                 phone: trimmedPhone,
                 role: formData.role,
                 schoolName: selectedSchool.name,
+                referralCode: userReferralCode,
+                referredBy: trimmedPromo || null,
                 createdAt: new Date(),
                 verified: false // Sellers start unverified
             });
@@ -89,11 +96,25 @@ const Register = () => {
                     name: trimmedName,
                     phone: trimmedPhone,
                     schoolName: selectedSchool.name,
+                    referralCode: userReferralCode,
                     verified: false,
                     createdAt: new Date()
                 });
             } catch (pubErr) {
                 console.warn('Could not initialize public profile:', pubErr);
+            }
+
+            // 3c. If a promo/referral code was entered, record referral
+            if (trimmedPromo) {
+                try {
+                    await recordSignupReferral({
+                        referredUserId: user.uid,
+                        refCode: trimmedPromo,
+                        phone: trimmedPhone
+                    });
+                } catch (refErr) {
+                    console.warn('Could not record signup referral:', refErr);
+                }
             }
 
             // Save selected school to localStorage immediately so the campus switcher & market see it
@@ -251,6 +272,25 @@ const Register = () => {
                             </label>
                         </div>
                     </div>
+
+                    {GIVEAWAY_ENABLED && <div className="form-group" style={{ marginTop: '0.75rem' }}>
+                        <label htmlFor="promoCode" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: '700' }}>
+                            <span>🎁 Referral / Promo Code <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', fontWeight: 'normal' }}>(Optional)</span></span>
+                        </label>
+                        <input
+                            type="text"
+                            id="promoCode"
+                            name="promoCode"
+                            value={formData.promoCode}
+                            onChange={(e) => setFormData({ ...formData, promoCode: e.target.value.toUpperCase() })}
+                            placeholder="e.g. MU-AB12CD"
+                            maxLength={16}
+                            style={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700' }}
+                        />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem', display: 'block' }}>
+                            Invited by a friend? Enter their code so they get credit toward the ₦1,000 giveaway!
+                        </span>
+                    </div>}
 
                     <button
                         type="submit"

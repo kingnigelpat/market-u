@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { GIVEAWAY_ENABLED } from '../utils/referralService';
 import { auth, db, messagingReady } from '../firebase';
 import {
     updatePassword,
@@ -13,7 +14,7 @@ import { doc, updateDoc, deleteDoc, setDoc, arrayUnion } from 'firebase/firestor
 import {
     User, Phone, Lock, Trash2, ArrowLeft,
     CheckCircle, AlertCircle, Eye, EyeOff, Save, ShieldAlert,
-    Bell, Send, RefreshCw, LogOut, Palette, Sun, Moon
+    Bell, Send, RefreshCw, LogOut, Palette, Sun, Moon, Gift, BarChart3
 } from 'lucide-react';
 import { requestNotificationPermission, sendPushNotification, getOrRefreshFcmToken } from '../utils/notifications';
 import PhoneNumberField from '../components/PhoneNumberField';
@@ -669,6 +670,75 @@ const Profile = () => {
                     </button>
                 </div>
             </Section>
+
+            {/* ── Referral Giveaway Card ── */}
+            {GIVEAWAY_ENABLED && <div style={{
+                background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+                color: '#fff',
+                borderRadius: 'var(--radius-xl)',
+                padding: '1.25rem 1.5rem',
+                marginBottom: '1.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                boxShadow: '0 8px 20px -6px rgba(37, 99, 235, 0.35)'
+            }}>
+                <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
+                        <span style={{ fontSize: '1.15rem' }}>🎁</span>
+                        <span style={{ fontWeight: '800', fontSize: '1.05rem' }}>Invite 5 Friends, Win ₦1,000!</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.8125rem', color: 'rgba(255, 255, 255, 0.85)' }}>
+                        Share your promo code and get cash sent to your bank account.
+                    </p>
+                </div>
+                <Link
+                    to="/giveaway"
+                    className="btn"
+                    style={{
+                        backgroundColor: '#fff',
+                        color: 'var(--primary)',
+                        fontWeight: '800',
+                        fontSize: '0.875rem',
+                        padding: '0.6rem 1.1rem',
+                        borderRadius: 'var(--radius-lg)',
+                        textDecoration: 'none'
+                    }}
+                >
+                    View Progress & Earn →
+                </Link>
+            </div>}
+
+            {/* ── Admin Management Tools ── */}
+            {userRole === 'admin' && (
+                <Section icon={<BarChart3 size={18} />} title="Admin Tools" subtitle="Manage campus operations, payouts, and ads">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem' }}>
+                        <Link
+                            to="/admin/analytics"
+                            className="btn btn-secondary"
+                            style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: '700', textDecoration: 'none', justifyContent: 'center' }}
+                        >
+                            <BarChart3 size={16} /> Traffic & Analytics
+                        </Link>
+                        <Link
+                            to="/admin/giveaway"
+                            className="btn btn-secondary"
+                            style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: '700', textDecoration: 'none', justifyContent: 'center' }}
+                        >
+                            <Gift size={16} /> Giveaway Payouts
+                        </Link>
+                        <Link
+                            to="/admin/ads"
+                            className="btn btn-secondary"
+                            style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: '700', textDecoration: 'none', justifyContent: 'center' }}
+                        >
+                            📢 Manage Ads
+                        </Link>
+                    </div>
+                </Section>
+            )}
 
             {/* ── Edit Name ── */}
             <Section icon={<User size={18} />} title="Display Name" subtitle="Shown to buyers and on your listings">

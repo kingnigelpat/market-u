@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { doc, getDoc, deleteDoc, updateDoc, increment, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ArrowLeft, Trash2, Edit, Heart, Loader, AlertCircle, Bookmark, BookmarkCheck, XCircle, Share2, Check, ExternalLink, MessageCircle, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Trash2, Edit, Loader, AlertCircle, Bookmark, BookmarkCheck, Share2, Check, ExternalLink, MessageCircle, GraduationCap } from 'lucide-react';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SellerRating from '../components/SellerRating';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +13,9 @@ import { optimizeImage } from '../utils/cloudinary';
 import { sendPushNotification } from '../utils/notifications';
 import NotificationPermissionPrompt from '../components/NotificationPermissionPrompt';
 import ProductChat from '../components/ProductChat';
+import { formatWhatsAppNumber } from '../utils/phoneUtils';
+import { logEvent } from '../utils/analyticsService';
+import { qualifyReferralAction } from '../utils/referralService';
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -28,8 +31,6 @@ const ProductDetail = () => {
     // Interest state
     const [interestLoading, setInterestLoading] = useState(false);
     const [alreadyInterested, setAlreadyInterested] = useState(false);
-    const [isCanceled, setIsCanceled] = useState(false);
-    const [interestDocId, setInterestDocId] = useState(null);
 
     // Save for Later state
     const [saved, setSaved] = useState(false);
@@ -39,6 +40,7 @@ const ProductDetail = () => {
     const [shareToast, setShareToast] = useState(false);
     const [showNotifPrompt, setShowNotifPrompt] = useState(false);
     const [showChat, setShowChat] = useState(false);
+    const [askedInApp, setAskedInApp] = useState(false);
 
     // Auto-open chat if navigated from notification (?chat=true)
     useEffect(() => {
@@ -65,12 +67,19 @@ const ProductDetail = () => {
                         } catch(e) { console.error('Error incrementing views', e); }
                     }
 
-                    // Fetch live seller verified status from public profile
+                    // Fetch live seller verified status and phone from public profile
                     try {
                         const sellerRef = doc(db, 'publicProfiles', productData.sellerId);
                         const sellerSnap = await getDoc(sellerRef);
                         if (sellerSnap.exists()) {
-                            productData.sellerVerified = Boolean(sellerSnap.data().verified) || Boolean(productData.sellerVerified);
+                            const sData = sellerSnap.data();
+                            productData.sellerVerified = Boolean(sData.verified) || Boolean(productData.sellerVerified);
+                            if (!productData.sellerPhone && sData.phone) {
+                                productData.sellerPhone = sData.phone;
+                            }
+                            if (sData.avgReplyMinutes) {
+                                productData.avgReplyMinutes = sData.avgReplyMinutes;
+                            }
                         }
                     } catch (e) {
                         console.warn("Could not fetch seller public profile", e);
@@ -80,6 +89,18 @@ const ProductDetail = () => {
                     const numPrice = parseFloat(productData.price);
                     const priceTag = !isNaN(numPrice) ? ` • ₦${numPrice.toLocaleString('en-NG')}` : '';
                     document.title = `${productData.title}${priceTag} | Market-U`;
+
+                    // Log product viewed event (Task 2) and qualify referral action (Task 3)
+                    logEvent({
+                        eventType: 'product_viewed',
+                        userId: currentUser?.uid,
+                        sellerId: productData.sellerId,
+                        productId: productData.id,
+                        metadata: { title: productData.title, price: productData.price }
+                    });
+                    if (currentUser?.uid) {
+                        qualifyReferralAction(currentUser.uid, 'product_viewed');
+                    }
 
                     // Check if current buyer already expressed interest
                     if (currentUser && currentUser.uid !== productData.sellerId) {
@@ -92,14 +113,7 @@ const ProductDetail = () => {
                             const snap = await getDocs(interestQuery);
                             if (!snap.empty) {
                                 const docData = snap.docs[0].data();
-                                setInterestDocId(snap.docs[0].id);
-                                if (!docData.canceled) {
-                                    setAlreadyInterested(true);
-                                    setIsCanceled(false);
-                                } else {
-                                    setAlreadyInterested(false);
-                                    setIsCanceled(true);
-                                }
+                                setAlreadyInterested(!docData.canceled);
                             }
                         } catch {
                             // If rules deny (e.g. seller viewing buyer interests), silently ignore
@@ -143,7 +157,34 @@ const ProductDetail = () => {
 
     const isOwner = currentUser && product && currentUser.uid === product.sellerId;
 
-    const handleInterested = async () => {
+    // Normalized seller phone for WhatsApp
+    const cleanSellerPhone = formatWhatsAppNumber(product?.sellerPhone);
+
+    const handleWhatsAppChat = () => {
+        if (!cleanSellerPhone || !product) return;
+        if (!isAuthenticated) {
+            setShowPrompt(true);
+            return;
+        }
+        
+        logEvent({
+            eventType: 'whatsapp_clicked',
+            userId: currentUser?.uid,
+            sellerId: product.sellerId,
+            productId: product.id,
+            metadata: { title: product.title, phone: cleanSellerPhone }
+        });
+        if (currentUser?.uid) {
+            qualifyReferralAction(currentUser.uid, 'whatsapp_clicked');
+        }
+
+        const productLink = window.location.href.split('?')[0];
+        const prefilledMsg = `Hi, I saw ${product.title} on Market-U. Is it still available? ${productLink}`;
+        const whatsappUrl = `https://wa.me/${cleanSellerPhone}?text=${encodeURIComponent(prefilledMsg)}`;
+        window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    };
+
+    const handleAskInApp = async () => {
         if (!isAuthenticated) {
             setShowPrompt(true);
             return;
@@ -151,42 +192,37 @@ const ProductDetail = () => {
 
         if (isOwner) return;
 
-        setInterestLoading(true);
-        try {
-            if (alreadyInterested && !isCanceled) {
-                // Cancel interest
-                if (interestDocId) {
-                    await updateDoc(doc(db, 'interests', interestDocId), { canceled: true });
-                }
-                setAlreadyInterested(false);
-                setIsCanceled(true);
-            } else {
-                // Express interest (or re-express interest)
-                const buyerName = userName || currentUser.displayName || 'A buyer';
-                if (interestDocId) {
-                    await updateDoc(doc(db, 'interests', interestDocId), {
-                        canceled: false,
-                        createdAt: serverTimestamp(),
-                        seen: false
-                    });
-                } else {
-                    const ref = await addDoc(collection(db, 'interests'), {
-                        buyerId: currentUser.uid,
-                        buyerName,
-                        buyerPhone: userPhone || '',
-                        sellerId: product.sellerId,
-                        productId: id,
-                        productName: product.title,
-                        createdAt: serverTimestamp(),
-                        seen: false,
-                        canceled: false,
-                    });
-                    setInterestDocId(ref.id);
-                }
-                setAlreadyInterested(true);
-                setIsCanceled(false);
+        setShowChat(true);
+        setAskedInApp(true);
 
-                // Send push notification to seller securely (server looks up seller's tokens)
+        logEvent({
+            eventType: 'in_app_ask_clicked',
+            userId: currentUser?.uid,
+            sellerId: product.sellerId,
+            productId: product.id,
+            metadata: { title: product.title }
+        });
+        qualifyReferralAction(currentUser.uid, 'in_app_ask_clicked');
+
+        if (!alreadyInterested) {
+            setInterestLoading(true);
+            try {
+                const buyerName = userName || currentUser.displayName || 'A buyer';
+                await addDoc(collection(db, 'interests'), {
+                    buyerId: currentUser.uid,
+                    buyerName,
+                    buyerPhone: userPhone || '',
+                    sellerId: product.sellerId,
+                    productId: id,
+                    productName: product.title,
+                    createdAt: serverTimestamp(),
+                    seen: false,
+                    canceled: false,
+                    questionText: 'Is this available?'
+                });
+                setAlreadyInterested(true);
+
+                // Send push notification to seller securely
                 if (product.sellerId) {
                     sendPushNotification({
                         recipientUserId: product.sellerId,
@@ -194,14 +230,15 @@ const ProductDetail = () => {
                         buyerName,
                         productName: product.title,
                         productId: id,
+                        text: 'Is this available?',
+                        link: `/product/${id}?chat=true`
                     }).catch(e => console.warn('Push notification failed:', e));
                 }
+            } catch (error) {
+                console.error("Error sending in-app inquiry:", error);
+            } finally {
+                setInterestLoading(false);
             }
-        } catch (error) {
-            console.error("Error updating interest:", error);
-            alert("Something went wrong. Please try again.");
-        } finally {
-            setInterestLoading(false);
         }
     };
 
@@ -666,55 +703,117 @@ const ProductDetail = () => {
                                 }
 
                                 return (
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                        {alreadyInterested && !isCanceled ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                                        {/* TASK 1: Large Green WhatsApp Button (hidden if phone is missing/invalid) */}
+                                        {cleanSellerPhone && (
                                             <button
-                                                onClick={handleInterested}
-                                                disabled={interestLoading}
-                                                id="cancel-interest-btn"
+                                                onClick={handleWhatsAppChat}
+                                                id="whatsapp-chat-btn"
                                                 style={{
-                                                    padding: '1rem', fontSize: '1rem', fontWeight: '700', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', backgroundColor: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', border: '1.5px solid rgba(239, 68, 68, 0.3)', cursor: 'pointer', transition: 'all 0.3s'
+                                                    width: '100%',
+                                                    padding: '1.05rem 1.25rem',
+                                                    fontSize: '1.0625rem',
+                                                    fontWeight: '800',
+                                                    borderRadius: 'var(--radius-lg)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '0.65rem',
+                                                    backgroundColor: '#25D366',
+                                                    color: '#ffffff',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 4px 14px -2px rgba(37, 211, 102, 0.45)',
+                                                    transition: 'all 0.2s ease',
                                                 }}
+                                                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                                                onMouseLeave={e => e.currentTarget.style.transform = 'none'}
                                             >
-                                                {interestLoading ? <Loader size={20} style={{ animation: 'spin 0.8s linear infinite' }} /> : <><XCircle size={20} /> Cancel</>}
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={handleInterested}
-                                                disabled={interestLoading}
-                                                id="interested-btn"
-                                                style={{
-                                                    padding: '1rem', fontSize: '1rem', fontWeight: '700', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', border: 'none', cursor: 'pointer', transition: 'all 0.3s', backgroundColor: 'var(--primary)', color: 'white', boxShadow: '0 4px 12px -2px rgba(37, 99, 235, 0.3)'
-                                                }}
-                                            >
-                                                {interestLoading ? <Loader size={20} style={{ animation: 'spin 0.8s linear infinite' }} /> : <><Heart size={20} /> Notify Seller</>}
+                                                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                                                </svg>
+                                                Chat on WhatsApp
                                             </button>
                                         )}
-                                        
+
+                                        {/* TASK 1: Secondary "Ask in app" Button with "Is this available?" label */}
                                         <button
-                                            onClick={() => {
-                                                if (!isAuthenticated) setShowPrompt(true);
-                                                else setShowChat(!showChat);
-                                            }}
+                                            onClick={handleAskInApp}
+                                            disabled={interestLoading}
+                                            id="ask-in-app-btn"
                                             style={{
-                                                padding: '1rem', fontSize: '1rem', fontWeight: '700', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', border: '1.5px solid var(--primary)', backgroundColor: showChat ? 'var(--primary-light)' : 'var(--surface)', color: 'var(--primary)', cursor: 'pointer', transition: 'all 0.3s'
+                                                width: '100%',
+                                                padding: '0.85rem 1.25rem',
+                                                fontSize: '0.9375rem',
+                                                fontWeight: '700',
+                                                borderRadius: 'var(--radius-lg)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
+                                                border: '1.5px solid var(--border)',
+                                                backgroundColor: showChat ? 'var(--primary-light)' : 'var(--surface-elevated)',
+                                                color: showChat ? 'var(--primary)' : 'var(--text)',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
                                             }}
                                         >
-                                            <MessageCircle size={20} /> {showChat ? 'Close Chat' : 'Have Question'}
+                                            {interestLoading ? (
+                                                <Loader size={18} style={{ animation: 'spin 0.8s linear infinite' }} />
+                                            ) : (
+                                                <MessageCircle size={18} color="var(--primary)" />
+                                            )}
+                                            {showChat ? 'Close Chat' : 'Is this available? (Ask in app)'}
+                                        </button>
+
+                                        {/* TASK 4: Seller Sharing Tools — Share this product on WhatsApp */}
+                                        <button
+                                            onClick={() => {
+                                                const productLink = window.location.href.split('?')[0];
+                                                const numPrice = parseFloat(product.price);
+                                                const priceFormatted = !isNaN(numPrice) ? `₦${numPrice.toLocaleString('en-NG')}` : '';
+                                                const shareMsg = `Check out "${product.title}" ${priceFormatted ? `(${priceFormatted}) ` : ''}on Market-U: ${productLink}`;
+                                                window.open(`https://wa.me/?text=${encodeURIComponent(shareMsg)}`, '_blank');
+                                            }}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.65rem 1rem',
+                                                fontSize: '0.8125rem',
+                                                fontWeight: '600',
+                                                borderRadius: 'var(--radius-lg)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.45rem',
+                                                border: '1px dashed var(--border)',
+                                                backgroundColor: 'transparent',
+                                                color: 'var(--text-secondary)',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            <Share2 size={14} /> Share product on WhatsApp Status
                                         </button>
                                     </div>
                                 );
                             })()
                         )}
 
-                        {/* Success sub-text */}
-                        {alreadyInterested && !isCanceled && !isOwner && (
-                            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                        {/* TASK 5: Seller response status & notification feedback */}
+                        {(alreadyInterested || askedInApp) && !isOwner && (
+                            <div style={{
+                                marginTop: '1rem',
+                                padding: '0.85rem 1rem',
+                                backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                                borderRadius: 'var(--radius-md)',
+                                border: '1px solid rgba(16, 185, 129, 0.25)',
+                                textAlign: 'center',
+                            }}>
                                 <p style={{ fontSize: '0.875rem', color: 'var(--success)', fontWeight: '700', margin: '0' }}>
-                                    The seller has been notified and will contact you on WhatsApp soon 😊
+                                    ⚡ Seller notified, usually replies in {product.avgReplyMinutes ? `~${product.avgReplyMinutes} mins` : '10-15 minutes'}
                                 </p>
                             </div>
                         )}
+
 
                         {/* Chat UI */}
                         {showChat && !isOwner && isAuthenticated && (

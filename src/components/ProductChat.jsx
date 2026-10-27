@@ -4,6 +4,7 @@ import { db } from '../firebase';
 import { X, Send, Store, MessageCircle, Loader } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { sendPushNotification } from '../utils/notifications';
+import { logEvent } from '../utils/analyticsService';
 
 const ProductChat = ({ product, onClose }) => {
     const { currentUser, userName } = useAuth();
@@ -127,8 +128,18 @@ const ProductChat = ({ product, onClose }) => {
                 createdAt: serverTimestamp()
             });
 
+            if (currentUser.uid === product.sellerId) {
+                logEvent({
+                    eventType: 'seller_replied',
+                    userId: currentUser.uid,
+                    sellerId: product.sellerId,
+                    productId: product.id,
+                    metadata: { chatId, context: 'product_chat_drawer' }
+                });
+            }
+
             // Send push notification to seller securely (server looks up seller's tokens)
-            if (product.sellerId) {
+            if (product.sellerId && currentUser.uid !== product.sellerId) {
                 sendPushNotification({
                     recipientUserId: product.sellerId,
                     type: 'chat_message',

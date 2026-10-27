@@ -10,6 +10,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx';
 import AIAssistant from './components/AIAssistant.jsx';
 import IOSInstallBanner from './components/IOSInstallBanner.jsx';
 import PushGuide from './components/PushGuide.jsx';
+import { GIVEAWAY_ENABLED } from './utils/referralService.js';
 
 // Resilient lazy-loader that auto-reloads if a new build invalidated old bundle hashes
 const lazyRetry = (componentImport) =>
@@ -43,6 +44,9 @@ const SavedItems = lazyRetry(() => import('./pages/SavedItems.jsx'));
 const SellerStore = lazyRetry(() => import('./pages/SellerStore.jsx'));
 const Advertise = lazyRetry(() => import('./pages/Advertise.jsx'));
 const AdminAds = lazyRetry(() => import('./pages/AdminAds.jsx'));
+const AdminAnalytics = lazyRetry(() => import('./pages/AdminAnalytics.jsx'));
+const AdminGiveaway = lazyRetry(() => import('./pages/AdminGiveaway.jsx'));
+const Giveaway = lazyRetry(() => import('./pages/Giveaway.jsx'));
 const Messages = lazyRetry(() => import('./pages/Messages.jsx'));
 const SchoolsDashboard = lazyRetry(() => import('./pages/SchoolsDashboard.jsx'));
 
@@ -143,8 +147,13 @@ const AppContent = () => {
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
                             <Route path="/saved" element={<SavedItems />} />
                         </Route>
+                        <Route path="/giveaway" element={GIVEAWAY_ENABLED ? <Giveaway /> : <Navigate to="/" replace />} />
+                        <Route path="/invite" element={GIVEAWAY_ENABLED ? <Giveaway /> : <Navigate to="/" replace />} />
+
                         <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                             <Route path="/admin/ads" element={<AdminAds />} />
+                            <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                            <Route path="/admin/giveaway" element={<AdminGiveaway />} />
                         </Route>
                     </Routes>
                 </Suspense>
