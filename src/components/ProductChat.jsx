@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { sendPushNotification } from '../utils/notifications';
 import { logEvent } from '../utils/analyticsService';
 
-const ProductChat = ({ product, onClose }) => {
+const ProductChat = ({ product, onClose, onMessageSent }) => {
     const { currentUser, userName } = useAuth();
     // Deterministic chat ID: 1-to-1 conversation per product and buyer
     const chatId = product?.id && currentUser?.uid ? `${product.id}_${currentUser.uid}` : null;
@@ -136,6 +136,8 @@ const ProductChat = ({ product, onClose }) => {
                     productId: product.id,
                     metadata: { chatId, context: 'product_chat_drawer' }
                 });
+            } else if (typeof onMessageSent === 'function') {
+                onMessageSent();
             }
 
             // Send push notification to seller securely (server looks up seller's tokens)

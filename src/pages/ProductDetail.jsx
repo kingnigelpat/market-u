@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { doc, getDoc, deleteDoc, updateDoc, increment, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ArrowLeft, Trash2, Edit, Loader, AlertCircle, Bookmark, BookmarkCheck, Share2, Check, ExternalLink, MessageCircle, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Trash2, Edit, Loader, AlertCircle, Bookmark, BookmarkCheck, Share2, Check, ExternalLink, MessageCircle, GraduationCap, Lock } from 'lucide-react';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SellerRating from '../components/SellerRating';
 import { useAuth } from '../context/AuthContext';
@@ -41,6 +41,8 @@ const ProductDetail = () => {
     const [showNotifPrompt, setShowNotifPrompt] = useState(false);
     const [showChat, setShowChat] = useState(false);
     const [askedInApp, setAskedInApp] = useState(false);
+    // WhatsApp unlocks only after the buyer has sent at least one in-app message
+    const [whatsappUnlocked, setWhatsappUnlocked] = useState(false);
 
     // Auto-open chat if navigated from notification (?chat=true)
     useEffect(() => {
@@ -119,6 +121,14 @@ const ProductDetail = () => {
                             // If rules deny (e.g. seller viewing buyer interests), silently ignore
                         }
 
+                        // Has this buyer already messaged the seller about this product? (unlocks WhatsApp)
+                        try {
+                            const chatSnap = await getDoc(doc(db, 'chats', `${id}_${currentUser.uid}`));
+                            if (chatSnap.exists() && chatSnap.data().lastMessage) {
+                                setWhatsappUnlocked(true);
+                            }
+                        } catch { /* no chat yet or not readable */ }
+
                         // Check if buyer already saved this product
                         try {
                             const savedQuery = query(
@@ -166,6 +176,10 @@ const ProductDetail = () => {
             setShowPrompt(true);
             return;
         }
+        if (!whatsappUnlocked) {
+            setShowChat(true);
+            return;
+        }
         
         logEvent({
             eventType: 'whatsapp_clicked',
@@ -191,6 +205,11 @@ const ProductDetail = () => {
         }
 
         if (isOwner) return;
+
+        if (showChat) {
+            setShowChat(false);
+            return;
+        }
 
         setShowChat(true);
         setAskedInApp(true);
@@ -704,67 +723,98 @@ const ProductDetail = () => {
 
                                 return (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-                                        {/* TASK 1: Large Green WhatsApp Button (hidden if phone is missing/invalid) */}
-                                        {cleanSellerPhone && (
-                                            <button
-                                                onClick={handleWhatsAppChat}
-                                                id="whatsapp-chat-btn"
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '1.05rem 1.25rem',
-                                                    fontSize: '1.0625rem',
-                                                    fontWeight: '800',
-                                                    borderRadius: 'var(--radius-lg)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    gap: '0.65rem',
-                                                    backgroundColor: '#25D366',
-                                                    color: '#ffffff',
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                    boxShadow: '0 4px 14px -2px rgba(37, 211, 102, 0.45)',
-                                                    transition: 'all 0.2s ease',
-                                                }}
-                                                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-                                                onMouseLeave={e => e.currentTarget.style.transform = 'none'}
-                                            >
-                                                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                                                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
-                                                </svg>
-                                                Chat on WhatsApp
-                                            </button>
-                                        )}
-
-                                        {/* TASK 1: Secondary "Ask in app" Button with "Is this available?" label */}
+                                        {/* Primary: In-App Message (Always accessible, records first contact & notifies seller) */}
                                         <button
                                             onClick={handleAskInApp}
                                             disabled={interestLoading}
                                             id="ask-in-app-btn"
                                             style={{
                                                 width: '100%',
-                                                padding: '0.85rem 1.25rem',
-                                                fontSize: '0.9375rem',
-                                                fontWeight: '700',
+                                                padding: '1.05rem 1.25rem',
+                                                fontSize: '1.0625rem',
+                                                fontWeight: '800',
                                                 borderRadius: 'var(--radius-lg)',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                gap: '0.5rem',
-                                                border: '1.5px solid var(--border)',
-                                                backgroundColor: showChat ? 'var(--primary-light)' : 'var(--surface-elevated)',
-                                                color: showChat ? 'var(--primary)' : 'var(--text)',
+                                                gap: '0.65rem',
+                                                backgroundColor: showChat ? 'var(--primary-dark, #1d4ed8)' : 'var(--primary)',
+                                                color: '#ffffff',
+                                                border: 'none',
                                                 cursor: 'pointer',
+                                                boxShadow: '0 4px 14px -2px rgba(37, 99, 235, 0.4)',
                                                 transition: 'all 0.2s ease',
                                             }}
+                                            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                                            onMouseLeave={e => e.currentTarget.style.transform = 'none'}
                                         >
                                             {interestLoading ? (
-                                                <Loader size={18} style={{ animation: 'spin 0.8s linear infinite' }} />
+                                                <Loader size={20} style={{ animation: 'spin 0.8s linear infinite' }} />
                                             ) : (
-                                                <MessageCircle size={18} color="var(--primary)" />
+                                                <MessageCircle size={20} />
                                             )}
-                                            {showChat ? 'Close Chat' : 'Is this available? (Ask in app)'}
+                                            {showChat ? 'Close Chat' : 'Message Seller on Market-U'}
                                         </button>
+
+                                        {/* Secondary: WhatsApp Button (Unlocked after in-app contact) */}
+                                        {cleanSellerPhone && (
+                                            whatsappUnlocked ? (
+                                                <button
+                                                    onClick={handleWhatsAppChat}
+                                                    id="whatsapp-chat-btn"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.85rem 1.25rem',
+                                                        fontSize: '0.9375rem',
+                                                        fontWeight: '700',
+                                                        borderRadius: 'var(--radius-lg)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '0.5rem',
+                                                        backgroundColor: '#25D366',
+                                                        color: '#ffffff',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        boxShadow: '0 4px 12px -2px rgba(37, 211, 102, 0.35)',
+                                                        transition: 'all 0.2s ease',
+                                                    }}
+                                                >
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                                                    </svg>
+                                                    Continue on WhatsApp
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={handleWhatsAppChat}
+                                                    id="whatsapp-chat-btn"
+                                                    title="Send an in-app message first to open WhatsApp"
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.75rem 1.25rem',
+                                                        fontSize: '0.875rem',
+                                                        fontWeight: '600',
+                                                        borderRadius: 'var(--radius-lg)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '0.5rem',
+                                                        border: '1.5px dashed var(--border)',
+                                                        backgroundColor: 'var(--surface-elevated)',
+                                                        color: 'var(--text-secondary)',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s ease',
+                                                    }}
+                                                >
+                                                    <Lock size={14} />
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.7 }}>
+                                                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                                                    </svg>
+                                                    Chat on WhatsApp (Send in-app message first)
+                                                </button>
+                                            )
+                                        )}
 
                                         {/* TASK 4: Seller Sharing Tools — Share this product on WhatsApp */}
                                         <button
@@ -820,6 +870,7 @@ const ProductDetail = () => {
                             <ProductChat 
                                 product={product} 
                                 onClose={() => setShowChat(false)} 
+                                onMessageSent={() => setWhatsappUnlocked(true)}
                             />
                         )}
 
