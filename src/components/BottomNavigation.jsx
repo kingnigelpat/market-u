@@ -8,13 +8,13 @@ import {
     Search, 
     Bookmark, 
     User, 
-    LayoutDashboard, 
     PlusCircle, 
     Bell, 
     Home,
     LogIn,
     UserPlus,
-    Heart
+    Heart,
+    Flame
 } from 'lucide-react';
 
 // NavItem is defined outside the parent to prevent recreating on every render
@@ -79,8 +79,8 @@ const BottomNavigation = () => {
         navigation = (
             <div className="bottom-nav-container">
                 <NavItem to="/market" icon={Home} label="Home" isActive={isActive} />
+                <NavItem to="/gist" icon={Flame} label="Gist" isActive={isActive} />
                 <NavItem to="/search" icon={Search} label="Search" isActive={isActive} />
-                <NavItem to="/about" icon={Compass} label="About" isActive={isActive} />
                 <NavItem to="/login" icon={LogIn} label="Login" isActive={isActive} />
                 <NavItem to="/register" icon={UserPlus} label="Sign Up" isActive={isActive} />
             </div>
@@ -89,7 +89,7 @@ const BottomNavigation = () => {
         navigation = (
             <div className="bottom-nav-container bottom-nav-container--seller">
                 <NavItem to="/market" icon={Compass} label="Market" isActive={isActive} />
-                <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" isActive={isActive} />
+                <NavItem to="/gist" icon={Flame} label="Gist" isActive={isActive} />
                 <NavItem to="/add-product" icon={PlusCircle} label="Post" isCenter={true} isActive={isActive} />
                 <NavItem to="/notifications" icon={Bell} label="Alerts" badge={unseenCount} isActive={isActive} />
                 <NavItem to="/profile" icon={User} label="Profile" isActive={isActive} />
@@ -99,7 +99,7 @@ const BottomNavigation = () => {
         navigation = (
             <div className="bottom-nav-container">
                 <NavItem to="/market" icon={Compass} label="Market" isActive={isActive} />
-                <NavItem to="/search" icon={Search} label="Search" isActive={isActive} />
+                <NavItem to="/gist" icon={Flame} label="Gist" isActive={isActive} />
                 <NavItem to="/notifications" icon={Heart} label="Activity" isActive={isActive} />
                 <NavItem to="/saved" icon={Bookmark} label="Saved" badge={savedCount} isActive={isActive} />
                 <NavItem to="/profile" icon={User} label="Profile" isActive={isActive} />

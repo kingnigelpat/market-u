@@ -30,7 +30,7 @@ const EditProduct = () => {
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    if (data.sellerId !== currentUser.uid) {
+                    if (data.sellerId !== currentUser.uid && userRole !== 'admin') {
                         setError("You don't have permission to edit this product.");
                     } else {
                         setFormData({
@@ -56,7 +56,7 @@ const EditProduct = () => {
         if (currentUser) {
             fetchProduct();
         }
-    }, [id, currentUser]);
+    }, [id, currentUser, userRole]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });

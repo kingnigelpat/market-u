@@ -1,12 +1,31 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { doc, getDoc, deleteDoc, updateDoc, increment, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ArrowLeft, Trash2, Edit, Loader, AlertCircle, Bookmark, BookmarkCheck, Share2, Check, ExternalLink, MessageCircle, GraduationCap, Lock } from 'lucide-react';
+import {
+    ArrowLeft,
+    Trash2,
+    Edit,
+    Loader,
+    AlertCircle,
+    Bookmark,
+    BookmarkCheck,
+    Share2,
+    Check,
+    ExternalLink,
+    MessageCircle,
+    GraduationCap,
+    Lock,
+    Flame,
+    Zap,
+    ShieldCheck,
+    Eye,
+    Star,
+    Sparkles
+} from 'lucide-react';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SellerRating from '../components/SellerRating';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
 import AuthPromptModal from '../components/AuthPromptModal';
 import ReadOnlyRating from '../components/ReadOnlyRating';
 import { optimizeImage } from '../utils/cloudinary';
@@ -16,17 +35,22 @@ import ProductChat from '../components/ProductChat';
 import { formatWhatsAppNumber } from '../utils/phoneUtils';
 import { logEvent } from '../utils/analyticsService';
 import { qualifyReferralAction } from '../utils/referralService';
+import { fetchGistReviewsForProduct, formatGistTime } from '../utils/gistService';
 
 const ProductDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const { currentUser, isAuthenticated, userName, userPhone, enableNotifications } = useAuth();
+    const { currentUser, isAuthenticated, userName, userPhone, enableNotifications, isAdmin } = useAuth();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [showPrompt, setShowPrompt] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+    const [activeImageIdx, setActiveImageIdx] = useState(0);
+
+    // Gist reviews for this product
+    const [gistReviews, setGistReviews] = useState([]);
 
     // Interest state
     const [interestLoading, setInterestLoading] = useState(false);
@@ -41,7 +65,6 @@ const ProductDetail = () => {
     const [showNotifPrompt, setShowNotifPrompt] = useState(false);
     const [showChat, setShowChat] = useState(false);
     const [askedInApp, setAskedInApp] = useState(false);
-    // WhatsApp unlocks only after the buyer has sent at least one in-app message
     const [whatsappUnlocked, setWhatsappUnlocked] = useState(false);
 
     // Auto-open chat if navigated from notification (?chat=true)
@@ -61,15 +84,13 @@ const ProductDetail = () => {
                 if (docSnap.exists()) {
                     const productData = { id: docSnap.id, ...docSnap.data() };
 
-                    // Increment real views — requires auth in Firestore rules, so only run for signed-in non-owners
                     if (currentUser && currentUser.uid !== productData.sellerId) {
                         try {
                             await updateDoc(docRef, { views: increment(1) });
                             productData.views = (productData.views || 0) + 1;
-                        } catch(e) { console.error('Error incrementing views', e); }
+                        } catch (e) { console.error('Error incrementing views', e); }
                     }
 
-                    // Fetch live seller verified status and phone from public profile
                     try {
                         const sellerRef = doc(db, 'publicProfiles', productData.sellerId);
                         const sellerSnap = await getDoc(sellerRef);
@@ -88,11 +109,14 @@ const ProductDetail = () => {
                     }
 
                     setProduct(productData);
+                    setActiveImageIdx(0);
                     const numPrice = parseFloat(productData.price);
                     const priceTag = !isNaN(numPrice) ? ` • ₦${numPrice.toLocaleString('en-NG')}` : '';
                     document.title = `${productData.title}${priceTag} | Market-U`;
 
-                    // Log product viewed event (Task 2) and qualify referral action (Task 3)
+                    // Fetch Gist reviews/buzz referencing this product
+                    fetchGistReviewsForProduct(productData.id).then(setGistReviews).catch(() => {});
+
                     logEvent({
                         eventType: 'product_viewed',
                         userId: currentUser?.uid,
@@ -104,7 +128,6 @@ const ProductDetail = () => {
                         qualifyReferralAction(currentUser.uid, 'product_viewed');
                     }
 
-                    // Check if current buyer already expressed interest
                     if (currentUser && currentUser.uid !== productData.sellerId) {
                         try {
                             const interestQuery = query(
@@ -117,19 +140,15 @@ const ProductDetail = () => {
                                 const docData = snap.docs[0].data();
                                 setAlreadyInterested(!docData.canceled);
                             }
-                        } catch {
-                            // If rules deny (e.g. seller viewing buyer interests), silently ignore
-                        }
+                        } catch { /* ignore */ }
 
-                        // Has this buyer already messaged the seller about this product? (unlocks WhatsApp)
                         try {
                             const chatSnap = await getDoc(doc(db, 'chats', `${id}_${currentUser.uid}`));
                             if (chatSnap.exists() && chatSnap.data().lastMessage) {
                                 setWhatsappUnlocked(true);
                             }
-                        } catch { /* no chat yet or not readable */ }
+                        } catch { /* ignore */ }
 
-                        // Check if buyer already saved this product
                         try {
                             const savedQuery = query(
                                 collection(db, 'savedItems'),
@@ -141,7 +160,7 @@ const ProductDetail = () => {
                                 setSaved(true);
                                 setSavedDocId(savedSnap.docs[0].id);
                             }
-                        } catch { /* silently ignore */ }
+                        } catch { /* ignore */ }
                     }
                 } else {
                     console.error("No such product!");
@@ -158,17 +177,35 @@ const ProductDetail = () => {
     }, [id]);
 
     if (loading) {
-        return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}>Loading product details...</div>;
+        return (
+            <div className="page-loader">
+                <div className="marketu-logo-loader">
+                    <div className="marketu-logo-loader-brand">
+                        <div className="page-spinner" />
+                        <span className="marketu-logo-loader-word">arketU</span>
+                    </div>
+                    <div className="marketu-logo-loader-bar" />
+                </div>
+            </div>
+        );
     }
 
     if (!product) {
         return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}>Product not found.</div>;
     }
 
-    const isOwner = currentUser && product && currentUser.uid === product.sellerId;
-
-    // Normalized seller phone for WhatsApp
+    const isOwner = Boolean(currentUser && product && (currentUser.uid === product.sellerId || isAdmin));
     const cleanSellerPhone = formatWhatsAppNumber(product?.sellerPhone);
+    const images = Array.isArray(product.images) && product.images.length > 0
+        ? product.images
+        : product.imageUrl
+        ? [product.imageUrl]
+        : [];
+    const currentHeroImage = images[activeImageIdx] || images[0] || null;
+
+    const stockNum = typeof product.stock === 'number' ? product.stock : (product.stock !== undefined ? parseInt(product.stock, 10) : null);
+    const isOutOfStock = stockNum !== null && stockNum <= 0;
+    const isLowStock = stockNum !== null && stockNum > 0 && stockNum <= 3;
 
     const handleWhatsAppChat = () => {
         if (!cleanSellerPhone || !product) return;
@@ -180,7 +217,7 @@ const ProductDetail = () => {
             setShowChat(true);
             return;
         }
-        
+
         logEvent({
             eventType: 'whatsapp_clicked',
             userId: currentUser?.uid,
@@ -241,7 +278,6 @@ const ProductDetail = () => {
                 });
                 setAlreadyInterested(true);
 
-                // Send push notification to seller securely
                 if (product.sellerId) {
                     sendPushNotification({
                         recipientUserId: product.sellerId,
@@ -271,18 +307,16 @@ const ProductDetail = () => {
         setSaveError('');
         try {
             if (saved && savedDocId) {
-                // Unsave
                 await deleteDoc(doc(db, 'savedItems', savedDocId));
                 setSaved(false);
                 setSavedDocId(null);
             } else {
-                // Save
                 const ref = await addDoc(collection(db, 'savedItems'), {
                     buyerId: currentUser.uid,
                     productId: id,
                     productTitle: product.title,
                     productPrice: product.price,
-                    productImage: product.images?.[0] || '',
+                    productImage: product.images?.[0] || product.imageUrl || '',
                     sellerName: product.sellerName,
                     sellerId: product.sellerId,
                     savedAt: serverTimestamp(),
@@ -290,9 +324,7 @@ const ProductDetail = () => {
                 setSaved(true);
                 setSavedDocId(ref.id);
 
-                // 🎯 Trojan Horse: nudge buyer to allow notifications after saving
                 if ('Notification' in window && Notification.permission === 'default') {
-                    // Small delay so the save animation is seen first
                     setTimeout(() => setShowNotifPrompt(true), 600);
                 }
             }
@@ -352,8 +384,7 @@ const ProductDetail = () => {
     };
 
     return (
-        <div className="container">
-            {/* Notification Permission Prompt (Trojan Horse) */}
+        <div className="container" style={{ paddingBottom: '5rem' }}>
             {showNotifPrompt && (
                 <NotificationPermissionPrompt
                     onAllow={enableNotifications}
@@ -363,7 +394,7 @@ const ProductDetail = () => {
 
             {/* Lightbox Modal */}
             {selectedImage && (
-                <div 
+                <div
                     style={{
                         position: 'fixed',
                         top: 0,
@@ -380,12 +411,12 @@ const ProductDetail = () => {
                     }}
                     onClick={() => setSelectedImage(null)}
                 >
-                    <img 
-                        src={optimizeImage(selectedImage, 1200)} 
-                        alt="Enlarged product" 
-                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+                    <img
+                        src={optimizeImage(selectedImage, 1200)}
+                        alt="Enlarged product"
+                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                     />
-                    <button 
+                    <button
                         style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', color: 'white', fontSize: '2rem', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 }}
                         onClick={() => setSelectedImage(null)}
                         aria-label="Close image"
@@ -398,54 +429,259 @@ const ProductDetail = () => {
             <button
                 onClick={() => navigate(-1)}
                 className="btn"
-                style={{ margin: '1.5rem 0', color: 'var(--text-secondary)', paddingLeft: 0 }}
+                style={{ margin: '1.25rem 0', color: 'var(--text-secondary)', paddingLeft: 0 }}
             >
                 <ArrowLeft size={20} /> Back to market
             </button>
 
             <div className="product-detail-layout">
-                {/* Images Section */}
+                {/* ── Interactive Image Showcase Gallery ── */}
                 <div className="product-images-container">
-                    {product.images && product.images.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            {product.images.map((img, index) => (
-                                <div 
-                                    key={index} 
-                                    onClick={() => setSelectedImage(img)}
-                                    style={{ 
-                                        position: 'relative', 
-                                        width: '100%', 
-                                        borderRadius: 'var(--radius-xl)', 
-                                        overflow: 'hidden', 
-                                        backgroundColor: 'var(--surface)',
-                                        cursor: 'zoom-in',
-                                        border: '1px solid var(--border)',
-                                        boxShadow: 'var(--shadow-sm)',
-                                        transition: 'transform 0.2s'
+                    {currentHeroImage ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                            {/* Main Hero Image */}
+                            <div
+                                onClick={() => setSelectedImage(currentHeroImage)}
+                                style={{
+                                    position: 'relative',
+                                    width: '100%',
+                                    borderRadius: 'var(--radius-2xl)',
+                                    overflow: 'hidden',
+                                    backgroundColor: 'var(--surface)',
+                                    cursor: 'zoom-in',
+                                    border: '1.5px solid var(--border)',
+                                    boxShadow: 'var(--shadow-lg)'
+                                }}
+                            >
+                                <img
+                                    src={optimizeImage(currentHeroImage, 900)}
+                                    alt={`${product.title} - view ${activeImageIdx + 1}`}
+                                    style={{
+                                        width: '100%',
+                                        height: 'auto',
+                                        display: 'block',
+                                        minHeight: '320px',
+                                        maxHeight: '560px',
+                                        objectFit: 'cover'
                                     }}
-                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.01)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                                >
-                                    <img
-                                        src={optimizeImage(img, 800)}
-                                        alt={`${product.title} - view ${index + 1}`}
-                                        style={{ width: '100%', height: 'auto', display: 'block', minHeight: '300px', maxHeight: '800px', objectFit: 'contain' }}
-                                    />
+                                />
+
+                                {/* Floating Live Demand Pill */}
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '1rem',
+                                    left: '1rem',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.35rem',
+                                    padding: '0.35rem 0.75rem',
+                                    borderRadius: '99px',
+                                    background: 'rgba(15, 23, 42, 0.78)',
+                                    backdropFilter: 'blur(8px)',
+                                    color: 'white',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 800,
+                                    border: '1px solid rgba(255,255,255,0.15)'
+                                }}>
+                                    <Eye size={13} style={{ color: '#60A5FA' }} />
+                                    <span>{product.views || 1} campus {(product.views || 1) === 1 ? 'view' : 'views'}</span>
                                 </div>
-                            ))}
+
+                                {/* Floating Urgency Badge */}
+                                {!isOutOfStock && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '1rem',
+                                        right: '1rem',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.3rem',
+                                        padding: '0.35rem 0.75rem',
+                                        borderRadius: '99px',
+                                        background: isLowStock
+                                            ? 'linear-gradient(135deg, #EF4444, #DC2626)'
+                                            : 'linear-gradient(135deg, #F59E0B, #EA580C)',
+                                        color: 'white',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 800,
+                                        boxShadow: '0 4px 14px rgba(0,0,0,0.25)'
+                                    }}>
+                                        <Flame size={13} fill="currentColor" />
+                                        <span>{isLowStock ? `Only ${stockNum} Left!` : 'Hot Campus Pick'}</span>
+                                    </div>
+                                )}
+
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: '0.75rem',
+                                    right: '0.75rem',
+                                    padding: '0.25rem 0.65rem',
+                                    borderRadius: '99px',
+                                    background: 'rgba(0,0,0,0.65)',
+                                    color: 'white',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700
+                                }}>
+                                    🔍 Tap to zoom ({activeImageIdx + 1}/{images.length})
+                                </div>
+                            </div>
+
+                            {/* Interactive Thumbnail Switcher */}
+                            {images.length > 1 && (
+                                <div style={{
+                                    display: 'flex',
+                                    gap: '0.625rem',
+                                    overflowX: 'auto',
+                                    paddingBottom: '0.25rem'
+                                }} className="hide-scrollbar">
+                                    {images.map((img, idx) => (
+                                        <button
+                                            key={idx}
+                                            type="button"
+                                            onClick={() => setActiveImageIdx(idx)}
+                                            style={{
+                                                width: '72px',
+                                                height: '72px',
+                                                borderRadius: '12px',
+                                                overflow: 'hidden',
+                                                border: idx === activeImageIdx ? '2.5px solid var(--primary)' : '1.5px solid var(--border)',
+                                                padding: 0,
+                                                cursor: 'pointer',
+                                                flexShrink: 0,
+                                                opacity: idx === activeImageIdx ? 1 : 0.65,
+                                                transform: idx === activeImageIdx ? 'scale(1.03)' : 'scale(1)',
+                                                transition: 'all 0.15s ease',
+                                                background: 'var(--surface)'
+                                            }}
+                                        >
+                                            <img
+                                                src={optimizeImage(img, 160)}
+                                                alt={`Thumbnail ${idx + 1}`}
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div style={{ padding: '4rem', textAlign: 'center', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-xl)', border: '2px dashed var(--border)' }}>
                             No images available
                         </div>
                     )}
+
+                    {/* ── Campus Gist Reviews & Buzz Section (Desktop & Mobile) ── */}
+                    <div style={{
+                        marginTop: '1.75rem',
+                        padding: '1.25rem',
+                        background: 'var(--surface-elevated)',
+                        borderRadius: 'var(--radius-xl)',
+                        border: '1px solid var(--border)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                                <Flame size={18} style={{ color: '#F59E0B' }} />
+                                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>
+                                    Campus Gist & Reviews ({gistReviews.length})
+                                </h3>
+                            </div>
+                            <Link
+                                to={`/gist?create=true&type=${isOwner ? 'gist' : 'review'}&productId=${product.id}`}
+                                style={{
+                                    fontSize: '0.75rem',
+                                    fontWeight: 800,
+                                    color: 'var(--primary)',
+                                    textDecoration: 'none',
+                                    background: 'var(--primary-light)',
+                                    padding: '0.3rem 0.75rem',
+                                    borderRadius: '99px'
+                                }}
+                            >
+                                + {isOwner ? 'Hype on Gist' : 'Write Funny Review'}
+                            </Link>
+                        </div>
+
+                        {gistReviews.length === 0 ? (
+                            <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                                Bought this item or have thoughts on it? Be the first student to drop a review or gist about it!
+                            </p>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                                {gistReviews.map(rev => (
+                                    <Link
+                                        key={rev.id}
+                                        to={`/gist/post/${rev.id}`}
+                                        style={{
+                                            display: 'block',
+                                            padding: '0.75rem',
+                                            background: 'var(--surface)',
+                                            borderRadius: 'var(--radius-lg)',
+                                            border: '1px solid var(--border)',
+                                            textDecoration: 'none',
+                                            color: 'inherit'
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                            <span style={{ fontWeight: 800, fontSize: '0.8125rem' }}>
+                                                {rev.authorName} • {rev.schoolShort}
+                                            </span>
+                                            {rev.product?.rating && (
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#F59E0B', fontSize: '0.75rem', fontWeight: 800 }}>
+                                                    <Star size={12} fill="#F59E0B" /> {rev.product.rating}/5
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                                            {rev.content?.slice(0, 140)}{rev.content?.length > 140 ? '...' : ''}
+                                        </p>
+                                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
+                                            {formatGistTime(rev.createdAt)} • Tap to view in Gist
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {/* Details Section */}
+                {/* ── Details & High-Conversion Impulse Box ── */}
                 <div className="product-info-container">
                     <div style={{ position: 'sticky', top: '2rem' }}>
+                        {/* Category & Campus Pills */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.65rem' }}>
+                            {product.category && (
+                                <span style={{
+                                    fontSize: '0.7rem',
+                                    fontWeight: 800,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.04em',
+                                    padding: '0.25rem 0.65rem',
+                                    borderRadius: '99px',
+                                    background: 'rgba(245, 158, 11, 0.14)',
+                                    color: '#D97706'
+                                }}>
+                                    ✨ {product.category}
+                                </span>
+                            )}
+                            <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                                padding: '0.25rem 0.7rem',
+                                borderRadius: '99px',
+                                backgroundColor: 'var(--primary-light)',
+                                color: 'var(--primary)',
+                                fontSize: '0.75rem',
+                                fontWeight: 700
+                            }}>
+                                <GraduationCap size={14} />
+                                <span>{product.schoolName || 'Western Delta University'}</span>
+                            </span>
+                        </div>
+
+                        {/* Title & Share/Save Actions */}
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1rem', gap: '1rem' }}>
-                            <h1 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.25rem)', fontWeight: '900', margin: 0, letterSpacing: '-0.03em', lineHeight: '1.1' }}>
+                            <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.15rem)', fontWeight: '900', margin: 0, letterSpacing: '-0.03em', lineHeight: '1.15' }}>
                                 {product.title}
                             </h1>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
@@ -466,8 +702,6 @@ const ProductDetail = () => {
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
                                     }}
-                                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--surface-elevated)'; }}
-                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--surface)'; }}
                                 >
                                     <Share2 size={20} />
                                 </button>
@@ -490,17 +724,13 @@ const ProductDetail = () => {
                                             transition: 'all 0.2s',
                                             opacity: saveLoading ? 0.6 : 1,
                                         }}
-                                        onMouseEnter={e => { if (!saveLoading) { e.currentTarget.style.backgroundColor = saved ? 'var(--primary-glow)' : 'var(--surface-elevated)'; } }}
-                                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = saved ? 'var(--primary-light)' : 'var(--surface)'; }}
                                     >
-                                        {saved
-                                            ? <BookmarkCheck size={20} />
-                                            : <Bookmark size={20} />}
+                                        {saved ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
                                     </button>
                                 )}
                             </div>
                         </div>
-                        {/* Saved confirmation */}
+
                         {saved && !isOwner && (
                             <div style={{
                                 display: 'flex',
@@ -508,20 +738,19 @@ const ProductDetail = () => {
                                 gap: '0.4rem',
                                 fontSize: '0.8125rem',
                                 color: 'var(--primary)',
-                                fontWeight: '600',
+                                fontWeight: '700',
                                 marginBottom: '0.75rem',
                                 marginTop: '-0.5rem',
                             }}>
-                                <BookmarkCheck size={13} /> Saved for later
+                                <BookmarkCheck size={14} /> Saved to your wishlist!
                             </div>
                         )}
-                        {/* Save error */}
+
                         {saveError && (
                             <div style={{
                                 fontSize: '0.8125rem',
                                 color: 'var(--danger)',
                                 marginBottom: '0.75rem',
-                                marginTop: '-0.5rem',
                                 padding: '0.5rem 0.75rem',
                                 backgroundColor: 'rgba(239, 68, 68, 0.07)',
                                 borderRadius: '8px',
@@ -531,6 +760,211 @@ const ProductDetail = () => {
                             </div>
                         )}
 
+                        {/* ── High-Conversion Price & Impulse Spotlight Box ── */}
+                        <div style={{
+                            marginBottom: '1.25rem',
+                            padding: '1.25rem 1.35rem',
+                            background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.07) 0%, rgba(245, 158, 11, 0.07) 100%)',
+                            borderRadius: 'var(--radius-2xl)',
+                            border: '1.5px solid rgba(37, 99, 235, 0.22)',
+                            boxShadow: 'var(--shadow-sm)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                <div>
+                                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                        Campus Deal Price
+                                    </div>
+                                    <div style={{ fontSize: 'clamp(1.85rem, 5vw, 2.4rem)', fontWeight: '900', color: 'var(--primary)', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+                                        ₦{(parseFloat(product.price) || 0).toLocaleString('en-NG', {
+                                            maximumFractionDigits: (parseFloat(product.price) % 1 === 0 ? 0 : 2)
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Stock / Urgency Pill */}
+                                <div style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.35rem',
+                                    padding: '0.4rem 0.85rem',
+                                    borderRadius: '99px',
+                                    fontSize: '0.78rem',
+                                    fontWeight: 800,
+                                    backgroundColor: isOutOfStock
+                                        ? 'rgba(239, 68, 68, 0.12)'
+                                        : isLowStock
+                                        ? 'rgba(245, 158, 11, 0.16)'
+                                        : 'rgba(16, 185, 129, 0.14)',
+                                    color: isOutOfStock
+                                        ? 'var(--danger)'
+                                        : isLowStock
+                                        ? '#D97706'
+                                        : '#059669'
+                                }}>
+                                    {isOutOfStock ? (
+                                        <>❌ Sold Out</>
+                                    ) : isLowStock ? (
+                                        <>🔥 Only {stockNum} left — Grab fast!</>
+                                    ) : stockNum !== null ? (
+                                        <>⚡ {stockNum} in stock • Ready for pickup</>
+                                    ) : (
+                                        <>✅ Available on Campus</>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Impulse Trust Signals */}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                                marginTop: '0.875rem',
+                                paddingTop: '0.75rem',
+                                borderTop: '1px solid var(--border)',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                color: 'var(--text-secondary)',
+                                flexWrap: 'wrap'
+                            }}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <ShieldCheck size={14} style={{ color: 'var(--success)' }} /> Inspect Before Paying
+                                </span>
+                                <span>•</span>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <Zap size={14} style={{ color: '#F59E0B' }} /> Fast Campus Meetup
+                                </span>
+                                <span>•</span>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <Sparkles size={14} style={{ color: 'var(--primary)' }} /> Direct Student Seller
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Primary Action Buttons right below Price for instant conversion */}
+                        {!isOwner && (
+                            isOutOfStock ? (
+                                <div style={{
+                                    width: '100%', padding: '1.1rem', marginBottom: '1.25rem', fontSize: '1.05rem', fontWeight: '800', borderRadius: 'var(--radius-xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', backgroundColor: 'rgba(148, 163, 184, 0.1)', color: 'var(--text-secondary)', border: '1px dashed var(--border)', cursor: 'not-allowed'
+                                }}>
+                                    ❌ Out of Stock
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                                    <button
+                                        onClick={handleAskInApp}
+                                        disabled={interestLoading}
+                                        id="ask-in-app-btn"
+                                        style={{
+                                            width: '100%',
+                                            padding: '1.05rem 1.25rem',
+                                            fontSize: '1.05rem',
+                                            fontWeight: '900',
+                                            borderRadius: 'var(--radius-xl)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '0.6rem',
+                                            background: showChat
+                                                ? 'var(--primary-dark, #1d4ed8)'
+                                                : 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 55%, #F59E0B 100%)',
+                                            color: '#ffffff',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 8px 22px -4px rgba(37, 99, 235, 0.48)',
+                                            transition: 'all 0.2s ease',
+                                        }}
+                                    >
+                                        {interestLoading ? (
+                                            <Loader size={20} style={{ animation: 'spin 0.8s linear infinite' }} />
+                                        ) : (
+                                            <Zap size={20} fill="currentColor" />
+                                        )}
+                                        {showChat ? 'Close Seller Chat' : 'Grab This Deal — Message Seller Now'}
+                                    </button>
+
+                                    {cleanSellerPhone && (
+                                        whatsappUnlocked ? (
+                                            <button
+                                                onClick={handleWhatsAppChat}
+                                                id="whatsapp-chat-btn"
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.85rem 1.25rem',
+                                                    fontSize: '0.9375rem',
+                                                    fontWeight: '800',
+                                                    borderRadius: 'var(--radius-xl)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '0.5rem',
+                                                    backgroundColor: '#25D366',
+                                                    color: '#ffffff',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 4px 12px -2px rgba(37, 211, 102, 0.35)',
+                                                }}
+                                            >
+                                                <MessageCircle size={18} />
+                                                Continue on WhatsApp
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={handleWhatsAppChat}
+                                                id="whatsapp-chat-btn"
+                                                title="Send an in-app message first to open WhatsApp"
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.75rem 1.25rem',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: '700',
+                                                    borderRadius: 'var(--radius-xl)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '0.5rem',
+                                                    border: '1.5px dashed var(--border)',
+                                                    backgroundColor: 'var(--surface-elevated)',
+                                                    color: 'var(--text-secondary)',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                <Lock size={14} />
+                                                <span>Chat on WhatsApp (Unlocks after first message)</span>
+                                            </button>
+                                        )
+                                    )}
+                                </div>
+                            )
+                        )}
+
+                        {/* Seller response status & notification feedback */}
+                        {(alreadyInterested || askedInApp) && !isOwner && (
+                            <div style={{
+                                marginBottom: '1.25rem',
+                                padding: '0.85rem 1rem',
+                                backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                                borderRadius: 'var(--radius-md)',
+                                border: '1px solid rgba(16, 185, 129, 0.25)',
+                                textAlign: 'center',
+                            }}>
+                                <p style={{ fontSize: '0.875rem', color: 'var(--success)', fontWeight: '700', margin: '0' }}>
+                                    ⚡ Seller notified, usually replies in {product.avgReplyMinutes ? `~${product.avgReplyMinutes} mins` : '10-15 minutes'}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Chat UI */}
+                        {showChat && !isOwner && isAuthenticated && (
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <ProductChat
+                                    product={product}
+                                    onClose={() => setShowChat(false)}
+                                    onMessageSent={() => setWhatsappUnlocked(true)}
+                                />
+                            </div>
+                        )}
+
+                        {/* Seller Profile Card */}
                         {product.sellerId ? (
                             <Link
                                 to={`/seller/${product.sellerId}`}
@@ -540,7 +974,7 @@ const ProductDetail = () => {
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
                                     marginBottom: '1rem',
-                                    padding: '1rem',
+                                    padding: '0.9rem 1rem',
                                     backgroundColor: 'var(--surface)',
                                     borderRadius: 'var(--radius-lg)',
                                     border: '1px solid var(--border)',
@@ -548,73 +982,27 @@ const ProductDetail = () => {
                                     color: 'inherit',
                                     transition: 'all 0.2s ease',
                                 }}
-                                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none'; }}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <div style={{ width: '40px', height: '40px', backgroundColor: 'var(--surface-elevated)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--primary)', border: '1px solid var(--border)' }}>
+                                    <div style={{ width: '40px', height: '40px', background: 'var(--gradient-primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: 'white' }}>
                                         {product.sellerName ? product.sellerName.charAt(0).toUpperCase() : 'S'}
                                     </div>
                                     <div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                            <span style={{ fontWeight: '700', fontSize: '1rem' }}>{product.sellerName}</span>
+                                            <span style={{ fontWeight: '800', fontSize: '0.95rem' }}>{product.sellerName}</span>
                                             {product.sellerVerified && <VerifiedBadge size={16} />}
                                             <ReadOnlyRating sellerId={product.sellerId} />
                                         </div>
-                                        <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                                            {product.sellerVerified ? 'Verified Campus Seller • Visit Store' : 'Campus Seller • Visit Store'}
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                            {product.sellerVerified ? 'Verified Campus Seller • View Storefront' : 'Campus Seller • View Storefront'}
                                         </span>
                                     </div>
                                 </div>
                                 <ExternalLink size={16} style={{ color: 'var(--text-tertiary)' }} />
                             </Link>
-                        ) : (
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.75rem',
-                                    marginBottom: '1rem',
-                                    padding: '1rem',
-                                    backgroundColor: 'var(--surface)',
-                                    borderRadius: 'var(--radius-lg)',
-                                    border: '1px solid var(--border)',
-                                }}
-                            >
-                                <div style={{ width: '40px', height: '40px', backgroundColor: 'var(--surface-elevated)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: 'var(--primary)', border: '1px solid var(--border)' }}>
-                                    {product.sellerName ? product.sellerName.charAt(0).toUpperCase() : 'S'}
-                                </div>
-                                <div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                        <span style={{ fontWeight: '700', fontSize: '1rem' }}>{product.sellerName}</span>
-                                        {product.sellerVerified && <VerifiedBadge size={16} />}
-                                    </div>
-                                    <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                                        {product.sellerVerified ? 'Verified Campus Seller' : 'Campus Seller'}
-                                    </span>
-                                </div>
-                            </div>
-                        )}
+                        ) : null}
 
-                        {/* Campus Badge */}
-                        <div style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.45rem',
-                            padding: '0.45rem 0.85rem',
-                            borderRadius: 'var(--radius-full)',
-                            backgroundColor: 'var(--primary-light)',
-                            color: 'var(--primary)',
-                            fontSize: '0.8125rem',
-                            fontWeight: '700',
-                            marginBottom: '1.25rem',
-                            border: '1px solid rgba(37, 99, 235, 0.2)'
-                        }}>
-                            <GraduationCap size={16} />
-                            <span>Campus: {product.schoolName || 'Western Delta University'}</span>
-                        </div>
-
-                        {/* Interactive Seller Rating (separate from link to allow clicking stars) */}
+                        {/* Interactive Seller Rating */}
                         {!isOwner && product.sellerId && (
                             <div style={{
                                 display: 'flex',
@@ -638,248 +1026,104 @@ const ProductDetail = () => {
                                 display: 'flex',
                                 alignItems: 'flex-start',
                                 gap: '0.625rem',
-                                padding: '0.875rem 1rem',
-                                marginBottom: '1.5rem',
+                                padding: '0.75rem 1rem',
+                                marginBottom: '1.25rem',
                                 backgroundColor: 'rgba(245, 158, 11, 0.08)',
                                 border: '1px solid rgba(245, 158, 11, 0.25)',
                                 borderRadius: 'var(--radius-lg)',
                             }}>
                                 <AlertCircle size={16} color="#d97706" style={{ flexShrink: 0, marginTop: '2px' }} />
-                                <span style={{ fontSize: '0.875rem', color: 'var(--text)', lineHeight: '1.5' }}>
-                                    This seller is not verified. Please proceed with caution. 🫡
+                                <span style={{ fontSize: '0.8125rem', color: 'var(--text)', lineHeight: '1.5' }}>
+                                    Meet in a public campus location and inspect the item before transferring payment. 🫡
                                 </span>
                             </div>
                         )}
 
-                        <div style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Description</h3>
-                            <p style={{ color: 'var(--text)', whiteSpace: 'pre-wrap', lineHeight: '1.7', fontSize: '1.0625rem' }}>{product.description}</p>
+                        {/* Product Description */}
+                        <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+                            <h3 style={{ fontSize: '0.85rem', fontWeight: '800', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>
+                                Item Details
+                            </h3>
+                            <p style={{ color: 'var(--text)', whiteSpace: 'pre-wrap', lineHeight: '1.65', fontSize: '0.975rem', margin: 0 }}>
+                                {product.description}
+                            </p>
                         </div>
 
-                        <div style={{ marginBottom: '1rem', padding: '1.5rem', backgroundColor: 'rgba(37, 99, 235, 0.03)', borderRadius: 'var(--radius-xl)', border: '1px solid rgba(37, 99, 235, 0.1)', textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Price</div>
-                            <div style={{ fontSize: '2.5rem', fontWeight: '900', color: 'var(--primary)', letterSpacing: '-0.03em' }}>
-                                ₦{parseFloat(product.price).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </div>
-                        </div>
-
-                        {/* Stock Availability Indicator */}
-                        {(() => {
-                            const stockNum = typeof product.stock === 'number' ? product.stock : (product.stock !== undefined ? parseInt(product.stock, 10) : null);
-                            const isOutOfStock = stockNum !== null && stockNum <= 0;
-                            const isLowStock = stockNum !== null && stockNum > 0 && stockNum <= 3;
-
-                            return (
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '0.5rem',
-                                    padding: '0.75rem 1rem',
-                                    marginBottom: '1.5rem',
-                                    borderRadius: 'var(--radius-lg)',
-                                    fontSize: '0.875rem',
-                                    fontWeight: '700',
-                                    backgroundColor: isOutOfStock 
-                                        ? 'rgba(239, 68, 68, 0.08)' 
-                                        : isLowStock 
-                                            ? 'rgba(245, 158, 11, 0.08)' 
-                                            : 'rgba(16, 185, 129, 0.08)',
-                                    color: isOutOfStock 
-                                        ? 'var(--danger)' 
-                                        : isLowStock 
-                                            ? '#d97706' 
-                                            : '#10b981',
-                                    border: `1px solid ${isOutOfStock ? 'rgba(239, 68, 68, 0.2)' : isLowStock ? 'rgba(245, 158, 11, 0.25)' : 'rgba(16, 185, 129, 0.2)'}`,
-                                }}>
-                                    {isOutOfStock ? (
-                                        <><span>❌</span> Out of Stock (0 units left)</>
-                                    ) : isLowStock ? (
-                                        <><span>🔥</span> Only {stockNum} left in stock - order soon!</>
-                                    ) : stockNum !== null ? (
-                                        <><span>📦</span> In Stock ({stockNum} units available)</>
-                                    ) : (
-                                        <><span>✅</span> In Stock</>
-                                    )}
-                                </div>
-                            );
-                        })()}
-
-                        {/* Action Buttons — shown to everyone except the owner */}
+                        {/* Secondary Social / Gist Actions */}
                         {!isOwner && (
-                            (() => {
-                                const stockNum = typeof product.stock === 'number' ? product.stock : (product.stock !== undefined ? parseInt(product.stock, 10) : null);
-                                const isOutOfStock = stockNum !== null && stockNum <= 0;
-                                
-                                if (isOutOfStock) {
-                                    return (
-                                        <div style={{
-                                            width: '100%', padding: '1.25rem', fontSize: '1.125rem', fontWeight: '700', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem', backgroundColor: 'rgba(148, 163, 184, 0.1)', color: 'var(--text-secondary)', border: '1px dashed var(--border)', cursor: 'not-allowed'
-                                        }}>
-                                            ❌ Out of Stock
-                                        </div>
-                                    );
-                                }
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                                <Link
+                                    to={`/gist?create=true&type=review&productId=${product.id}`}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.7rem 1rem',
+                                        fontSize: '0.8125rem',
+                                        fontWeight: '800',
+                                        borderRadius: 'var(--radius-lg)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.45rem',
+                                        border: '1.5px solid rgba(245, 158, 11, 0.35)',
+                                        backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                                        color: 'var(--accent-hover)',
+                                        textDecoration: 'none',
+                                    }}
+                                >
+                                    <Flame size={15} /> Review or Spill Gist About This Item
+                                </Link>
 
-                                return (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-                                        {/* Primary: In-App Message (Always accessible, records first contact & notifies seller) */}
-                                        <button
-                                            onClick={handleAskInApp}
-                                            disabled={interestLoading}
-                                            id="ask-in-app-btn"
-                                            style={{
-                                                width: '100%',
-                                                padding: '1.05rem 1.25rem',
-                                                fontSize: '1.0625rem',
-                                                fontWeight: '800',
-                                                borderRadius: 'var(--radius-lg)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '0.65rem',
-                                                backgroundColor: showChat ? 'var(--primary-dark, #1d4ed8)' : 'var(--primary)',
-                                                color: '#ffffff',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                boxShadow: '0 4px 14px -2px rgba(37, 99, 235, 0.4)',
-                                                transition: 'all 0.2s ease',
-                                            }}
-                                            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-                                            onMouseLeave={e => e.currentTarget.style.transform = 'none'}
-                                        >
-                                            {interestLoading ? (
-                                                <Loader size={20} style={{ animation: 'spin 0.8s linear infinite' }} />
-                                            ) : (
-                                                <MessageCircle size={20} />
-                                            )}
-                                            {showChat ? 'Close Chat' : 'Message Seller on Market-U'}
-                                        </button>
-
-                                        {/* Secondary: WhatsApp Button (Unlocked after in-app contact) */}
-                                        {cleanSellerPhone && (
-                                            whatsappUnlocked ? (
-                                                <button
-                                                    onClick={handleWhatsAppChat}
-                                                    id="whatsapp-chat-btn"
-                                                    style={{
-                                                        width: '100%',
-                                                        padding: '0.85rem 1.25rem',
-                                                        fontSize: '0.9375rem',
-                                                        fontWeight: '700',
-                                                        borderRadius: 'var(--radius-lg)',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        gap: '0.5rem',
-                                                        backgroundColor: '#25D366',
-                                                        color: '#ffffff',
-                                                        border: 'none',
-                                                        cursor: 'pointer',
-                                                        boxShadow: '0 4px 12px -2px rgba(37, 211, 102, 0.35)',
-                                                        transition: 'all 0.2s ease',
-                                                    }}
-                                                >
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
-                                                    </svg>
-                                                    Continue on WhatsApp
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={handleWhatsAppChat}
-                                                    id="whatsapp-chat-btn"
-                                                    title="Send an in-app message first to open WhatsApp"
-                                                    style={{
-                                                        width: '100%',
-                                                        padding: '0.75rem 1.25rem',
-                                                        fontSize: '0.875rem',
-                                                        fontWeight: '600',
-                                                        borderRadius: 'var(--radius-lg)',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        gap: '0.5rem',
-                                                        border: '1.5px dashed var(--border)',
-                                                        backgroundColor: 'var(--surface-elevated)',
-                                                        color: 'var(--text-secondary)',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s ease',
-                                                    }}
-                                                >
-                                                    <Lock size={14} />
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.7 }}>
-                                                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
-                                                    </svg>
-                                                    Chat on WhatsApp (Send in-app message first)
-                                                </button>
-                                            )
-                                        )}
-
-                                        {/* TASK 4: Seller Sharing Tools — Share this product on WhatsApp */}
-                                        <button
-                                            onClick={() => {
-                                                const productLink = window.location.href.split('?')[0];
-                                                const numPrice = parseFloat(product.price);
-                                                const priceFormatted = !isNaN(numPrice) ? `₦${numPrice.toLocaleString('en-NG')}` : '';
-                                                const shareMsg = `Check out "${product.title}" ${priceFormatted ? `(${priceFormatted}) ` : ''}on Market-U: ${productLink}`;
-                                                window.open(`https://wa.me/?text=${encodeURIComponent(shareMsg)}`, '_blank');
-                                            }}
-                                            style={{
-                                                width: '100%',
-                                                padding: '0.65rem 1rem',
-                                                fontSize: '0.8125rem',
-                                                fontWeight: '600',
-                                                borderRadius: 'var(--radius-lg)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '0.45rem',
-                                                border: '1px dashed var(--border)',
-                                                backgroundColor: 'transparent',
-                                                color: 'var(--text-secondary)',
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            <Share2 size={14} /> Share product on WhatsApp Status
-                                        </button>
-                                    </div>
-                                );
-                            })()
-                        )}
-
-                        {/* TASK 5: Seller response status & notification feedback */}
-                        {(alreadyInterested || askedInApp) && !isOwner && (
-                            <div style={{
-                                marginTop: '1rem',
-                                padding: '0.85rem 1rem',
-                                backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                                borderRadius: 'var(--radius-md)',
-                                border: '1px solid rgba(16, 185, 129, 0.25)',
-                                textAlign: 'center',
-                            }}>
-                                <p style={{ fontSize: '0.875rem', color: 'var(--success)', fontWeight: '700', margin: '0' }}>
-                                    ⚡ Seller notified, usually replies in {product.avgReplyMinutes ? `~${product.avgReplyMinutes} mins` : '10-15 minutes'}
-                                </p>
+                                <button
+                                    onClick={() => {
+                                        const productLink = window.location.href.split('?')[0];
+                                        const numPrice = parseFloat(product.price);
+                                        const priceFormatted = !isNaN(numPrice) ? `₦${numPrice.toLocaleString('en-NG')}` : '';
+                                        const shareMsg = `Check out "${product.title}" ${priceFormatted ? `(${priceFormatted}) ` : ''}on Market-U: ${productLink}`;
+                                        window.open(`https://wa.me/?text=${encodeURIComponent(shareMsg)}`, '_blank');
+                                    }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.65rem 1rem',
+                                        fontSize: '0.8125rem',
+                                        fontWeight: '600',
+                                        borderRadius: 'var(--radius-lg)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.45rem',
+                                        border: '1px dashed var(--border)',
+                                        backgroundColor: 'transparent',
+                                        color: 'var(--text-secondary)',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    <Share2 size={14} /> Share product on WhatsApp Status
+                                </button>
                             </div>
-                        )}
-
-
-                        {/* Chat UI */}
-                        {showChat && !isOwner && isAuthenticated && (
-                            <ProductChat 
-                                product={product} 
-                                onClose={() => setShowChat(false)} 
-                                onMessageSent={() => setWhatsappUnlocked(true)}
-                            />
                         )}
 
                         {isOwner && (
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0' }}>
+                                <Link
+                                    to={`/gist?create=true&type=gist&productId=${product.id}`}
+                                    className="btn btn-secondary"
+                                    style={{
+                                        gridColumn: '1 / -1',
+                                        padding: '0.75rem',
+                                        fontSize: '0.875rem',
+                                        fontWeight: '700',
+                                        justifyContent: 'center',
+                                        color: 'var(--primary)',
+                                        borderColor: 'rgba(37, 99, 235, 0.3)',
+                                        background: 'var(--primary-light)'
+                                    }}
+                                >
+                                    <Flame size={16} /> Share Product to Campus Gist
+                                </Link>
                                 <Link
                                     to={`/edit-product/${id}`}
                                     className="btn btn-secondary"
-                                    style={{ padding: '1rem', fontSize: '1rem', fontWeight: '600', justifyContent: 'center' }}
+                                    style={{ padding: '0.875rem', fontSize: '0.9375rem', fontWeight: '600', justifyContent: 'center' }}
                                 >
                                     <Edit size={18} />
                                     Edit Post
@@ -888,7 +1132,7 @@ const ProductDetail = () => {
                                     onClick={handleDelete}
                                     disabled={deleting}
                                     className="btn"
-                                    style={{ padding: '1rem', fontSize: '1rem', fontWeight: '600', justifyContent: 'center', backgroundColor: 'rgba(239, 68, 68, 0.05)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.1)' }}
+                                    style={{ padding: '0.875rem', fontSize: '0.9375rem', fontWeight: '600', justifyContent: 'center', backgroundColor: 'rgba(239, 68, 68, 0.05)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.1)' }}
                                 >
                                     <Trash2 size={18} />
                                     {deleting ? 'Deleting...' : 'Delete'}
@@ -899,13 +1143,12 @@ const ProductDetail = () => {
                 </div>
             </div>
 
-            <AuthPromptModal 
-                isOpen={showPrompt} 
-                onClose={() => setShowPrompt(false)} 
+            <AuthPromptModal
+                isOpen={showPrompt}
+                onClose={() => setShowPrompt(false)}
                 message="Sign up to contact sellers and start using Market-U"
             />
 
-            {/* Floating Share Link Toast */}
             {shareToast && (
                 <div style={{
                     position: 'fixed',

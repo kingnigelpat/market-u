@@ -239,19 +239,110 @@ select:focus {
 
 .page-loader {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 50vh;
   width: 100%;
+  gap: 0.9rem;
 }
 
-.page-spinner {
-  width: 28px;
-  height: 28px;
-  border: 2.5px solid var(--border);
+.page-spinner,
+.spinner {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--gradient-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 28px rgba(124, 58, 237, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  animation: marketu-logo-pulse 1.6s ease-in-out infinite;
+  border: none;
+}
+
+.page-spinner::before,
+.spinner::before {
+  content: 'M';
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.65rem;
+  color: #ffffff;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+
+.page-spinner::after,
+.spinner::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 21px;
+  border: 2.5px solid transparent;
   border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.65s linear infinite;
+  border-right-color: var(--secondary);
+  animation: spin 1.05s cubic-bezier(0.5, 0.15, 0.5, 0.85) infinite;
+  pointer-events: none;
+}
+
+.marketu-logo-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  user-select: none;
+}
+
+.marketu-logo-loader-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 20px;
+}
+
+.marketu-logo-loader-word {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-left: 0.25rem;
+}
+
+.marketu-logo-loader-bar {
+  width: 120px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+  position: relative;
+}
+
+.marketu-logo-loader-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -45%;
+  width: 45%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--gradient-primary);
+  animation: progress-indeterminate 1.15s ease-in-out infinite;
+}
+
+@keyframes marketu-logo-pulse {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+    box-shadow: 0 10px 28px rgba(124, 58, 237, 0.35);
+  }
+  50% {
+    transform: scale(1.06) translateY(-2px);
+    box-shadow: 0 14px 36px rgba(124, 58, 237, 0.52);
+  }
 }
 
 @keyframes spin {
@@ -426,19 +517,6 @@ select:focus {
   justify-content: center;
   z-index: 9999;
   gap: 1.5rem;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--border);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 .loading-text {

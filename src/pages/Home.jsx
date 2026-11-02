@@ -23,6 +23,8 @@ const CATEGORIES = [
     { key: 'all', label: 'All', emoji: '🔥' },
     { key: 'verified', label: 'Verified', emoji: '⭐' },
     { key: 'Electronics', label: 'Tech', emoji: '💻' },
+    { key: 'Phones & Tablets', label: 'Phones', emoji: '📱' },
+    { key: 'Computing', label: 'Laptops', emoji: '🖥️' },
     { key: 'Fashion', label: 'Fashion', emoji: '👕' },
     { key: 'Health & Beauty', label: 'Beauty', emoji: '💄' },
     { key: 'Home & Kitchen', label: 'Home', emoji: '🏡' },
@@ -492,6 +494,103 @@ const Home = () => {
                     )
                 ) : categoryFilter === 'all' && !searchTerm && !verifiedOnly ? (
                     <div className="category-swimlanes">
+                        {/* ── Campus Gist & Across Campuses Discovery Strip ── */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '1rem',
+                            padding: '1rem 1.25rem',
+                            marginBottom: '2rem',
+                            borderRadius: 'var(--radius-2xl)',
+                            background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(245, 158, 11, 0.12) 100%)',
+                            border: '1.5px solid rgba(245, 158, 11, 0.28)',
+                            flexWrap: 'wrap'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{
+                                    width: '42px',
+                                    height: '42px',
+                                    borderRadius: '12px',
+                                    background: 'linear-gradient(135deg, #FF512F 0%, #F09819 100%)',
+                                    color: 'white',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '1.25rem',
+                                    flexShrink: 0,
+                                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.35)'
+                                }}>
+                                    🔥
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 900, fontSize: '0.95rem', color: 'var(--text)' }}>
+                                        Market-U Gist is Live!
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                        Funny product reviews, anonymous confessions, campus polls & nationwide banter
+                                    </div>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <Link
+                                    to="/gist"
+                                    className="btn btn-primary"
+                                    style={{
+                                        fontSize: '0.78rem',
+                                        padding: '0.45rem 1rem',
+                                        borderRadius: 'var(--radius-full)'
+                                    }}
+                                >
+                                    🗣️ Your Campus Gist
+                                </Link>
+                                <Link
+                                    to="/gist?scope=across"
+                                    className="btn btn-secondary"
+                                    style={{
+                                        fontSize: '0.78rem',
+                                        padding: '0.45rem 1rem',
+                                        borderRadius: 'var(--radius-full)'
+                                    }}
+                                >
+                                    🌍 Across Campuses
+                                </Link>
+                            </div>
+                        </div>
+
+                        {/* ── Hot Campus Drops (Impulse Steals Swimlane) ── */}
+                        {(() => {
+                            const hotDrops = [...campusProducts]
+                                .filter(p => p.stock === undefined || p.stock === null || parseInt(p.stock, 10) > 0)
+                                .sort((a, b) => ((b.views || 0) * 2 + (b.sellerVerified ? 15 : 0)) - ((a.views || 0) * 2 + (a.sellerVerified ? 15 : 0)))
+                                .slice(0, 8);
+                            if (hotDrops.length === 0) return null;
+                            return (
+                                <div className="market-section">
+                                    <div className="market-section-header">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <span style={{ fontSize: '1.25rem' }}>⚡</span>
+                                            <div>
+                                                <h2 className="market-section-title" style={{ margin: 0 }}>
+                                                    Hot Campus Drops
+                                                </h2>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                                    Most-viewed steals students are grabbing right now
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="swimlane hide-scrollbar">
+                                        {hotDrops.map((product, index) => (
+                                            <div className="swimlane-item" key={`hot_${product.id}`}>
+                                                <ProductCard product={product} index={index} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
                         {/* Verified Sellers Swimlane */}
                         {(() => {
                             const verifiedProducts = campusProducts.filter(p => p.sellerVerified).sort((a, b) => (b.views || 0) - (a.views || 0));
@@ -548,7 +647,7 @@ const Home = () => {
                         {/* Unmapped / Other Products Catch-all */}
                         {(() => {
                             const knownKeys = CATEGORIES.map(c => c.key);
-                            const otherProducts = products.filter(p => !knownKeys.includes(p.category) && p.category !== 'verified').sort((a, b) => (b.views || 0) - (a.views || 0));
+                            const otherProducts = campusProducts.filter(p => !knownKeys.includes(p.category) && p.category !== 'verified').sort((a, b) => (b.views || 0) - (a.views || 0));
                             if (otherProducts.length === 0) return null;
                             return (
                                 <div className="market-section">

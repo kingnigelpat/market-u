@@ -1,0 +1,557 @@
+/* ─────────────────────────────────────────────────────────────
+   MARKET-U GIST DESIGN SYSTEM
+   Modern, Student-Centered Social Entertainment & Campus Buzz
+───────────────────────────────────────────────────────────── */
+
+.gist-page-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 1.25rem 1rem 5rem 1rem;
+}
+
+@media (min-width: 768px) {
+    .gist-page-container {
+        padding: 2rem 1.5rem 6rem 1.5rem;
+    }
+}
+
+/* ── Hero Banner ── */
+.gist-hero {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(245, 158, 11, 0.08) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-2xl);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+[data-theme="dark"] .gist-hero {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(245, 158, 11, 0.08) 100%);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.gist-hero-title {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.gist-hero-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* ── Scope Tabs (Your Campus vs Across Campuses vs Saved) ── */
+.gist-scope-bar {
+    display: flex;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    padding: 0.3rem;
+    border-radius: var(--radius-full);
+    margin-bottom: 1.25rem;
+    gap: 0.25rem;
+}
+
+.gist-scope-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.875rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    background: none;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.gist-scope-btn:hover {
+    color: var(--text);
+}
+
+.gist-scope-btn--active {
+    background: var(--surface-elevated);
+    color: var(--primary);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ── Filter & Sort Bar ── */
+.gist-controls-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.gist-filter-chips {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.gist-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    color: var(--text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.gist-chip:hover {
+    border-color: var(--primary);
+    color: var(--text);
+}
+
+.gist-chip--active {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.gist-sort-select {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-full);
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+}
+
+/* ── Feed List & Cards ── */
+.gist-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.gist-card {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-xs);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+}
+
+.gist-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: rgba(37, 99, 235, 0.25);
+}
+
+.gist-card--anonymous {
+    border-left: 3.5px solid #a855f7;
+    background: linear-gradient(180deg, var(--surface-elevated) 0%, rgba(168, 85, 247, 0.02) 100%);
+}
+
+.gist-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.875rem;
+}
+
+.gist-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.gist-avatar--anonymous {
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: white;
+}
+
+.gist-school-badge {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-full);
+    background: var(--surface);
+    color: var(--primary);
+    border: 1px solid var(--border);
+}
+
+.gist-card-title {
+    font-size: 1.0625rem;
+    font-weight: 800;
+    line-height: 1.35;
+    color: var(--text);
+    margin: 0 0 0.5rem 0;
+}
+
+.gist-card-text {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin-bottom: 0.875rem;
+}
+
+.gist-card-media {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin: 0.75rem 0;
+    max-height: 480px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+}
+
+.gist-card-media img {
+    width: 100%;
+    height: 100%;
+    max-height: 480px;
+    object-fit: contain;
+    display: block;
+    background: black;
+}
+
+/* ── Poll Styling ── */
+.gist-poll-module {
+    margin: 0.875rem 0;
+    padding: 0.875rem;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+}
+
+.gist-poll-option {
+    position: relative;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-elevated);
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.15s ease;
+}
+
+.gist-poll-option:hover:not(.gist-poll-option--voted) {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.gist-poll-option--selected {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary);
+}
+
+.gist-poll-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1;
+}
+
+.gist-poll-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+}
+
+/* ── Product Review Card Embedded in Post ── */
+.gist-product-review-card {
+    margin: 0.875rem 0;
+    padding: 0.875rem;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+}
+
+/* ── Footer & Social Actions ── */
+.gist-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
+}
+
+.gist-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.65rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.gist-action-btn:hover {
+    background: var(--surface);
+    color: var(--text);
+}
+
+.gist-action-btn--reacted {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.gist-action-btn--saved {
+    color: var(--primary);
+    background: var(--primary-light);
+}
+
+/* ── Floating Reaction Picker ── */
+.gist-reaction-picker {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    padding: 0.3rem 0.5rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 10;
+    animation: pickerPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gist-reaction-option {
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: transform 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gist-reaction-option:hover {
+    transform: scale(1.3);
+}
+
+@keyframes pickerPop {
+    from { opacity: 0; transform: translateY(6px) scale(0.9); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Dropdown Menu ── */
+.gist-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    width: 170px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    z-index: 20;
+    animation: pickerPop 0.15s ease;
+}
+
+.gist-dropdown-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text);
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.1s ease;
+}
+
+.gist-dropdown-item:hover {
+    background: var(--surface);
+}
+
+.gist-dropdown-item--danger {
+    color: var(--danger);
+}
+
+.gist-dropdown-item--danger:hover {
+    background: rgba(239, 68, 68, 0.08);
+}
+
+.gist-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.gist-icon-btn:hover {
+    background: var(--surface);
+    color: var(--text);
+}
+
+/* ── Modals & Drawers ── */
+.gist-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.15s ease;
+}
+
+.gist-modal-content {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-2xl);
+    padding: 1.5rem;
+    width: 100%;
+    box-shadow: var(--shadow-xl);
+    position: relative;
+    animation: modalScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 640px) {
+    .gist-modal-drawer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-width: 100% !important;
+        border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+        padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+        animation: drawerUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalScale {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes drawerUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+/* ── Floating Create Button ── */
+.gist-floating-btn {
+    position: fixed;
+    bottom: 4.75rem;
+    right: 1.25rem;
+    background: var(--gradient-primary);
+    color: white;
+    font-weight: 800;
+    font-size: 0.9375rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-full);
+    box-shadow: 0 4px 18px var(--primary-glow);
+    border: none;
+    cursor: pointer;
+    z-index: 900;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+@media (min-width: 768px) {
+    .gist-floating-btn {
+        bottom: 2rem;
+        right: 2rem;
+    }
+}
+
+.gist-floating-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px var(--primary-glow);
+}
+
+.gist-floating-btn:active {
+    transform: scale(0.96);
+}
+
+/* ── Toast Alert ── */
+.gist-toast {
+    position: fixed;
+    bottom: 5.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: var(--bg);
+    padding: 0.6rem 1.25rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1200;
+}

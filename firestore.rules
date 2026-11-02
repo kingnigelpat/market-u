@@ -36,16 +36,17 @@ service cloud.firestore {
       allow create: if isOwner(uid)
         && request.resource.data.role in ['buyer', 'seller']
         && (!request.resource.data.keys().hasAny(['verified']) || request.resource.data.verified == false)
+        && (!request.resource.data.keys().hasAny(['gistSuspended']) || request.resource.data.gistSuspended == false)
         && (!request.resource.data.keys().hasAny(['sellerRequestStatus']) || request.resource.data.sellerRequestStatus == 'pending')
         && (!request.resource.data.keys().hasAny(['verificationStatus']) || request.resource.data.verificationStatus == 'pending');
 
       // Normal users can update non-privileged fields (e.g. name, phone, fcmTokens, bio).
-      // They CANNOT modify role or verified flag, and can only request 'pending' status.
+      // They CANNOT modify role, verified, or gistSuspended flags, and can only request 'pending' status.
       // Admins can update any user record.
       allow update: if isAdmin()
         || (
           isOwner(uid)
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'verified'])
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'verified', 'gistSuspended', 'gistSuspendedReason', 'gistSuspendedAt', 'gistSuspendedBy'])
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['sellerRequestStatus'])
               || request.resource.data.sellerRequestStatus == 'pending'
               || request.resource.data.sellerRequestStatus == resource.data.sellerRequestStatus)
@@ -408,9 +409,178 @@ service cloud.firestore {
     // GLOBAL SETTINGS & BUDGET CAPS
     // ─────────────────────────────────────────────
 
+    // ─────────────────────────────────────────────
+    // GLOBAL SETTINGS & BUDGET CAPS
+    // ─────────────────────────────────────────────
+
     match /settings/{docId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+
+    // ─────────────────────────────────────────────
+    // MARKET-U GIST SOCIAL SYSTEM
+    // ─────────────────────────────────────────────
+
+    // Posts (Gists, Confessions, Hot Takes, Polls, Reviews)
+    match /gist_posts/{postId} {
+      // Public feeds can read posts (removed posts are filtered out client-side and scrubbed on soft-delete).
+      allow read: if true;
+
+      // Only signed-in users can create posts.
+      // For normal posts, authorId must match request auth UID.
+      // For anonymous posts (isAnonymous == true), authorId on the public doc may be null (stored privately in gist_private_authors).
+      // Also enforce that a suspended user cannot post.
+      allow create: if isSignedIn()
+        && (
+          request.resource.data.authorId == request.auth.uid
+          || (request.resource.data.isAnonymous == true && request.resource.data.authorId == null)
+        )
+        && request.resource.data.status == 'active'
+        && (
+          !exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          || !get(/databases/$(database)/documents/users/$(request.auth.uid)).data.keys().hasAny(['gistSuspended'])
+          || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gistSuspended != true
+        );
+
+      // Updates:
+      // 1. Admins have full moderation permissions (e.g., status to 'removed').
+      // 2. Author (direct or via gist_private_authors) can edit their own post content or soft-delete it, but cannot transfer authorship or change originating school.
+      // 3. Authenticated users can update engagement counters (reactionsCount, commentsCount, sharesCount, poll).
+      allow update: if isAdmin()
+        || (
+          isSignedIn()
+          && (
+            (
+              (
+                resource.data.authorId == request.auth.uid
+                || (
+                  resource.data.isAnonymous == true
+                  && exists(/databases/$(database)/documents/gist_private_authors/$(postId))
+                  && get(/databases/$(database)/documents/gist_private_authors/$(postId)).data.authorId == request.auth.uid
+                )
+              )
+              && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['authorId', 'schoolName', 'schoolShort'])
+            )
+            || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactionsCount', 'commentsCount', 'sharesCount', 'poll'])
+          )
+        );
+
+      // Only author or admin can delete.
+      allow delete: if isSignedIn()
+        && (
+          resource.data.authorId == request.auth.uid
+          || (
+            resource.data.isAnonymous == true
+            && exists(/databases/$(database)/documents/gist_private_authors/$(postId))
+            && get(/databases/$(database)/documents/gist_private_authors/$(postId)).data.authorId == request.auth.uid
+          )
+          || isAdmin()
+        );
+    }
+
+    // Private Author Records for Anonymous Gists & Comments (Never publicly readable)
+    match /gist_private_authors/{targetId} {
+      allow read: if isSignedIn()
+        && (resource.data.authorId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+        && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Reactions (Love, Haha, Fire, Wild)
+    match /gist_reactions/{reactionId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Poll Votes (One vote per user per poll)
+    match /gist_votes/{voteId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if false; // Once cast, votes are immutable
+      allow delete: if isAdmin();
+    }
+
+    // Comments & Replies
+    match /gist_comments/{commentId} {
+      allow read: if true;
+      allow create: if isSignedIn()
+        && (
+          request.resource.data.authorId == request.auth.uid
+          || (request.resource.data.isAnonymous == true && request.resource.data.authorId == null)
+        )
+        && request.resource.data.status == 'active'
+        && (
+          !exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          || !get(/databases/$(database)/documents/users/$(request.auth.uid)).data.keys().hasAny(['gistSuspended'])
+          || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gistSuspended != true
+        );
+      allow update: if isAdmin()
+        || (
+          isSignedIn()
+          && (
+            resource.data.authorId == request.auth.uid
+            || (
+              resource.data.isAnonymous == true
+              && exists(/databases/$(database)/documents/gist_private_authors/$(commentId))
+              && get(/databases/$(database)/documents/gist_private_authors/$(commentId)).data.authorId == request.auth.uid
+            )
+          )
+        );
+      allow delete: if isAdmin()
+        || (
+          isSignedIn()
+          && (
+            resource.data.authorId == request.auth.uid
+            || (
+              resource.data.isAnonymous == true
+              && exists(/databases/$(database)/documents/gist_private_authors/$(commentId))
+              && get(/databases/$(database)/documents/gist_private_authors/$(commentId)).data.authorId == request.auth.uid
+            )
+          )
+        );
+    }
+
+    // Reports (User reports for harassment, spam, doxxing, etc.)
+    match /gist_reports/{reportId} {
+      allow create: if isSignedIn()
+        && request.resource.data.reporterId == request.auth.uid;
+      allow read: if isSignedIn()
+        && (resource.data.reporterId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    // Moderation Audit Log & Actions
+    match /gist_moderation_actions/{actionId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Gist Social Notifications
+    match /gist_notifications/{notifId} {
+      allow read: if isSignedIn()
+        && (resource.data.recipientId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+        && request.resource.data.actorId == request.auth.uid;
+      allow update: if isSignedIn()
+        && (resource.data.recipientId == request.auth.uid || request.resource.data.actorId == request.auth.uid || isAdmin());
+      allow delete: if isSignedIn()
+        && (resource.data.recipientId == request.auth.uid || isAdmin());
+    }
+
+    // Saved / Bookmarked Gists
+    match /gist_saved/{saveId} {
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
 

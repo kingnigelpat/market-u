@@ -5,7 +5,17 @@ const ProtectedRoute = ({ allowedRoles }) => {
     const { isAuthenticated, userRole, loading } = useAuth();
 
     if (loading) {
-        return <div className="container" style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
+        return (
+            <div className="page-loader">
+                <div className="marketu-logo-loader">
+                    <div className="marketu-logo-loader-brand">
+                        <div className="page-spinner" />
+                        <span className="marketu-logo-loader-word">arketU</span>
+                    </div>
+                    <div className="marketu-logo-loader-bar" />
+                </div>
+            </div>
+        );
     }
 
     if (!isAuthenticated) {

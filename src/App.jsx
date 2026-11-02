@@ -49,6 +49,9 @@ const AdminGiveaway = lazyRetry(() => import('./pages/AdminGiveaway.jsx'));
 const Giveaway = lazyRetry(() => import('./pages/Giveaway.jsx'));
 const Messages = lazyRetry(() => import('./pages/Messages.jsx'));
 const SchoolsDashboard = lazyRetry(() => import('./pages/SchoolsDashboard.jsx'));
+const Gist = lazyRetry(() => import('./pages/Gist.jsx'));
+const GistPostDetail = lazyRetry(() => import('./pages/GistPostDetail.jsx'));
+const AdminGistModeration = lazyRetry(() => import('./pages/AdminGistModeration.jsx'));
 
 import './styles/global.css';
 
@@ -90,7 +93,13 @@ const AppContent = () => {
         return (
             <div className="app-container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <div className="top-progress-bar" />
-                <div className="page-spinner" />
+                <div className="marketu-logo-loader">
+                    <div className="marketu-logo-loader-brand">
+                        <div className="page-spinner" />
+                        <span className="marketu-logo-loader-word">arketU</span>
+                    </div>
+                    <div className="marketu-logo-loader-bar" />
+                </div>
             </div>
         );
     }
@@ -105,7 +114,13 @@ const AppContent = () => {
                     <>
                         <div className="top-progress-bar" />
                         <div className="page-loader">
-                            <div className="page-spinner" />
+                            <div className="marketu-logo-loader">
+                                <div className="marketu-logo-loader-brand">
+                                    <div className="page-spinner" />
+                                    <span className="marketu-logo-loader-word">arketU</span>
+                                </div>
+                                <div className="marketu-logo-loader-bar" />
+                            </div>
                         </div>
                     </>
                 }>
@@ -123,6 +138,8 @@ const AppContent = () => {
                         <Route path="/advertise" element={<Advertise />} />
                         <Route path="/schools" element={<SchoolsDashboard />} />
                         <Route path="/campuses" element={<SchoolsDashboard />} />
+                        <Route path="/gist" element={<Gist />} />
+                        <Route path="/gist/post/:id" element={<GistPostDetail />} />
 
                         {/* Protected Routes */}
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
@@ -151,6 +168,7 @@ const AppContent = () => {
                         <Route path="/invite" element={GIVEAWAY_ENABLED ? <Giveaway /> : <Navigate to="/" replace />} />
 
                         <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                            <Route path="/admin/gist" element={<AdminGistModeration />} />
                             <Route path="/admin/ads" element={<AdminAds />} />
                             <Route path="/admin/analytics" element={<AdminAnalytics />} />
                             <Route path="/admin/giveaway" element={<AdminGiveaway />} />

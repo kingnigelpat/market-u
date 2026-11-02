@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot, writeBatch, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, writeBatch, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Bell, MessageCircle, Clock, ShoppingBag, ArrowLeft, Heart, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Bell, MessageCircle, Clock, ShoppingBag, ArrowLeft, Heart, Eye, CheckCircle, XCircle, Flame } from 'lucide-react';
+import { fetchUserGistNotifications, markGistNotificationsRead } from '../utils/gistService';
 
 // Format relative time
 function timeAgo(timestamp) {
@@ -46,12 +47,13 @@ const SellerNotifications = ({ currentUser }) => {
 
         const q = query(
             collection(db, 'interests'),
-            where('sellerId', '==', currentUser.uid),
-            orderBy('createdAt', 'desc')
+            where('sellerId', '==', currentUser.uid)
         );
 
         const unsub = onSnapshot(q, async (snapshot) => {
-            const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            const items = snapshot.docs
+                .map(d => ({ id: d.id, ...d.data() }))
+                .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
             setInterests(items);
             setLoading(false);
 
@@ -290,12 +292,13 @@ const BuyerActivity = ({ currentUser }) => {
 
         const q = query(
             collection(db, 'interests'),
-            where('buyerId', '==', currentUser.uid),
-            orderBy('createdAt', 'desc')
+            where('buyerId', '==', currentUser.uid)
         );
 
         const unsub = onSnapshot(q, (snapshot) => {
-            const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            const items = snapshot.docs
+                .map(d => ({ id: d.id, ...d.data() }))
+                .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
             setInterests(items);
             setLoading(false);
         }, (err) => {
@@ -468,9 +471,164 @@ const BuyerActivity = ({ currentUser }) => {
     );
 };
 
+const GistNotificationsFeed = ({ currentUser }) => {
+    const [notifs, setNotifs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [gistNotifsEnabled, setGistNotifsEnabled] = useState(() => {
+        return localStorage.getItem('marketu_gist_notifs') !== 'disabled';
+    });
+
+    const toggleGistPref = () => {
+        const next = !gistNotifsEnabled;
+        setGistNotifsEnabled(next);
+        localStorage.setItem('marketu_gist_notifs', next ? 'enabled' : 'disabled');
+    };
+
+    useEffect(() => {
+        if (!currentUser?.uid) {
+            setLoading(false);
+            return;
+        }
+        let isMounted = true;
+        fetchUserGistNotifications(currentUser.uid).then(list => {
+            if (!isMounted) return;
+            setNotifs(list);
+            setLoading(false);
+            const unreadIds = list.filter(n => !n.read).map(n => n.id);
+            if (unreadIds.length > 0) {
+                markGistNotificationsRead(currentUser.uid, unreadIds);
+            }
+        });
+        return () => { isMounted = false; };
+    }, [currentUser?.uid]);
+
+    const getNotifLabel = (n) => {
+        switch (n.type) {
+            case 'gist_comment':
+                return `💬 ${n.actorName} commented on your Gist`;
+            case 'gist_reply':
+                return `↩️ ${n.actorName} replied to your comment`;
+            case 'gist_reaction':
+                return `🔥 ${n.actorName} reacted to your Gist`;
+            case 'gist_vote':
+                return `📊 ${n.previewText || 'New votes on your campus poll'}`;
+            default:
+                return `🔔 New activity on your Gist`;
+        }
+    };
+
+    return (
+        <div>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.75rem 1rem',
+                marginBottom: '1rem',
+                background: 'var(--surface)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--border)',
+                fontSize: '0.8125rem'
+            }}>
+                <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    🔔 Gist Social Alerts (Comments, Replies, Milestones)
+                </span>
+                <button
+                    onClick={toggleGistPref}
+                    style={{
+                        padding: '0.25rem 0.65rem',
+                        borderRadius: '99px',
+                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: gistNotifsEnabled ? 'var(--primary)' : 'var(--border)',
+                        color: gistNotifsEnabled ? 'white' : 'var(--text-secondary)'
+                    }}
+                >
+                    {gistNotifsEnabled ? 'Enabled' : 'Muted'}
+                </button>
+            </div>
+
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                    <div className="spinner" style={{ margin: '0 auto 1rem' }} />
+                    Loading Gist activity...
+                </div>
+            ) : !gistNotifsEnabled ? (
+                <div style={{
+                    textAlign: 'center',
+                    padding: '3rem 1.5rem',
+                    background: 'var(--surface)',
+                    borderRadius: 'var(--radius-xl)',
+                    border: '1px solid var(--border)'
+                }}>
+                    <p style={{ margin: 0, fontWeight: 700 }}>Gist notifications are currently muted.</p>
+                </div>
+            ) : notifs.length === 0 ? (
+                <div style={{
+                    textAlign: 'center',
+                    padding: '3.5rem 1.5rem',
+                    background: 'var(--surface)',
+                    borderRadius: 'var(--radius-xl)',
+                    border: '1px solid var(--border)'
+                }}>
+                    <Flame size={32} style={{ color: '#F59E0B', margin: '0 auto 0.75rem' }} />
+                    <h3 style={{ margin: '0 0 0.35rem', fontWeight: 800, fontSize: '1.0625rem' }}>No Gist buzz yet</h3>
+                    <p style={{ margin: '0 0 1.25rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                        Post a campus story, hot take, or poll to start getting reactions and replies!
+                    </p>
+                    <Link to="/gist" className="btn btn-primary" style={{ borderRadius: '99px', fontSize: '0.8125rem' }}>
+                        Explore Campus Gist
+                    </Link>
+                </div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {notifs.map(n => (
+                        <Link
+                            key={n.id}
+                            to={n.postId ? `/gist/post/${n.postId}` : '/gist'}
+                            style={{
+                                display: 'block',
+                                textDecoration: 'none',
+                                color: 'inherit',
+                                padding: '1rem 1.15rem',
+                                background: !n.read ? 'rgba(37, 99, 235, 0.05)' : 'var(--bg)',
+                                border: `1px solid ${!n.read ? 'rgba(37, 99, 235, 0.25)' : 'var(--border)'}`,
+                                borderRadius: 'var(--radius-xl)',
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                                <div style={{ fontWeight: 800, fontSize: '0.875rem', color: 'var(--text)' }}>
+                                    {getNotifLabel(n)}
+                                </div>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                                    {timeAgo(n.createdAt)}
+                                </span>
+                            </div>
+                            {n.previewText && n.type !== 'gist_vote' && (
+                                <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                                    &quot;{n.previewText}&quot;
+                                </div>
+                            )}
+                            {n.postTitle && (
+                                <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 600, marginTop: '0.35rem' }}>
+                                    Post: {n.postTitle}
+                                </div>
+                            )}
+                        </Link>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const Notifications = () => {
     const { currentUser, isSeller } = useAuth();
     const navigate = useNavigate();
+    const [activeSection, setActiveSection] = useState('market');
 
     if (!currentUser) {
         return (
@@ -492,7 +650,7 @@ const Notifications = () => {
                 <ArrowLeft size={20} /> Back
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
                 <div style={{
                     width: '48px', height: '48px',
                     backgroundColor: 'rgba(37, 99, 235, 0.1)',
@@ -508,17 +666,64 @@ const Notifications = () => {
                     </h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
                         {isSeller
-                            ? 'Buyers interested in your products'
-                            : 'Products you\'ve shown interest in'}
+                            ? 'Buyer inquiries & Campus Gist buzz'
+                            : 'Your marketplace inquiries & Campus Gist buzz'}
                     </p>
                 </div>
             </div>
 
-            {/* Render the appropriate view */}
-            {isSeller
-                ? <SellerNotifications currentUser={currentUser} />
-                : <BuyerActivity currentUser={currentUser} />
-            }
+            <div style={{
+                display: 'flex',
+                background: 'var(--surface)',
+                border: '1.5px solid var(--border)',
+                borderRadius: '99px',
+                padding: '0.25rem',
+                marginBottom: '1.5rem',
+                gap: '0.25rem'
+            }}>
+                <button
+                    onClick={() => setActiveSection('market')}
+                    style={{
+                        flex: 1,
+                        padding: '0.5rem 0.75rem',
+                        borderRadius: '99px',
+                        border: 'none',
+                        fontWeight: 700,
+                        fontSize: '0.8125rem',
+                        cursor: 'pointer',
+                        background: activeSection === 'market' ? 'var(--surface-elevated)' : 'transparent',
+                        color: activeSection === 'market' ? 'var(--primary)' : 'var(--text-secondary)',
+                        boxShadow: activeSection === 'market' ? 'var(--shadow-sm)' : 'none'
+                    }}
+                >
+                    🛒 {isSeller ? 'Buyer Inquiries' : 'Marketplace Activity'}
+                </button>
+                <button
+                    onClick={() => setActiveSection('gist')}
+                    style={{
+                        flex: 1,
+                        padding: '0.5rem 0.75rem',
+                        borderRadius: '99px',
+                        border: 'none',
+                        fontWeight: 700,
+                        fontSize: '0.8125rem',
+                        cursor: 'pointer',
+                        background: activeSection === 'gist' ? 'var(--surface-elevated)' : 'transparent',
+                        color: activeSection === 'gist' ? '#d97706' : 'var(--text-secondary)',
+                        boxShadow: activeSection === 'gist' ? 'var(--shadow-sm)' : 'none'
+                    }}
+                >
+                    🔥 Campus Gist Buzz
+                </button>
+            </div>
+
+            {activeSection === 'gist' ? (
+                <GistNotificationsFeed currentUser={currentUser} />
+            ) : isSeller ? (
+                <SellerNotifications currentUser={currentUser} />
+            ) : (
+                <BuyerActivity currentUser={currentUser} />
+            )}
         </div>
     );
 };
