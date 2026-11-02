@@ -275,20 +275,41 @@ export default function Gist() {
                         </p>
                     </div>
 
-                    <button
-                        onClick={() => setShowRulesModal(true)}
-                        className="btn btn-secondary"
-                        style={{
-                            fontSize: '0.75rem',
-                            padding: '0.4rem 0.85rem',
-                            borderRadius: 'var(--radius-full)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.35rem'
-                        }}
-                    >
-                        <ShieldCheck size={14} style={{ color: 'var(--success)' }} /> Community Rules
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <button
+                            onClick={() => {
+                                setCreateModalType(filterType !== 'all' ? filterType : 'gist');
+                                setShowCreateModal(true);
+                            }}
+                            className="btn btn-primary"
+                            style={{
+                                fontSize: '0.8125rem',
+                                padding: '0.45rem 1rem',
+                                borderRadius: 'var(--radius-full)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                                fontWeight: 800
+                            }}
+                        >
+                            <Plus size={16} /> Spill Gist
+                        </button>
+
+                        <button
+                            onClick={() => setShowRulesModal(true)}
+                            className="btn btn-secondary"
+                            style={{
+                                fontSize: '0.75rem',
+                                padding: '0.4rem 0.85rem',
+                                borderRadius: 'var(--radius-full)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem'
+                            }}
+                        >
+                            <ShieldCheck size={14} style={{ color: 'var(--success)' }} /> Rules
+                        </button>
+                    </div>
                 </div>
 
                 {/* Campus switcher inside hero when viewing Campus scope */}
@@ -300,6 +321,86 @@ export default function Gist() {
                         />
                     </div>
                 )}
+            </div>
+
+            {/* ── Always-Visible "Spill Gist" Composer Box ── */}
+            <div
+                onClick={() => {
+                    setCreateModalType(filterType !== 'all' ? filterType : 'gist');
+                    setShowCreateModal(true);
+                }}
+                style={{
+                    background: 'var(--surface-elevated)',
+                    border: '1.5px solid var(--border)',
+                    borderRadius: 'var(--radius-2xl)',
+                    padding: '1rem 1.15rem',
+                    marginBottom: '1.25rem',
+                    boxShadow: 'var(--shadow-sm)',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
+                }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <div className="gist-avatar" style={{ width: '40px', height: '40px', fontSize: '0.95rem' }}>
+                        {(userName || 'S').charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{
+                        flex: 1,
+                        padding: '0.65rem 1rem',
+                        borderRadius: 'var(--radius-full)',
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.875rem',
+                        fontWeight: 600
+                    }}>
+                        What&apos;s the gist on campus today? Tap to spill... 🔥
+                    </div>
+                </div>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.4rem',
+                    paddingTop: '0.65rem',
+                    borderTop: '1px solid var(--border)',
+                    overflowX: 'auto'
+                }} className="hide-scrollbar">
+                    {[
+                        { key: 'gist', label: 'Spill Gist', emoji: '🗣️' },
+                        { key: 'confession', label: 'Confess', emoji: '🎭' },
+                        { key: 'hot_take', label: 'Hot Take', emoji: '🌶️' },
+                        { key: 'poll', label: 'Poll', emoji: '📊' },
+                        { key: 'review', label: 'Review', emoji: '⭐' }
+                    ].map(item => (
+                        <button
+                            key={item.key}
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCreateModalType(item.key);
+                                setShowCreateModal(true);
+                            }}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                padding: '0.35rem 0.7rem',
+                                borderRadius: 'var(--radius-full)',
+                                background: 'var(--surface)',
+                                border: '1px solid var(--border)',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                color: 'var(--text)',
+                                whiteSpace: 'nowrap',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <span>{item.emoji}</span>
+                            <span>{item.label}</span>
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* ── Scope Tabs: Your Campus | Across Campuses | Saved ── */}
@@ -443,11 +544,8 @@ export default function Gist() {
                         {scope !== 'saved' && (
                             <button
                                 onClick={() => {
-                                    if (!currentUser) {
-                                        alert('Please log in or sign up to create a Gist.');
-                                    } else {
-                                        setShowCreateModal(true);
-                                    }
+                                    setCreateModalType(filterType !== 'all' ? filterType : 'gist');
+                                    setShowCreateModal(true);
                                 }}
                                 className="btn btn-primary"
                                 style={{ borderRadius: 'var(--radius-full)', padding: '0.65rem 1.5rem' }}
@@ -500,12 +598,8 @@ export default function Gist() {
             {/* ── Floating "Create Gist" Button ── */}
             <button
                 onClick={() => {
-                    if (!currentUser) {
-                        alert('Please log in or sign up to post on Market-U Gist.');
-                    } else {
-                        setCreateModalType(filterType !== 'all' ? filterType : 'gist');
-                        setShowCreateModal(true);
-                    }
+                    setCreateModalType(filterType !== 'all' ? filterType : 'gist');
+                    setShowCreateModal(true);
                 }}
                 className="gist-floating-btn"
                 aria-label="Create new Gist"

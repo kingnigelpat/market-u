@@ -450,10 +450,10 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    z-index: 1100;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 2000;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -469,10 +469,21 @@
     width: 100%;
     box-shadow: var(--shadow-xl);
     position: relative;
+    z-index: 2001;
     animation: modalScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @media (max-width: 640px) {
+    .gist-modal-overlay {
+        padding: 0.75rem;
+        align-items: flex-end;
+    }
+
+    .gist-modal-content {
+        max-height: 85vh !important;
+        padding: 1.25rem 1rem 1.5rem 1rem;
+    }
+
     .gist-modal-drawer {
         position: fixed;
         bottom: 0;
@@ -503,7 +514,7 @@
 /* ── Floating Create Button ── */
 .gist-floating-btn {
     position: fixed;
-    bottom: 4.75rem;
+    bottom: 5.75rem;
     right: 1.25rem;
     background: var(--gradient-primary);
     color: white;
@@ -512,12 +523,12 @@
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.75rem 1.25rem;
+    padding: 0.8rem 1.35rem;
     border-radius: var(--radius-full);
-    box-shadow: 0 4px 18px var(--primary-glow);
-    border: none;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45);
+    border: 2px solid rgba(255, 255, 255, 0.25);
     cursor: pointer;
-    z-index: 900;
+    z-index: 1050;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
