@@ -5,7 +5,36 @@ import ProductCard from '../components/ProductCard';
 import PromoBanner from '../components/PromoBanner';
 import BuyerDiscovery from '../components/BuyerDiscovery';
 import CampaignEditModal from '../components/CampaignEditModal';
-import { Search, PackagePlus, ArrowRight, Sparkles, X, GraduationCap } from 'lucide-react';
+import {
+    Search,
+    PackagePlus,
+    ArrowRight,
+    X,
+    GraduationCap,
+    Grid,
+    BadgeCheck,
+    Tv,
+    Smartphone,
+    Laptop,
+    Shirt,
+    HeartHandshake,
+    Home as HomeIcon,
+    BookOpen,
+    Utensils,
+    Wrench,
+    BedDouble,
+    Package,
+    TrendingUp,
+    ShoppingBag,
+    Tag,
+    Bell,
+    LayoutDashboard,
+    Bookmark,
+    Heart,
+    MessageSquare,
+    Globe,
+    Download
+} from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import InstallGuideModal from '../components/InstallGuideModal';
@@ -20,19 +49,19 @@ import { SUPPORTED_SCHOOL, DEFAULT_CAMPUS } from '../data/institutions';
 import CampusSwitcher from '../components/CampusSwitcher';
 
 const CATEGORIES = [
-    { key: 'all', label: 'All', emoji: '🔥' },
-    { key: 'verified', label: 'Verified', emoji: '⭐' },
-    { key: 'Electronics', label: 'Tech', emoji: '💻' },
-    { key: 'Phones & Tablets', label: 'Phones', emoji: '📱' },
-    { key: 'Computing', label: 'Laptops', emoji: '🖥️' },
-    { key: 'Fashion', label: 'Fashion', emoji: '👕' },
-    { key: 'Health & Beauty', label: 'Beauty', emoji: '💄' },
-    { key: 'Home & Kitchen', label: 'Home', emoji: '🏡' },
-    { key: 'Books & Stationery', label: 'Books', emoji: '📚' },
-    { key: 'Food & Groceries', label: 'Food', emoji: '🍕' },
-    { key: 'Services', label: 'Services', emoji: '🛠️' },
-    { key: 'Hostels & Rooms', label: 'Housing', emoji: '🛏️' },
-    { key: 'Other', label: 'Other', emoji: '📦' },
+    { key: 'all', label: 'All', Icon: Grid },
+    { key: 'verified', label: 'Verified', Icon: BadgeCheck },
+    { key: 'Electronics', label: 'Tech', Icon: Tv },
+    { key: 'Phones & Tablets', label: 'Phones', Icon: Smartphone },
+    { key: 'Computing', label: 'Laptops', Icon: Laptop },
+    { key: 'Fashion', label: 'Fashion', Icon: Shirt },
+    { key: 'Health & Beauty', label: 'Beauty', Icon: HeartHandshake },
+    { key: 'Home & Kitchen', label: 'Home', Icon: HomeIcon },
+    { key: 'Books & Stationery', label: 'Books', Icon: BookOpen },
+    { key: 'Food & Groceries', label: 'Food', Icon: Utensils },
+    { key: 'Services', label: 'Services', Icon: Wrench },
+    { key: 'Hostels & Rooms', label: 'Housing', Icon: BedDouble },
+    { key: 'Other', label: 'Other', Icon: Package },
 ];
 
 const Home = () => {
@@ -250,7 +279,7 @@ const Home = () => {
                                             ? '0 2px 8px rgba(37,99,235,0.3)'
                                             : '0 2px 8px rgba(16,185,129,0.3)',
                                     }}>
-                                        {isSeller ? '🏷️ Seller' : '🛍️ Buyer'}
+                                        {isSeller ? <><Tag size={11} /> Seller</> : <><ShoppingBag size={11} /> Buyer</>}
                                     </span>
                                 )}
                             </div>
@@ -277,10 +306,10 @@ const Home = () => {
                             marginBottom: '1.25rem',
                         }}>
                             <Link to="/register?role=buyer" className="btn btn-primary" style={{ justifyContent: 'center', fontSize: '0.875rem' }}>
-                                🛍️ Buy
+                                <ShoppingBag size={16} /> Buy
                             </Link>
                             <Link to="/register?role=seller" className="btn btn-secondary" style={{ justifyContent: 'center', fontSize: '0.875rem' }}>
-                                🏷️ Sell
+                                <Tag size={16} /> Sell
                             </Link>
                         </div>
                     )}
@@ -292,10 +321,10 @@ const Home = () => {
                                 + Post Item
                             </Link>
                             <Link to="/notifications" className="btn btn-secondary" style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', borderRadius: 'var(--radius-full)' }}>
-                                🔔 Alerts
+                                <Bell size={14} /> Alerts
                             </Link>
                             <Link to="/dashboard" className="btn btn-secondary" style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', borderRadius: 'var(--radius-full)' }}>
-                                📊 Dashboard
+                                <LayoutDashboard size={14} /> Dashboard
                             </Link>
                         </div>
                     )}
@@ -304,13 +333,13 @@ const Home = () => {
                     {isAuthenticated && !isSeller && (
                         <div className="animate-fade-in-up" style={{ display: 'flex', gap: '0.625rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
                             <Link to="/saved" className="btn btn-secondary" style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', borderRadius: 'var(--radius-full)' }}>
-                                🔖 Saved
+                                <Bookmark size={14} /> Saved
                             </Link>
                             <Link to="/notifications" className="btn btn-secondary" style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', borderRadius: 'var(--radius-full)' }}>
-                                ❤️ Activity
+                                <Heart size={14} /> Activity
                             </Link>
                             <Link to="/dashboard" className="btn btn-primary" style={{ fontSize: '0.8125rem', padding: '0.45rem 1rem', borderRadius: 'var(--radius-full)' }}>
-                                🏷️ Start Selling
+                                <Tag size={14} /> Start Selling
                             </Link>
                         </div>
                     )}
@@ -340,7 +369,8 @@ const Home = () => {
 
                     {/* ── Category filter chips ── */}
                     <div className="market-filters hide-scrollbar">
-                        {CATEGORIES.map(({ key, label, emoji }) => {
+                        {CATEGORIES.map((cat) => {
+                            const { key, label } = cat;
                             const isActive = key === 'verified' ? verifiedOnly : categoryFilter === key && !verifiedOnly;
                             return (
                                 <button
@@ -348,7 +378,7 @@ const Home = () => {
                                     onClick={() => handleCategoryClick(key)}
                                     className={`filter-chip ${isActive ? 'filter-chip--active' : ''}`}
                                 >
-                                    <span>{emoji}</span> {label}
+                                    <cat.Icon size={15} /> {label}
                                 </button>
                             );
                         })}
@@ -427,7 +457,7 @@ const Home = () => {
                             <X size={18} />
                         </button>
                         <div className="download-banner-icon">
-                            <Sparkles size={22} />
+                            <Download size={22} />
                         </div>
                         <div className="download-banner-text">
                             <h3>{isSeller ? 'Manage your store on the go' : 'Get the MarketU app'}</h3>
@@ -503,8 +533,8 @@ const Home = () => {
                             padding: '1rem 1.25rem',
                             marginBottom: '2rem',
                             borderRadius: 'var(--radius-2xl)',
-                            background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(245, 158, 11, 0.12) 100%)',
-                            border: '1.5px solid rgba(245, 158, 11, 0.28)',
+                            background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%)',
+                            border: '1.5px solid rgba(37, 99, 235, 0.22)',
                             flexWrap: 'wrap'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -512,23 +542,22 @@ const Home = () => {
                                     width: '42px',
                                     height: '42px',
                                     borderRadius: '12px',
-                                    background: 'linear-gradient(135deg, #FF512F 0%, #F09819 100%)',
+                                    background: 'var(--gradient-primary)',
                                     color: 'white',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    fontSize: '1.25rem',
                                     flexShrink: 0,
-                                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.35)'
+                                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
                                 }}>
-                                    🔥
+                                    <MessageSquare size={20} />
                                 </div>
                                 <div>
                                     <div style={{ fontWeight: 900, fontSize: '0.95rem', color: 'var(--text)' }}>
-                                        Market-U Gist is Live!
+                                        Market-U Gist is Live
                                     </div>
                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                        Funny product reviews, anonymous confessions, campus polls & nationwide banter
+                                        Product reviews, anonymous confessions, campus polls & student banter
                                     </div>
                                 </div>
                             </div>
@@ -542,7 +571,7 @@ const Home = () => {
                                         borderRadius: 'var(--radius-full)'
                                     }}
                                 >
-                                    🗣️ Your Campus Gist
+                                    <MessageSquare size={14} /> Your Campus Gist
                                 </Link>
                                 <Link
                                     to="/gist?scope=across"
@@ -553,12 +582,12 @@ const Home = () => {
                                         borderRadius: 'var(--radius-full)'
                                     }}
                                 >
-                                    🌍 Across Campuses
+                                    <Globe size={14} /> Across Campuses
                                 </Link>
                             </div>
                         </div>
 
-                        {/* ── Hot Campus Drops (Impulse Steals Swimlane) ── */}
+                        {/* ── Popular Campus Picks Swimlane ── */}
                         {(() => {
                             const hotDrops = [...campusProducts]
                                 .filter(p => p.stock === undefined || p.stock === null || parseInt(p.stock, 10) > 0)
@@ -568,14 +597,14 @@ const Home = () => {
                             return (
                                 <div className="market-section">
                                     <div className="market-section-header">
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <span style={{ fontSize: '1.25rem' }}>⚡</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                                            <TrendingUp size={20} style={{ color: 'var(--primary)' }} />
                                             <div>
                                                 <h2 className="market-section-title" style={{ margin: 0 }}>
-                                                    Hot Campus Drops
+                                                    Popular on Campus
                                                 </h2>
                                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                                                    Most-viewed steals students are grabbing right now
+                                                    Most-viewed items students are checking out right now
                                                 </span>
                                             </div>
                                         </div>
@@ -599,7 +628,7 @@ const Home = () => {
                                 <div className="market-section">
                                     <div className="market-section-header">
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <span style={{ fontSize: '1.25rem' }}>⭐</span>
+                                            <BadgeCheck size={20} style={{ color: 'var(--primary)' }} />
                                             <h2 className="market-section-title">Verified Sellers</h2>
                                         </div>
                                         <button className="market-section-link" onClick={() => handleCategoryClick('verified')}>
@@ -626,7 +655,7 @@ const Home = () => {
                                 <div className="market-section" key={category.key}>
                                     <div className="market-section-header">
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <span style={{ fontSize: '1.25rem' }}>{category.emoji}</span>
+                                            <category.Icon size={20} style={{ color: 'var(--primary)' }} />
                                             <h2 className="market-section-title">{category.label}</h2>
                                         </div>
                                         <button className="market-section-link" onClick={() => handleCategoryClick(category.key)}>
@@ -653,7 +682,7 @@ const Home = () => {
                                 <div className="market-section">
                                     <div className="market-section-header">
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <span style={{ fontSize: '1.25rem' }}>✨</span>
+                                            <Package size={20} style={{ color: 'var(--primary)' }} />
                                             <h2 className="market-section-title">More Campus Discoveries</h2>
                                         </div>
                                     </div>
@@ -710,7 +739,6 @@ const Home = () => {
             <style>{`
                 .market-page {
                     background: var(--bg);
-                    min-height: 100vh;
                 }
 
                 .market-hero {
@@ -903,12 +931,12 @@ const Home = () => {
                 }
 
                 .market-body {
-                    padding: 1.5rem 1.5rem 6rem;
+                    padding: 1.25rem 1.5rem 1rem;
                 }
 
                 @media (max-width: 640px) {
                     .market-body {
-                        padding: 1rem 1rem 6rem;
+                        padding: 0.875rem 1rem 0.75rem;
                     }
                 }
 
@@ -966,12 +994,16 @@ const Home = () => {
                 }
 
                 .market-section {
-                    margin-bottom: 2.5rem;
+                    margin-bottom: 2rem;
+                }
+
+                .market-section:last-child {
+                    margin-bottom: 0.5rem;
                 }
 
                 @media (max-width: 640px) {
                     .market-section {
-                        margin-bottom: 2rem;
+                        margin-bottom: 1.5rem;
                     }
                 }
 
@@ -1052,16 +1084,16 @@ const Home = () => {
                         margin: -0.5rem -1rem 0;
                         padding: 0.5rem 1rem 1rem;
                         scroll-padding-left: 1rem;
-                        gap: 0.75rem;
+                        gap: 0.85rem;
                     }
-                    .swimlane-item { flex: 0 0 calc(48% - 0.5rem); }
+                    .swimlane-item { flex: 0 0 calc(54% - 0.5rem); }
                 }
 
                 @media (max-width: 480px) {
                     .swimlane-item {
-                        flex: 0 0 162px;
-                        min-width: 155px;
-                        max-width: 175px;
+                        flex: 0 0 68vw;
+                        min-width: 210px;
+                        max-width: 245px;
                     }
                 }
 

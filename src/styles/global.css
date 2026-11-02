@@ -205,7 +205,6 @@ select:focus {
 .app-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
 }
 
 /* ── Sleek, minimal top progress bar & loader ────────────────────────────── */
@@ -350,17 +349,16 @@ select:focus {
 }
 
 .main-content {
-  flex: 1;
   padding: 0;
 }
 
 .main-content--with-padding {
-  padding: 2rem 0;
+  padding: 1rem 0 0.75rem 0;
 }
 
 @media (max-width: 768px) {
   .main-content--with-padding {
-    padding-bottom: 5.5rem;
+    padding: 0.5rem 0 0.5rem 0;
   }
 }
 

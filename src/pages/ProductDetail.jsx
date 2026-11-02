@@ -13,16 +13,21 @@ import {
     Share2,
     Check,
     ExternalLink,
-    MessageCircle,
+    MessageSquare,
+    ShoppingBag,
     GraduationCap,
-    Lock,
-    Flame,
-    Zap,
     ShieldCheck,
     Eye,
     Star,
-    Sparkles
+    Clock,
+    CheckCircle2,
+    XCircle,
+    Maximize2,
+    Tag,
+    TrendingUp,
+    UserCheck
 } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SellerRating from '../components/SellerRating';
 import { useAuth } from '../context/AuthContext';
@@ -194,7 +199,8 @@ const ProductDetail = () => {
         return <div className="container" style={{ padding: '3rem 0', textAlign: 'center' }}>Product not found.</div>;
     }
 
-    const isOwner = Boolean(currentUser && product && (currentUser.uid === product.sellerId || isAdmin));
+    const isOwner = Boolean(currentUser && product && currentUser.uid === product.sellerId);
+    const canManage = Boolean(isOwner || isAdmin);
     const cleanSellerPhone = formatWhatsAppNumber(product?.sellerPhone);
     const images = Array.isArray(product.images) && product.images.length > 0
         ? product.images
@@ -241,14 +247,14 @@ const ProductDetail = () => {
             return;
         }
 
-        if (isOwner) return;
-
         if (showChat) {
             setShowChat(false);
             return;
         }
 
         setShowChat(true);
+        if (isOwner) return;
+
         setAskedInApp(true);
 
         logEvent({
@@ -384,7 +390,7 @@ const ProductDetail = () => {
     };
 
     return (
-        <div className="container" style={{ paddingBottom: '5rem' }}>
+        <div className="container" style={{ paddingBottom: '1rem' }}>
             {showNotifPrompt && (
                 <NotificationPermissionPrompt
                     onAllow={enableNotifications}
@@ -500,14 +506,14 @@ const ProductDetail = () => {
                                         borderRadius: '99px',
                                         background: isLowStock
                                             ? 'linear-gradient(135deg, #EF4444, #DC2626)'
-                                            : 'linear-gradient(135deg, #F59E0B, #EA580C)',
+                                            : 'linear-gradient(135deg, #2563EB, #1D4ED8)',
                                         color: 'white',
                                         fontSize: '0.75rem',
                                         fontWeight: 800,
                                         boxShadow: '0 4px 14px rgba(0,0,0,0.25)'
                                     }}>
-                                        <Flame size={13} fill="currentColor" />
-                                        <span>{isLowStock ? `Only ${stockNum} Left!` : 'Hot Campus Pick'}</span>
+                                        {isLowStock ? <Clock size={13} /> : <TrendingUp size={13} />}
+                                        <span>{isLowStock ? `Only ${stockNum} Left` : 'Available Now'}</span>
                                     </div>
                                 )}
 
@@ -515,14 +521,18 @@ const ProductDetail = () => {
                                     position: 'absolute',
                                     bottom: '0.75rem',
                                     right: '0.75rem',
-                                    padding: '0.25rem 0.65rem',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.3rem',
+                                    padding: '0.28rem 0.65rem',
                                     borderRadius: '99px',
-                                    background: 'rgba(0,0,0,0.65)',
+                                    background: 'rgba(0,0,0,0.68)',
                                     color: 'white',
                                     fontSize: '0.7rem',
                                     fontWeight: 700
                                 }}>
-                                    🔍 Tap to zoom ({activeImageIdx + 1}/{images.length})
+                                    <Maximize2 size={11} />
+                                    <span>Tap to zoom ({activeImageIdx + 1}/{images.length})</span>
                                 </div>
                             </div>
 
@@ -569,88 +579,18 @@ const ProductDetail = () => {
                             No images available
                         </div>
                     )}
-
-                    {/* ── Campus Gist Reviews & Buzz Section (Desktop & Mobile) ── */}
-                    <div style={{
-                        marginTop: '1.75rem',
-                        padding: '1.25rem',
-                        background: 'var(--surface-elevated)',
-                        borderRadius: 'var(--radius-xl)',
-                        border: '1px solid var(--border)'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                                <Flame size={18} style={{ color: '#F59E0B' }} />
-                                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>
-                                    Campus Gist & Reviews ({gistReviews.length})
-                                </h3>
-                            </div>
-                            <Link
-                                to={`/gist?create=true&type=${isOwner ? 'gist' : 'review'}&productId=${product.id}`}
-                                style={{
-                                    fontSize: '0.75rem',
-                                    fontWeight: 800,
-                                    color: 'var(--primary)',
-                                    textDecoration: 'none',
-                                    background: 'var(--primary-light)',
-                                    padding: '0.3rem 0.75rem',
-                                    borderRadius: '99px'
-                                }}
-                            >
-                                + {isOwner ? 'Hype on Gist' : 'Write Funny Review'}
-                            </Link>
-                        </div>
-
-                        {gistReviews.length === 0 ? (
-                            <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                                Bought this item or have thoughts on it? Be the first student to drop a review or gist about it!
-                            </p>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                                {gistReviews.map(rev => (
-                                    <Link
-                                        key={rev.id}
-                                        to={`/gist/post/${rev.id}`}
-                                        style={{
-                                            display: 'block',
-                                            padding: '0.75rem',
-                                            background: 'var(--surface)',
-                                            borderRadius: 'var(--radius-lg)',
-                                            border: '1px solid var(--border)',
-                                            textDecoration: 'none',
-                                            color: 'inherit'
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                                            <span style={{ fontWeight: 800, fontSize: '0.8125rem' }}>
-                                                {rev.authorName} • {rev.schoolShort}
-                                            </span>
-                                            {rev.product?.rating && (
-                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#F59E0B', fontSize: '0.75rem', fontWeight: 800 }}>
-                                                    <Star size={12} fill="#F59E0B" /> {rev.product.rating}/5
-                                                </span>
-                                            )}
-                                        </div>
-                                        <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                                            {rev.content?.slice(0, 140)}{rev.content?.length > 140 ? '...' : ''}
-                                        </p>
-                                        <div style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
-                                            {formatGistTime(rev.createdAt)} • Tap to view in Gist
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
                 </div>
 
-                {/* ── Details & High-Conversion Impulse Box ── */}
+                {/* ── Details & Buy / Contact Seller Box ── */}
                 <div className="product-info-container">
                     <div style={{ position: 'sticky', top: '2rem' }}>
                         {/* Category & Campus Pills */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.65rem' }}>
                             {product.category && (
                                 <span style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.3rem',
                                     fontSize: '0.7rem',
                                     fontWeight: 800,
                                     textTransform: 'uppercase',
@@ -660,7 +600,7 @@ const ProductDetail = () => {
                                     background: 'rgba(245, 158, 11, 0.14)',
                                     color: '#D97706'
                                 }}>
-                                    ✨ {product.category}
+                                    <Tag size={12} /> {product.category}
                                 </span>
                             )}
                             <span style={{
@@ -802,18 +742,18 @@ const ProductDetail = () => {
                                         : '#059669'
                                 }}>
                                     {isOutOfStock ? (
-                                        <>❌ Sold Out</>
+                                        <><XCircle size={14} /> Sold Out</>
                                     ) : isLowStock ? (
-                                        <>🔥 Only {stockNum} left — Grab fast!</>
+                                        <><Clock size={14} /> Only {stockNum} left</>
                                     ) : stockNum !== null ? (
-                                        <>⚡ {stockNum} in stock • Ready for pickup</>
+                                        <><CheckCircle2 size={14} /> {stockNum} in stock • Ready for pickup</>
                                     ) : (
-                                        <>✅ Available on Campus</>
+                                        <><CheckCircle2 size={14} /> Available on Campus</>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Impulse Trust Signals */}
+                            {/* Trust Signals */}
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -826,115 +766,126 @@ const ProductDetail = () => {
                                 color: 'var(--text-secondary)',
                                 flexWrap: 'wrap'
                             }}>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
                                     <ShieldCheck size={14} style={{ color: 'var(--success)' }} /> Inspect Before Paying
                                 </span>
                                 <span>•</span>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <Zap size={14} style={{ color: '#F59E0B' }} /> Fast Campus Meetup
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                    <Clock size={14} style={{ color: '#F59E0B' }} /> Fast Campus Meetup
                                 </span>
                                 <span>•</span>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <Sparkles size={14} style={{ color: 'var(--primary)' }} /> Direct Student Seller
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                                    <UserCheck size={14} style={{ color: 'var(--primary)' }} /> Direct Student Seller
                                 </span>
                             </div>
                         </div>
 
-                        {/* Primary Action Buttons right below Price for instant conversion */}
-                        {!isOwner && (
-                            isOutOfStock ? (
-                                <div style={{
-                                    width: '100%', padding: '1.1rem', marginBottom: '1.25rem', fontSize: '1.05rem', fontWeight: '800', borderRadius: 'var(--radius-xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', backgroundColor: 'rgba(148, 163, 184, 0.1)', color: 'var(--text-secondary)', border: '1px dashed var(--border)', cursor: 'not-allowed'
-                                }}>
-                                    ❌ Out of Stock
-                                </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                                    <button
-                                        onClick={handleAskInApp}
-                                        disabled={interestLoading}
-                                        id="ask-in-app-btn"
-                                        style={{
-                                            width: '100%',
-                                            padding: '1.05rem 1.25rem',
-                                            fontSize: '1.05rem',
-                                            fontWeight: '900',
-                                            borderRadius: 'var(--radius-xl)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '0.6rem',
-                                            background: showChat
-                                                ? 'var(--primary-dark, #1d4ed8)'
-                                                : 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 55%, #F59E0B 100%)',
-                                            color: '#ffffff',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            boxShadow: '0 8px 22px -4px rgba(37, 99, 235, 0.48)',
-                                            transition: 'all 0.2s ease',
-                                        }}
-                                    >
-                                        {interestLoading ? (
-                                            <Loader size={20} style={{ animation: 'spin 0.8s linear infinite' }} />
-                                        ) : (
-                                            <Zap size={20} fill="currentColor" />
-                                        )}
-                                        {showChat ? 'Close Seller Chat' : 'Grab This Deal — Message Seller Now'}
-                                    </button>
-
-                                    {cleanSellerPhone && (
-                                        whatsappUnlocked ? (
-                                            <button
-                                                onClick={handleWhatsAppChat}
-                                                id="whatsapp-chat-btn"
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '0.85rem 1.25rem',
-                                                    fontSize: '0.9375rem',
-                                                    fontWeight: '800',
-                                                    borderRadius: 'var(--radius-xl)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    gap: '0.5rem',
-                                                    backgroundColor: '#25D366',
-                                                    color: '#ffffff',
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                    boxShadow: '0 4px 12px -2px rgba(37, 211, 102, 0.35)',
-                                                }}
-                                            >
-                                                <MessageCircle size={18} />
-                                                Continue on WhatsApp
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={handleWhatsAppChat}
-                                                id="whatsapp-chat-btn"
-                                                title="Send an in-app message first to open WhatsApp"
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '0.75rem 1.25rem',
-                                                    fontSize: '0.85rem',
-                                                    fontWeight: '700',
-                                                    borderRadius: 'var(--radius-xl)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    gap: '0.5rem',
-                                                    border: '1.5px dashed var(--border)',
-                                                    backgroundColor: 'var(--surface-elevated)',
-                                                    color: 'var(--text-secondary)',
-                                                    cursor: 'pointer',
-                                                }}
-                                            >
-                                                <Lock size={14} />
-                                                <span>Chat on WhatsApp (Unlocks after first message)</span>
-                                            </button>
-                                        )
+                        {/* Primary Buy / Contact Seller Buttons (always shown so Buyers, Sellers & Admins see how to buy) */}
+                        {isOutOfStock ? (
+                            <div style={{
+                                width: '100%', padding: '1.1rem', marginBottom: '1.25rem', fontSize: '1.05rem', fontWeight: '800', borderRadius: 'var(--radius-xl)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', backgroundColor: 'rgba(148, 163, 184, 0.1)', color: 'var(--text-secondary)', border: '1px dashed var(--border)', cursor: 'not-allowed'
+                            }}>
+                                <XCircle size={18} /> Out of Stock
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                                {isOwner && (
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        color: 'var(--primary)',
+                                        background: 'var(--primary-light)',
+                                        padding: '0.4rem 0.75rem',
+                                        borderRadius: 'var(--radius-md)',
+                                        textAlign: 'center'
+                                    }}>
+                                        This is your listing — students use the buttons below to buy from you:
+                                    </div>
+                                )}
+                                <button
+                                    onClick={handleAskInApp}
+                                    disabled={interestLoading}
+                                    id="ask-in-app-btn"
+                                    style={{
+                                        width: '100%',
+                                        padding: '1.05rem 1.25rem',
+                                        fontSize: '1.02rem',
+                                        fontWeight: '900',
+                                        borderRadius: 'var(--radius-xl)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.6rem',
+                                        background: showChat
+                                            ? 'var(--primary-hover)'
+                                            : 'var(--gradient-primary)',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 8px 22px -4px rgba(37, 99, 235, 0.45)',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                >
+                                    {interestLoading ? (
+                                        <Loader size={20} style={{ animation: 'spin 0.8s linear infinite' }} />
+                                    ) : (
+                                        <ShoppingBag size={20} />
                                     )}
-                                </div>
-                            )
+                                    {showChat ? 'Close Seller Chat' : 'Buy / Message Seller Now'}
+                                </button>
+
+                                {cleanSellerPhone && (
+                                    whatsappUnlocked ? (
+                                        <button
+                                            onClick={handleWhatsAppChat}
+                                            id="whatsapp-chat-btn"
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.85rem 1.25rem',
+                                                fontSize: '0.9375rem',
+                                                fontWeight: '800',
+                                                borderRadius: 'var(--radius-xl)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
+                                                backgroundColor: '#25D366',
+                                                color: '#ffffff',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 4px 12px -2px rgba(37, 211, 102, 0.35)',
+                                            }}
+                                        >
+                                            <FaWhatsapp size={19} />
+                                            Buy via WhatsApp
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={handleWhatsAppChat}
+                                            id="whatsapp-chat-btn"
+                                            title="Send an in-app message first to open WhatsApp"
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.78rem 1.25rem',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '700',
+                                                borderRadius: 'var(--radius-xl)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
+                                                border: '1.5px solid rgba(37, 211, 102, 0.35)',
+                                                backgroundColor: 'rgba(37, 211, 102, 0.08)',
+                                                color: '#16A34A',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            <FaWhatsapp size={17} />
+                                            <span>Chat Seller on WhatsApp</span>
+                                        </button>
+                                    )
+                                )}
+                            </div>
                         )}
 
                         {/* Seller response status & notification feedback */}
@@ -945,16 +896,20 @@ const ProductDetail = () => {
                                 backgroundColor: 'rgba(16, 185, 129, 0.08)',
                                 borderRadius: 'var(--radius-md)',
                                 border: '1px solid rgba(16, 185, 129, 0.25)',
-                                textAlign: 'center',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.45rem'
                             }}>
+                                <CheckCircle2 size={16} color="var(--success)" />
                                 <p style={{ fontSize: '0.875rem', color: 'var(--success)', fontWeight: '700', margin: '0' }}>
-                                    ⚡ Seller notified, usually replies in {product.avgReplyMinutes ? `~${product.avgReplyMinutes} mins` : '10-15 minutes'}
+                                    Seller notified — usually replies in {product.avgReplyMinutes ? `~${product.avgReplyMinutes} mins` : '10-15 minutes'}
                                 </p>
                             </div>
                         )}
 
                         {/* Chat UI */}
-                        {showChat && !isOwner && isAuthenticated && (
+                        {showChat && isAuthenticated && (
                             <div style={{ marginBottom: '1.5rem' }}>
                                 <ProductChat
                                     product={product}
@@ -1051,7 +1006,7 @@ const ProductDetail = () => {
 
                         {/* Secondary Social / Gist Actions */}
                         {!isOwner && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.25rem' }}>
                                 <Link
                                     to={`/gist?create=true&type=review&productId=${product.id}`}
                                     style={{
@@ -1064,13 +1019,13 @@ const ProductDetail = () => {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         gap: '0.45rem',
-                                        border: '1.5px solid rgba(245, 158, 11, 0.35)',
-                                        backgroundColor: 'rgba(245, 158, 11, 0.08)',
-                                        color: 'var(--accent-hover)',
+                                        border: '1.5px solid rgba(37, 99, 235, 0.3)',
+                                        backgroundColor: 'var(--primary-light)',
+                                        color: 'var(--primary)',
                                         textDecoration: 'none',
                                     }}
                                 >
-                                    <Flame size={15} /> Review or Spill Gist About This Item
+                                    <MessageSquare size={15} /> Write a Product Review on Gist
                                 </Link>
 
                                 <button
@@ -1097,13 +1052,13 @@ const ProductDetail = () => {
                                         cursor: 'pointer',
                                     }}
                                 >
-                                    <Share2 size={14} /> Share product on WhatsApp Status
+                                    <FaWhatsapp size={15} color="#25D366" /> Share on WhatsApp Status
                                 </button>
                             </div>
                         )}
 
-                        {isOwner && (
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0' }}>
+                        {canManage && (
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0', marginBottom: '1.5rem' }}>
                                 <Link
                                     to={`/gist?create=true&type=gist&productId=${product.id}`}
                                     className="btn btn-secondary"
@@ -1118,7 +1073,7 @@ const ProductDetail = () => {
                                         background: 'var(--primary-light)'
                                     }}
                                 >
-                                    <Flame size={16} /> Share Product to Campus Gist
+                                    <MessageSquare size={16} /> Share Product to Campus Gist
                                 </Link>
                                 <Link
                                     to={`/edit-product/${id}`}
@@ -1126,7 +1081,7 @@ const ProductDetail = () => {
                                     style={{ padding: '0.875rem', fontSize: '0.9375rem', fontWeight: '600', justifyContent: 'center' }}
                                 >
                                     <Edit size={18} />
-                                    Edit Post
+                                    Edit Listing
                                 </Link>
                                 <button
                                     onClick={handleDelete}
@@ -1139,9 +1094,205 @@ const ProductDetail = () => {
                                 </button>
                             </div>
                         )}
+
+                        {/* ── Campus Gist Reviews & Buzz Section (placed after Buy Details so Mobile users see Buy Box first) ── */}
+                        <div style={{
+                            marginTop: '1.25rem',
+                            padding: '1.25rem',
+                            background: 'var(--surface-elevated)',
+                            borderRadius: 'var(--radius-xl)',
+                            border: '1px solid var(--border)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                                    <MessageSquare size={18} style={{ color: 'var(--primary)' }} />
+                                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>
+                                        Student Reviews & Gist ({gistReviews.length})
+                                    </h3>
+                                </div>
+                                <Link
+                                    to={`/gist?create=true&type=${isOwner ? 'gist' : 'review'}&productId=${product.id}`}
+                                    style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: 800,
+                                        color: 'var(--primary)',
+                                        textDecoration: 'none',
+                                        background: 'var(--primary-light)',
+                                        padding: '0.3rem 0.75rem',
+                                        borderRadius: '99px'
+                                    }}
+                                >
+                                    + {isOwner ? 'Promote on Gist' : 'Write Review'}
+                                </Link>
+                            </div>
+
+                            {gistReviews.length === 0 ? (
+                                <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                                    Bought this item or have thoughts on it? Be the first student to write a review about it.
+                                </p>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                                    {gistReviews.map(rev => (
+                                        <Link
+                                            key={rev.id}
+                                            to={`/gist/post/${rev.id}`}
+                                            style={{
+                                                display: 'block',
+                                                padding: '0.75rem',
+                                                background: 'var(--surface)',
+                                                borderRadius: 'var(--radius-lg)',
+                                                border: '1px solid var(--border)',
+                                                textDecoration: 'none',
+                                                color: 'inherit'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                                <span style={{ fontWeight: 800, fontSize: '0.8125rem' }}>
+                                                    {rev.authorName} • {rev.schoolShort}
+                                                </span>
+                                                {rev.product?.rating && (
+                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#F59E0B', fontSize: '0.75rem', fontWeight: 800 }}>
+                                                        <Star size={12} fill="#F59E0B" /> {rev.product.rating}/5
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                                                {rev.content?.slice(0, 140)}{rev.content?.length > 140 ? '...' : ''}
+                                            </p>
+                                            <div style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
+                                                {formatGistTime(rev.createdAt)} • View in Gist
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* ── Sticky Mobile Bottom Buy Bar (Native E-Commerce Feel on Mobile) ── */}
+            {!isOutOfStock && (
+                <div className="mobile-sticky-buy-bar">
+                    <div className="mobile-sticky-buy-price">
+                        <span className="mobile-sticky-buy-label">Price</span>
+                        <span className="mobile-sticky-buy-amount">
+                            ₦{(parseFloat(product.price) || 0).toLocaleString('en-NG', {
+                                maximumFractionDigits: (parseFloat(product.price) % 1 === 0 ? 0 : 2)
+                            })}
+                        </span>
+                    </div>
+                    <div className="mobile-sticky-buy-actions">
+                        <button
+                            onClick={() => {
+                                handleAskInApp();
+                                setTimeout(() => {
+                                    document.getElementById('ask-in-app-btn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }, 100);
+                            }}
+                            className="mobile-sticky-btn-primary"
+                        >
+                            <ShoppingBag size={16} />
+                            <span>{showChat ? 'View Chat' : 'Buy / Message Seller'}</span>
+                        </button>
+                        {cleanSellerPhone && (
+                            <button
+                                onClick={handleWhatsAppChat}
+                                className="mobile-sticky-btn-whatsapp"
+                                aria-label="Contact on WhatsApp"
+                            >
+                                <FaWhatsapp size={20} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            <style>{`
+                .mobile-sticky-buy-bar {
+                    display: none;
+                }
+
+                @media (max-width: 768px) {
+                    .mobile-sticky-buy-bar {
+                        position: fixed;
+                        bottom: calc(3.85rem + env(safe-area-inset-bottom, 0px));
+                        left: 0;
+                        right: 0;
+                        z-index: 990;
+                        background: var(--surface-elevated);
+                        border-top: 1.5px solid var(--border);
+                        padding: 0.65rem 1rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 0.75rem;
+                        box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.12);
+                    }
+
+                    .mobile-sticky-buy-price {
+                        display: flex;
+                        flex-direction: column;
+                        min-width: 0;
+                    }
+
+                    .mobile-sticky-buy-label {
+                        font-size: 0.65rem;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        color: var(--text-secondary);
+                        letter-spacing: 0.04em;
+                    }
+
+                    .mobile-sticky-buy-amount {
+                        font-family: var(--font-display);
+                        font-size: 1.15rem;
+                        font-weight: 900;
+                        color: var(--primary);
+                        line-height: 1.1;
+                        white-space: nowrap;
+                    }
+
+                    .mobile-sticky-buy-actions {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        flex: 1;
+                        justify-content: flex-end;
+                    }
+
+                    .mobile-sticky-btn-primary {
+                        flex: 1;
+                        max-width: 210px;
+                        padding: 0.7rem 1rem;
+                        border-radius: var(--radius-full);
+                        background: var(--gradient-primary);
+                        color: #ffffff;
+                        font-size: 0.825rem;
+                        font-weight: 800;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.4rem;
+                        border: none;
+                        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+                    }
+
+                    .mobile-sticky-btn-whatsapp {
+                        width: 42px;
+                        height: 42px;
+                        border-radius: 50%;
+                        background: #25D366;
+                        color: #ffffff;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        border: none;
+                        flex-shrink: 0;
+                        box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35);
+                    }
+                }
+            `}</style>
 
             <AuthPromptModal
                 isOpen={showPrompt}

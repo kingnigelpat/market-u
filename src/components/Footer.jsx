@@ -1,10 +1,7 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Mail, Globe, ArrowRight, Smartphone, Share, Download, Sparkles, Shield, Zap } from 'lucide-react';
 
 const Footer = () => {
-  const location = useLocation();
-  if (location.pathname === '/') return null;
-
   return (
     <footer className="app-footer">
       <div className="container">
@@ -100,7 +97,13 @@ const Footer = () => {
         .app-footer {
           background: var(--text);
           color: #F1F5F9;
-          padding: 4rem 0 2rem;
+          padding: 2.5rem 0 2rem;
+        }
+
+        @media (max-width: 768px) {
+          .app-footer {
+            padding: 2rem 0 5.5rem;
+          }
         }
 
         [data-theme="dark"] .app-footer {

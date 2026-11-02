@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Sparkles, Search, Heart, Megaphone, MessageCircle, GraduationCap, Flame } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Search, Heart, Megaphone, MessageCircle, GraduationCap } from 'lucide-react';
 
 const Navbar = () => {
     const { isAuthenticated, isSeller, isAdmin, userRole, currentUser } = useAuth();
@@ -16,7 +16,7 @@ const Navbar = () => {
     const [savedCount, setSavedCount] = useState(0);
     const menuRef = useRef(null);
 
-    const isLanding = location.pathname === '/';
+    const isLanding = location.pathname === '/search';
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
@@ -84,7 +84,7 @@ const Navbar = () => {
                                 <PlusCircle size={14} /> Post
                             </Link>
                             <Link to="/gist" className="nav-link">
-                                <Flame size={16} style={{ color: '#F59E0B' }} /> Gist
+                                <MessageCircle size={16} /> Gist
                             </Link>
                             <Link to="/dashboard" className="nav-link">
                                 <LayoutDashboard size={16} /> Dashboard
@@ -105,7 +105,7 @@ const Navbar = () => {
                                 <Compass size={16} /> Browse
                             </Link>
                             <Link to="/gist" className="nav-link">
-                                <Flame size={16} style={{ color: '#F59E0B' }} /> Gist
+                                <MessageCircle size={16} /> Gist
                             </Link>
                             <Link to="/schools" className="nav-link nav-link--muted">
                                 <GraduationCap size={16} /> Campuses
@@ -120,10 +120,10 @@ const Navbar = () => {
                     {!isAuthenticated ? (
                         <div className="app-navbar-auth">
                             <Link to="/gist" className="nav-link nav-link--muted" style={{ marginRight: '0.25rem' }}>
-                                <Flame size={16} style={{ color: '#F59E0B' }} /> Gist
+                                <MessageCircle size={16} /> Gist
                             </Link>
                             <Link to="/login" className="nav-login-link">Log in</Link>
-                            <Link to="/register" className="btn btn-primary nav-signup-btn">Sign up <Sparkles size={12} /></Link>
+                            <Link to="/register" className="btn btn-primary nav-signup-btn">Sign up</Link>
                         </div>
                     ) : (
                         <div className="app-navbar-user">
@@ -178,7 +178,7 @@ const Navbar = () => {
                                             <>
                                                 <div className="nav-dropdown-divider" />
                                                 <Link to="/gist" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
-                                                    <Flame size={16} style={{ color: '#F59E0B' }} /> Campus Gist
+                                                    <MessageCircle size={16} /> Campus Gist
                                                 </Link>
                                                 <Link to="/market" className="mobile-only nav-dropdown-item" onClick={() => setMenuOpen(false)}>
                                                     <Compass size={16} /> Browse Market
@@ -208,7 +208,7 @@ const Navbar = () => {
                                         {isSeller && (
                                             <>
                                                 <Link to="/gist" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
-                                                    <Flame size={16} style={{ color: '#F59E0B' }} /> Campus Gist
+                                                    <MessageCircle size={16} /> Campus Gist
                                                 </Link>
                                                 <Link to="/notifications" onClick={() => setMenuOpen(false)} className={`nav-dropdown-item ${unseenCount > 0 ? 'nav-dropdown-item--highlight' : ''}`}>
                                                     <Bell size={16} /> Notifications

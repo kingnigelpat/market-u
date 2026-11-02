@@ -68,7 +68,7 @@ const AppContent = () => {
     const { loading } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-    const isLanding = location.pathname === '/';
+    const isFlushLayout = location.pathname === '/' || location.pathname === '/market' || location.pathname === '/search';
 
 
     // Listen for NAVIGATE messages from the service worker (notification click)
@@ -109,7 +109,7 @@ const AppContent = () => {
             <ScrollToTop />
             <Navbar />
             <BottomNavigation />
-            <main className={`main-content ${!isLanding ? 'main-content--with-padding' : ''}`}>
+            <main className={`main-content ${!isFlushLayout ? 'main-content--with-padding' : ''}`}>
                 <Suspense fallback={
                     <>
                         <div className="top-progress-bar" />

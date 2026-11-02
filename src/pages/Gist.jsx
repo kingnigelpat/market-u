@@ -22,22 +22,28 @@ import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import '../styles/gist.css';
 import {
-    Flame,
+    MessageSquare,
     Compass,
     Bookmark,
     Plus,
     RefreshCw,
     ShieldCheck,
-    AlertCircle
+    AlertCircle,
+    GraduationCap,
+    EyeOff,
+    Megaphone,
+    BarChart2,
+    Star,
+    Grid
 } from 'lucide-react';
 
 const TYPE_FILTERS = [
-    { key: 'all', label: 'All Gist', emoji: '🔥' },
-    { key: 'gist', label: 'Campus Gist', emoji: '🗣️' },
-    { key: 'confession', label: 'Confessions', emoji: '🎭' },
-    { key: 'hot_take', label: 'Hot Takes', emoji: '🌶️' },
-    { key: 'poll', label: 'Polls', emoji: '📊' },
-    { key: 'review', label: 'Reviews', emoji: '⭐' },
+    { key: 'all', label: 'All Gist', Icon: Grid },
+    { key: 'gist', label: 'Campus Gist', Icon: MessageSquare },
+    { key: 'confession', label: 'Confessions', Icon: EyeOff },
+    { key: 'hot_take', label: 'Hot Takes', Icon: Megaphone },
+    { key: 'poll', label: 'Polls', Icon: BarChart2 },
+    { key: 'review', label: 'Reviews', Icon: Star },
 ];
 
 export default function Gist() {
@@ -266,7 +272,7 @@ export default function Gist() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
                     <div>
                         <h1 className="gist-hero-title">
-                            Market-U Gist 🔥
+                            Market-U Gist
                         </h1>
                         <p className="gist-hero-subtitle">
                             {scope === 'across'
@@ -354,7 +360,7 @@ export default function Gist() {
                         fontSize: '0.875rem',
                         fontWeight: 600
                     }}>
-                        What&apos;s the gist on campus today? Tap to spill... 🔥
+                        What&apos;s the gist on campus today? Tap to spill...
                     </div>
                 </div>
                 <div style={{
@@ -367,11 +373,11 @@ export default function Gist() {
                     overflowX: 'auto'
                 }} className="hide-scrollbar">
                     {[
-                        { key: 'gist', label: 'Spill Gist', emoji: '🗣️' },
-                        { key: 'confession', label: 'Confess', emoji: '🎭' },
-                        { key: 'hot_take', label: 'Hot Take', emoji: '🌶️' },
-                        { key: 'poll', label: 'Poll', emoji: '📊' },
-                        { key: 'review', label: 'Review', emoji: '⭐' }
+                        { key: 'gist', label: 'Spill Gist', Icon: MessageSquare },
+                        { key: 'confession', label: 'Confess', Icon: EyeOff },
+                        { key: 'hot_take', label: 'Hot Take', Icon: Megaphone },
+                        { key: 'poll', label: 'Poll', Icon: BarChart2 },
+                        { key: 'review', label: 'Review', Icon: Star }
                     ].map(item => (
                         <button
                             key={item.key}
@@ -384,7 +390,7 @@ export default function Gist() {
                             style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '0.3rem',
+                                gap: '0.35rem',
                                 padding: '0.35rem 0.7rem',
                                 borderRadius: 'var(--radius-full)',
                                 background: 'var(--surface)',
@@ -396,7 +402,7 @@ export default function Gist() {
                                 cursor: 'pointer'
                             }}
                         >
-                            <span>{item.emoji}</span>
+                            <item.Icon size={13} style={{ color: 'var(--primary)' }} />
                             <span>{item.label}</span>
                         </button>
                     ))}
@@ -409,7 +415,7 @@ export default function Gist() {
                     onClick={() => setScope('campus')}
                     className={`gist-scope-btn ${scope === 'campus' ? 'gist-scope-btn--active' : ''}`}
                 >
-                    <span>🏫</span>
+                    <GraduationCap size={16} />
                     <span>Your Campus</span>
                 </button>
                 <button
@@ -442,7 +448,7 @@ export default function Gist() {
                                     onClick={() => setFilterType(f.key)}
                                     className={`gist-chip ${isActive ? 'gist-chip--active' : ''}`}
                                 >
-                                    <span>{f.emoji}</span>
+                                    <f.Icon size={14} />
                                     <span>{f.label}</span>
                                 </button>
                             );
@@ -455,9 +461,9 @@ export default function Gist() {
                         className="gist-sort-select"
                         aria-label="Sort gists"
                     >
-                        <option value="trending">🔥 Trending</option>
-                        <option value="latest">⏱️ Latest</option>
-                        <option value="most_discussed">💬 Most Discussed</option>
+                        <option value="trending">Trending</option>
+                        <option value="latest">Latest</option>
+                        <option value="most_discussed">Most Discussed</option>
                     </select>
                 </div>
             )}
@@ -529,7 +535,7 @@ export default function Gist() {
                             justifyContent: 'center',
                             margin: '0 auto 1.25rem'
                         }}>
-                            <Flame size={32} />
+                            <MessageSquare size={32} />
                         </div>
                         <h3 style={{ margin: '0 0 0.5rem', fontWeight: 800, fontSize: '1.25rem' }}>
                             {scope === 'saved' ? 'No saved gists yet' : 'No gists here yet'}

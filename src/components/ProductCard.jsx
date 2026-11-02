@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import VerifiedBadge from './VerifiedBadge';
 import ReadOnlyRating from './ReadOnlyRating';
-import { Eye, GraduationCap, Zap, Flame, Sparkles, Camera } from 'lucide-react';
+import { Eye, GraduationCap, ShoppingBag, TrendingUp, Clock, CheckCircle2, Camera, Tag } from 'lucide-react';
 import { optimizeImage } from '../utils/cloudinary';
 
 const CATEGORY_COLORS = {
@@ -76,22 +76,22 @@ const ProductCard = ({ product, index = 0 }) => {
                     </span>
                 )}
 
-                {/* Top Right: Urgency / Hype Badge */}
+                {/* Top Right: Urgency / Status Badge */}
                 {isOutOfStock ? (
                     <span className="product-card-badge product-card-badge--out">
                         Sold Out
                     </span>
                 ) : isLowStock ? (
                     <span className="product-card-badge product-card-badge--low">
-                        🚨 Only {stockNum} left!
+                        <Clock size={11} /> {stockNum} left
                     </span>
                 ) : isHot ? (
                     <span className="product-card-badge product-card-badge--hot">
-                        <Flame size={11} fill="currentColor" /> Hot Drop
+                        <TrendingUp size={11} /> Popular
                     </span>
                 ) : isNew ? (
                     <span className="product-card-badge product-card-badge--new">
-                        <Sparkles size={11} /> Fresh
+                        <Tag size={11} /> New
                     </span>
                 ) : null}
 
@@ -100,12 +100,12 @@ const ProductCard = ({ product, index = 0 }) => {
                     {product.views > 0 ? (
                         <>
                             <Eye size={11} />
-                            <span>{product.views} {product.views >= 20 ? '🔥 viewing' : 'views'}</span>
+                            <span>{product.views} {product.views === 1 ? 'view' : 'views'}</span>
                         </>
                     ) : (
                         <>
-                            <Zap size={11} fill="#F59E0B" color="#F59E0B" />
-                            <span>Campus Pick</span>
+                            <CheckCircle2 size={11} color="#10B981" />
+                            <span>Available</span>
                         </>
                     )}
                 </div>
@@ -130,7 +130,7 @@ const ProductCard = ({ product, index = 0 }) => {
                     </div>
                     {!isOutOfStock && (
                         <span className={`product-card-deal-tag ${isLowStock ? 'product-card-deal-tag--urgent' : ''}`}>
-                            {isLowStock ? '⚡ Going Fast' : '✨ Campus Deal'}
+                            {isLowStock ? 'Low Stock' : 'In Stock'}
                         </span>
                     )}
                 </div>
@@ -155,7 +155,7 @@ const ProductCard = ({ product, index = 0 }) => {
                     </div>
                 )}
 
-                {/* Magnetic Impulse CTA Button */}
+                {/* Buy / View CTA Button */}
                 <button
                     onClick={(e) => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
                     className={`product-card-cta ${isOutOfStock ? 'product-card-cta--disabled' : ''}`}
@@ -164,8 +164,8 @@ const ProductCard = ({ product, index = 0 }) => {
                         <span>Sold Out</span>
                     ) : (
                         <>
-                            <Zap size={14} fill="currentColor" className="product-card-cta-icon" />
-                            <span>{isLowStock ? 'Claim Before Gone' : 'Grab This Deal'}</span>
+                            <ShoppingBag size={14} className="product-card-cta-icon" />
+                            <span>{isLowStock ? 'Buy Now' : 'View & Buy'}</span>
                         </>
                     )}
                 </button>
@@ -456,39 +456,53 @@ const ProductCard = ({ product, index = 0 }) => {
                     100% { background-position: 1000px 0; }
                 }
 
-                @media (max-width: 480px) {
+                @media (max-width: 640px) {
+                    .product-card {
+                        border-radius: 16px;
+                    }
+
+                    .product-card-image-wrap {
+                        padding-top: 102%;
+                    }
+
                     .product-card-body {
-                        padding: 0.65rem 0.55rem;
+                        padding: 0.75rem 0.7rem;
                     }
 
                     .product-card-price {
-                        font-size: 1.02rem;
+                        font-size: 1.08rem;
                     }
 
                     .product-card-deal-tag {
-                        font-size: 0.55rem;
-                        padding: 0.1rem 0.35rem;
+                        font-size: 0.6rem;
+                        padding: 0.12rem 0.4rem;
                     }
 
                     .product-card-title {
-                        font-size: 0.8125rem;
-                        margin-bottom: 0.2rem;
+                        font-size: 0.875rem;
+                        margin-bottom: 0.25rem;
                     }
 
                     .product-card-seller {
-                        font-size: 0.6875rem;
-                        gap: 0.2rem;
+                        font-size: 0.72rem;
+                        gap: 0.25rem;
+                    }
+
+                    .product-card-campus {
+                        font-size: 0.68rem;
+                        margin-bottom: 0.5rem;
                     }
 
                     .product-card-cta {
-                        padding: 0.5rem 0.4rem;
-                        font-size: 0.75rem;
+                        padding: 0.58rem 0.65rem;
+                        font-size: 0.78rem;
+                        border-radius: 10px;
                     }
 
                     .product-card-category,
                     .product-card-badge {
-                        font-size: 0.575rem;
-                        padding: 0.16rem 0.45rem;
+                        font-size: 0.6rem;
+                        padding: 0.18rem 0.5rem;
                     }
                 }
             `}</style>

@@ -156,7 +156,7 @@ const SellerStore = () => {
     const whatsappUrl = formattedPhone ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`Hi ${sellerName}, I found your store on Market-U!`)}` : null;
 
     return (
-        <div className="container" style={{ paddingBottom: '5rem' }}>
+        <div className="container" style={{ paddingBottom: '1rem' }}>
             {/* Top Navigation Bar */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 0', marginBottom: '1rem' }}>
                 <button
