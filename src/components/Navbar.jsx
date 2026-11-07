@@ -189,6 +189,9 @@ const Navbar = () => {
                                                 <Link to="/notifications" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
                                                     <Heart size={16} /> My Activity
                                                 </Link>
+                                                <Link to="/messages" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <MessageCircle size={16} /> Messages
+                                                </Link>
                                                 <Link to="/saved" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
                                                     <Bookmark size={16} /> Saved Items
                                                     {savedCount > 0 && <span className="nav-badge nav-badge--inline">{savedCount > 99 ? '99+' : savedCount}</span>}

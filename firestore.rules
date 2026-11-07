@@ -156,8 +156,8 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
 
     match /ratings/{ratingId} {
-      // Authenticated users can view ratings.
-      allow read: if isSignedIn();
+      // Anyone can view seller ratings on product cards, product detail pages, and storefronts.
+      allow read: if true;
 
       // Buyer must be authenticated and own the rating.
       allow create: if isSignedIn()

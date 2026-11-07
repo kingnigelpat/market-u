@@ -1,18 +1,14 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useAuth } from '../context/AuthContext';
-
+import { Star } from 'lucide-react';
 
 const ReadOnlyRating = ({ sellerId }) => {
-    const { isAuthenticated } = useAuth();
     const [rating, setRating] = useState({ score: 0, count: 0 });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Firestore ratings collection requires isSignedIn() — skip for anonymous users
-        // to avoid a permission-denied console error on every product card.
-        if (!sellerId || !isAuthenticated) {
+        if (!sellerId) {
             setLoading(false);
             return;
         }
@@ -40,7 +36,7 @@ const ReadOnlyRating = ({ sellerId }) => {
         };
 
         fetchRatings();
-    }, [sellerId, isAuthenticated]);
+    }, [sellerId]);
 
     if (loading) return null;
 
@@ -50,7 +46,7 @@ const ReadOnlyRating = ({ sellerId }) => {
 
     return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.85em', color: 'var(--text-secondary)' }}>
-            <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center' }}>⭐</span>
+            <Star size={12} fill="#f59e0b" color="#f59e0b" />
             <span style={{ fontWeight: '700', color: 'var(--text)' }}>{averageRating}</span>
             <span>({rating.count})</span>
         </span>

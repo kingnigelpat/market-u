@@ -125,7 +125,7 @@ const AddProduct = () => {
                 {sellerData && !sellerData.verified && (
                     <div role="alert" id="add-product-unverified-warning" style={{ padding: '0.9rem 1.1rem', marginBottom: '1.25rem', borderRadius: 'var(--radius-lg)', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.4)', fontSize: '0.85rem', lineHeight: 1.5 }}>
                         ⚠️ <strong style={{ color: 'var(--danger)' }}>You are not verified.</strong> Go to your{' '}
-                        <Link to="/dashboard" style={{ color: 'var(--primary)', fontWeight: 700 }}>Dashboard</Link> and tap "Get Verified".
+                        <Link to="/dashboard" style={{ color: 'var(--primary)', fontWeight: 700 }}>Dashboard</Link> and tap &quot;Get Verified&quot; to email your Student ID/document/portal screenshot + a photo &amp; short video of yourself to <strong>team@raehub.live</strong> (your UID is pre-filled).
                         Unverified sellers' products will be deleted after <strong>48 hours</strong>.
                     </div>
                 )}

@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Link } from 'react-router-dom';
-import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap, Star, MessageCircle, Share2, Check, ExternalLink, Megaphone, ArrowRight, GraduationCap } from 'lucide-react';
+import { PlusCircle, UserCheck, Store, TrendingUp, Eye, Award, Zap, Star, MessageCircle, Share2, Check, ExternalLink, Megaphone, ArrowRight, GraduationCap, Mail, Copy } from 'lucide-react';
 
 const SellerDashboard = () => {
     const { currentUser, userRole, setUserRole, userSchoolName } = useAuth();
@@ -16,6 +16,9 @@ const SellerDashboard = () => {
     const [isUpgrading, setIsUpgrading] = useState(false);
     const [sellType, setSellType] = useState(null);
     const [shareToast, setShareToast] = useState(false);
+    const [showVerifModal, setShowVerifModal] = useState(false);
+    const [copiedUid, setCopiedUid] = useState(false);
+
     useEffect(() => {
         const fetchDashboardData = async () => {
             setLoading(true);
@@ -32,8 +35,8 @@ const SellerDashboard = () => {
                     const ratingsSnap = await getDocs(ratingsQ);
                     let score = 0;
                     let count = 0;
-                    ratingsSnap.forEach(doc => {
-                        score += doc.data().stars || 0;
+                    ratingsSnap.forEach(docSnap => {
+                        score += docSnap.data().stars || 0;
                         count += 1;
                     });
                     currentSellerData.ratingScore = score;
@@ -88,37 +91,68 @@ const SellerDashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentUser]);
 
+    const buildVerificationMailto = () => {
+        const sellerName = sellerData?.name || currentUser?.displayName || 'Student Seller';
+        const school = sellerData?.schoolName || userSchoolName || 'Campus';
+        const uid = currentUser?.uid || '';
+        const subject = encodeURIComponent(`MarketU Student Verification — ${sellerName} (UID: ${uid})`);
+        const body = encodeURIComponent(
+`Hello MarketU Verification Team (Rae Tech Services),
+
+I am submitting my student verification for my MarketU seller account.
+
+--- PRE-FILLED ACCOUNT DETAILS (DO NOT EDIT) ---
+User UID: ${uid}
+Full Name: ${sellerName}
+Account Email: ${currentUser?.email || ''}
+Campus / School: ${school}
+------------------------------------------------
+
+Please find attached to this email:
+1. My Student ID Card, Student Document, or Student Portal screenshot
+2. A clear photo of myself
+3. A short video of myself
+
+Thank you!`
+        );
+        return `mailto:team@raehub.live?subject=${subject}&body=${body}`;
+    };
+
     const handleRequestSellerAccess = async () => {
         setIsUpgrading(true);
         try {
             const userRef = doc(db, 'users', currentUser.uid);
             await updateDoc(userRef, { sellerRequestStatus: 'pending' });
             setSellerData({ ...sellerData, sellerRequestStatus: 'pending' });
-            const supportPhone = '2347073544811';
-            const message = encodeURIComponent(
-                `Hi, I'm ${currentUser.displayName || 'a new Market-U user'} and I'd like to become a seller on Market-U. Please review and approve my seller access. (User ID: ${currentUser.uid})`
-            );
-            window.open(`https://wa.me/${supportPhone}?text=${message}`, '_blank');
+            window.location.href = buildVerificationMailto();
         } catch (error) {
             console.error("Error requesting seller access:", error);
-            alert("Could not send your request. Please try again or contact admin on WhatsApp.");
+            alert(`Could not send your request. Please email team@raehub.live with your UID: ${currentUser?.uid}`);
         } finally {
             setIsUpgrading(false);
         }
     };
 
     const handleVerificationRequest = async () => {
-        const supportPhone = '2347073544811';
-        const message = encodeURIComponent(`Hi, I'm ${currentUser.displayName || 'a seller'} and I'd like to request verification for my Market-U account (ID: ${currentUser.uid}).`);
-        const whatsappUrl = `https://wa.me/${supportPhone}?text=${message}`;
-        window.open(whatsappUrl, '_blank');
-
+        setShowVerifModal(true);
         try {
             const sellerRef = doc(db, 'users', currentUser.uid);
             await updateDoc(sellerRef, { verificationStatus: 'pending' });
-            setSellerData({ ...sellerData, verificationStatus: 'pending' });
+            setSellerData(prev => ({ ...prev, verificationStatus: 'pending' }));
         } catch (error) {
             console.error('Error updating verification status:', error);
+        }
+        window.location.href = buildVerificationMailto();
+    };
+
+    const handleCopyUid = async () => {
+        if (!currentUser?.uid) return;
+        try {
+            await navigator.clipboard.writeText(currentUser.uid);
+            setCopiedUid(true);
+            setTimeout(() => setCopiedUid(false), 2000);
+        } catch {
+            // ignore
         }
     };
 
@@ -126,7 +160,7 @@ const SellerDashboard = () => {
         if (!currentUser) return;
         const storeUrl = `${window.location.origin}/store/${currentUser.uid}`;
         const sellerName = sellerData?.name || 'Seller';
-        const shareText = `🛍️ Explore ${sellerName}'s campus store on Market-U! Check out my listings and deals:`;
+        const shareText = `Explore ${sellerName}'s campus store on Market-U! Check out my listings and deals:`;
 
         if (navigator.share) {
             try {
@@ -165,16 +199,10 @@ const SellerDashboard = () => {
                 daysActive = Math.max(0, Math.floor((now - createdDate) / (1000 * 60 * 60 * 24)));
             }
             
-            // Deterministic pseudo-random based on title length to keep it consistent on re-renders
-            const pseudoRandom = ((product.title?.length || 5) % 3) + 1; // 1 to 3 views per day
-            
-            let views = daysActive * pseudoRandom; // Grow organically, starts at 0 on day 1
-            
-            if (views > 120) views = 120 + pseudoRandom; // Cap it so it doesn't inflate endlessly
-            
-            // Add real user views
+            const pseudoRandom = ((product.title?.length || 5) % 3) + 1;
+            let views = daysActive * pseudoRandom;
+            if (views > 120) views = 120 + pseudoRandom;
             views += (product.views || 0);
-
             totalViews += views;
         });
         
@@ -200,46 +228,52 @@ const SellerDashboard = () => {
         const sellerRequestPending = sellerData?.sellerRequestStatus === 'pending';
         return (
             <div className="container" style={{ paddingTop: '3rem', maxWidth: '600px' }}>
-                <div className="card animate-fade-in-up" style={{ padding: '4rem 2.5rem', textAlign: 'center' }}>
-                    <div style={{ backgroundColor: sellerRequestPending ? 'rgba(16, 185, 129, 0.1)' : 'rgba(37, 99, 235, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem auto' }}>
+                <div className="card animate-fade-in-up" style={{ padding: '3.5rem 2rem', textAlign: 'center' }}>
+                    <div style={{ backgroundColor: sellerRequestPending ? 'rgba(16, 185, 129, 0.1)' : 'rgba(37, 99, 235, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
                         {sellerRequestPending ? <UserCheck size={40} color="var(--success)" /> : <Store size={40} color="var(--primary)" />}
                     </div>
 
                     {sellerRequestPending ? (
                         <>
-                            <h1 style={{ fontSize: '2.25rem', fontWeight: '900', marginBottom: '1rem', letterSpacing: '-0.03em' }}>Request Sent! 🎉</h1>
-                            <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '1.125rem', lineHeight: '1.6' }}>
-                                Your seller access request has been submitted. Our admin will review it and approve your account so you can start selling.
+                            <h1 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '0.75rem', letterSpacing: '-0.03em' }}>Verification &amp; Access Pending</h1>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.25rem', fontSize: '1rem', lineHeight: '1.6' }}>
+                                To complete your student seller verification, email <strong>team@raehub.live</strong> with:
                             </p>
+                            <div style={{ textAlign: 'left', padding: '1rem', borderRadius: 'var(--radius-lg)', background: 'var(--surface)', border: '1px solid var(--border)', marginBottom: '1.5rem', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                                <div>1. <strong>Student ID Card, Student Document, or Student Portal screenshot</strong></div>
+                                <div>2. <strong>A clear photo of yourself</strong></div>
+                                <div>3. <strong>A short video of yourself</strong></div>
+                                <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                    Your User UID (included automatically): <code>{currentUser.uid}</code>
+                                </div>
+                            </div>
                             <a
-                                href={`https://wa.me/2347073544811?text=${encodeURIComponent(`Hi, I requested seller access on Market-U (User ID: ${currentUser.uid}). Please confirm my approval status.`)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                href={buildVerificationMailto()}
                                 className="btn btn-primary"
-                                style={{ width: '100%', padding: '1rem', borderRadius: 'var(--radius-lg)', fontSize: '1.125rem' }}
+                                style={{ width: '100%', padding: '1rem', borderRadius: 'var(--radius-lg)', fontSize: '1.05rem', justifyContent: 'center' }}
                             >
-                                <MessageCircle size={18} /> Follow Up on WhatsApp
+                                <Mail size={18} /> Open Pre-Filled Email to team@raehub.live
                             </a>
-                            <p style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                You&apos;ll be able to post products once your seller access is approved.
+                            <p style={{ marginTop: '1.25rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                You&apos;ll be able to post products as soon as our team reviews your email.
                             </p>
                         </>
                     ) : (
                         <>
                             <h1 style={{ fontSize: '2.25rem', fontWeight: '900', marginBottom: '1rem', letterSpacing: '-0.03em' }}>Ready to start selling?</h1>
-                            <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '1.125rem', lineHeight: '1.6' }}>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1.05rem', lineHeight: '1.6' }}>
                                 Join the Market-U seller community and reach hundreds of students on campus today.
                             </p>
                             <button
                                 onClick={handleRequestSellerAccess}
                                 disabled={isUpgrading}
                                 className="btn btn-primary"
-                                style={{ width: '100%', padding: '1rem', borderRadius: 'var(--radius-lg)', fontSize: '1.125rem' }}
+                                style={{ width: '100%', padding: '1rem', borderRadius: 'var(--radius-lg)', fontSize: '1.125rem', justifyContent: 'center' }}
                             >
-                                {isUpgrading ? 'Sending request...' : 'Request Seller Access'}
+                                <Mail size={18} /> {isUpgrading ? 'Opening email...' : 'Request Seller Access via Email'}
                             </button>
-                            <p style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                Your request will be reviewed by the admin before you can start selling.
+                            <p style={{ marginTop: '1.25rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                Opens a pre-filled email to <strong>team@raehub.live</strong> with your User UID so you can attach your Student ID/portal screenshot, photo, and short video.
                             </p>
                         </>
                     )}
@@ -252,15 +286,29 @@ const SellerDashboard = () => {
         <div className="container" style={{ paddingTop: '1rem' }}>
             {sellerData && !sellerData.verified && sellerRole !== 'admin' && (
                 <div role="alert" id="unverified-warning" style={{
-                    display: 'flex', gap: '0.75rem', alignItems: 'flex-start', padding: '1rem 1.25rem', marginBottom: '1.5rem',
-                    borderRadius: 'var(--radius-xl)', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.4)',
+                    display: 'flex', gap: '0.85rem', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', padding: '1rem 1.25rem', marginBottom: '1.5rem',
+                    borderRadius: 'var(--radius-xl)', background: 'rgba(239, 68, 68, 0.09)', border: '1px solid rgba(239, 68, 68, 0.35)',
                 }}>
-                    <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>⚠️</span>
-                    <div style={{ fontSize: '0.875rem', lineHeight: 1.5 }}>
-                        <strong style={{ color: 'var(--danger)' }}>Your account is not verified.</strong>{' '}
-                        Verify now (it's free) using the <strong>"Get Verified"</strong> button on this dashboard.
-                        If you are not verified within <strong>48 hours</strong> of posting, your products will be deleted.
+                    <div style={{ fontSize: '0.875rem', lineHeight: 1.55, flex: 1, minWidth: '240px' }}>
+                        <strong style={{ color: 'var(--danger)', display: 'block', marginBottom: '0.2rem' }}>
+                            Your student seller account is not verified yet (Free Verification)
+                        </strong>
+                        Tap <strong>&quot;Get Verified – Free&quot;</strong> to open a pre-filled email to <strong>team@raehub.live</strong> (your UID <code>{currentUser.uid}</code> is included automatically) and attach:
+                        <div style={{ marginTop: '0.35rem', fontWeight: 600 }}>
+                            1. Your Student ID, student document, or student portal screenshot • 2. A clear photo of yourself • 3. A short video of yourself
+                        </div>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                            If you are not verified within 48 hours of posting, unverified products will be deleted.
+                        </span>
                     </div>
+                    <button
+                        type="button"
+                        onClick={handleVerificationRequest}
+                        className="btn btn-primary"
+                        style={{ alignSelf: 'center', flexShrink: 0, padding: '0.6rem 1.1rem', fontSize: '0.85rem' }}
+                    >
+                        <Mail size={16} /> Verify via Email
+                    </button>
                 </div>
             )}
             <div className="responsive-header" style={{ marginBottom: '2rem' }}>
@@ -280,28 +328,33 @@ const SellerDashboard = () => {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                     {!sellerData?.verified && sellerData?.verificationStatus !== 'pending' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem' }}>
                             <button
                                 onClick={handleVerificationRequest}
                                 disabled={requestingVerif}
                                 className="btn btn-secondary"
                             >
-                                <UserCheck size={18} />
+                                <Mail size={18} />
                                 {requestingVerif ? 'Requesting...' : 'Get Verified – Free'}
                             </button>
-                            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textAlign: 'right' }}>No fees. We just confirm you're a student.</span>
-                            <a href="https://wa.me/2347073544811" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textDecoration: 'underline' }}>Contact Support</a>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textAlign: 'right' }}>
+                                Pre-filled email to <strong>team@raehub.live</strong>
+                            </span>
                         </div>
                     )}
                     {!sellerData?.verified && sellerData?.verificationStatus === 'pending' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                            <div className="btn btn-secondary" style={{ opacity: 0.7, cursor: 'default' }}>
-                                Verification Pending
-                            </div>
-                            <a href="https://wa.me/2347073544811" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: '600' }}>
-                                Verify on WhatsApp
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem' }}>
+                            <button
+                                type="button"
+                                onClick={() => setShowVerifModal(true)}
+                                className="btn btn-secondary"
+                            >
+                                <Mail size={16} /> Verification Pending (Steps)
+                            </button>
+                            <a href={buildVerificationMailto()} style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: '700' }}>
+                                Open Pre-filled Verification Email →
                             </a>
                         </div>
                     )}
@@ -347,8 +400,6 @@ const SellerDashboard = () => {
                 </span>
             </Link>
 
-
-
             {/* Gamification / Stats Section */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
                 <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
@@ -376,9 +427,9 @@ const SellerDashboard = () => {
                         <Award size={28} />
                     </div>
                     <div>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.25rem' }}>Seller Level</p>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.25rem' }}>Seller Level • ✓ {sellerData?.completedSalesCount || 0} sales</p>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: products.length >= 3 ? '#d97706' : 'var(--text)' }}>
-                            {products.length >= 10 ? 'Power Seller 👑' : products.length >= 3 ? 'Active Seller 🌟' : 'Beginner'}
+                            {products.length >= 10 ? 'Power Seller' : products.length >= 3 ? 'Active Seller' : 'Beginner'}
                         </h3>
                     </div>
                 </div>
@@ -407,7 +458,7 @@ const SellerDashboard = () => {
                             <TrendingUp size={24} />
                         </div>
                         <div>
-                            <h4 style={{ fontWeight: '800', fontSize: '1.125rem', marginBottom: '0.25rem' }}>You're almost there!</h4>
+                            <h4 style={{ fontWeight: '800', fontSize: '1.125rem', marginBottom: '0.25rem' }}>You&apos;re almost there!</h4>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', margin: 0 }}>Sellers with 3 or more items sell <strong>50% faster</strong>. Add {3 - products.length} more items to boost your visibility.</p>
                         </div>
                     </div>
@@ -552,7 +603,7 @@ const SellerDashboard = () => {
                                 <div style={{ padding: '1.25rem', backgroundColor: 'var(--bg)', borderRadius: '1rem', border: '1px solid var(--border)' }}>
                                     <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(37, 99, 235, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', marginBottom: '0.75rem' }}>3</div>
                                     <h4 style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '0.25rem' }}>Get Messages</h4>
-                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: '1.4' }}>Buyers will contact you directly on WhatsApp to seal the deal!</p>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: '1.4' }}>Buyers will contact you in-app or on WhatsApp to seal the deal!</p>
                                 </div>
                             </div>
 
@@ -568,6 +619,115 @@ const SellerDashboard = () => {
                     )}
                 </div>
             )}
+
+            {/* Email Verification Instructions Modal */}
+            {showVerifModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundColor: 'rgba(15, 23, 42, 0.72)',
+                    backdropFilter: 'blur(4px)',
+                    zIndex: 2100,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1rem'
+                }} onClick={() => setShowVerifModal(false)}>
+                    <div
+                        className="card"
+                        style={{ maxWidth: '480px', width: '100%', padding: '1.5rem', borderRadius: 'var(--radius-xl)' }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <UserCheck size={20} color="var(--primary)" /> Student Seller Verification (Free)
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setShowVerifModal(false)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '1.35rem' }}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '1rem' }}>
+                            Send an email to <strong style={{ color: 'var(--text)' }}>team@raehub.live</strong> with the following 3 items attached:
+                        </p>
+
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.6rem',
+                            padding: '1rem',
+                            borderRadius: 'var(--radius-lg)',
+                            background: 'var(--surface)',
+                            border: '1px solid var(--border)',
+                            fontSize: '0.85rem',
+                            marginBottom: '1rem'
+                        }}>
+                            <div><strong>1. Student Proof:</strong> Your Student ID card, admission/school document, or a screenshot of your Student Portal.</div>
+                            <div><strong>2. Photo:</strong> A clear photo of yourself.</div>
+                            <div><strong>3. Short Video:</strong> A short video of yourself so we can confirm your identity.</div>
+                        </div>
+
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '0.5rem',
+                            padding: '0.65rem 0.85rem',
+                            borderRadius: 'var(--radius-md)',
+                            background: 'var(--primary-light)',
+                            marginBottom: '1.15rem',
+                            fontSize: '0.78rem'
+                        }}>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <strong>Your UID:</strong> <code>{currentUser?.uid}</code>
+                            </span>
+                            <button
+                                type="button"
+                                onClick={handleCopyUid}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.3rem',
+                                    padding: '0.25rem 0.6rem',
+                                    borderRadius: '99px',
+                                    background: 'var(--primary)',
+                                    color: '#fff',
+                                    border: 'none',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    flexShrink: 0
+                                }}
+                            >
+                                <Copy size={12} /> {copiedUid ? 'Copied!' : 'Copy UID'}
+                            </button>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                            <a
+                                href={buildVerificationMailto()}
+                                className="btn btn-primary"
+                                style={{ width: '100%', justifyContent: 'center', padding: '0.85rem' }}
+                            >
+                                <Mail size={17} /> Open Pre-Filled Email (team@raehub.live)
+                            </a>
+                            <button
+                                type="button"
+                                onClick={() => setShowVerifModal(false)}
+                                className="btn btn-secondary"
+                                style={{ width: '100%', justifyContent: 'center', padding: '0.7rem' }}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Share Toast */}
             {shareToast && (
                 <div

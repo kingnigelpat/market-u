@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { collection, query, addDoc, serverTimestamp, orderBy, onSnapshot, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { X, Send, Store, MessageCircle, Loader } from 'lucide-react';
+import { X, Send, Store, ShieldAlert, Loader } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { sendPushNotification } from '../utils/notifications';
 import { logEvent } from '../utils/analyticsService';
@@ -39,6 +39,7 @@ const ProductChat = ({ product, onClose, onMessageSent }) => {
                         productId: product.id,
                         buyerId: currentUser.uid,
                         sellerId: product.sellerId || '',
+                        sellerName: product.sellerName || 'Seller',
                         buyerName: userName || currentUser.displayName || 'A buyer',
                         productName: product.title || 'Product',
                         productPrice: product.price || '',
@@ -62,7 +63,7 @@ const ProductChat = ({ product, onClose, onMessageSent }) => {
 
         ensureChatDoc();
         return () => { isMounted = false; };
-    }, [chatId, product.id, product.sellerId, currentUser.uid, currentUser.displayName, userName, product.title, product.price, product.images, product.image]);
+    }, [chatId, product.id, product.sellerId, product.sellerName, currentUser.uid, currentUser.displayName, userName, product.title, product.price, product.images, product.image]);
 
     // Subscribe to messages subcollection ONLY AFTER chat doc is ready
     useEffect(() => {
@@ -111,6 +112,7 @@ const ProductChat = ({ product, onClose, onMessageSent }) => {
                 productId: product.id,
                 buyerId: currentUser.uid,
                 sellerId: product.sellerId || '',
+                sellerName: product.sellerName || 'Seller',
                 buyerName: userName || currentUser.displayName || 'A buyer',
                 productName: product.title || 'Product',
                 productPrice: product.price || '',
@@ -228,20 +230,20 @@ const ProductChat = ({ product, onClose, onMessageSent }) => {
                 </button>
             </div>
 
-            {/* Live Chat Banner */}
+            {/* Live Chat & Safety Banner */}
             <div style={{
                 padding: '0.5rem 1rem',
-                backgroundColor: 'rgba(37, 99, 235, 0.08)',
-                color: 'var(--primary)',
-                fontSize: '0.75rem',
+                backgroundColor: 'rgba(245, 158, 11, 0.09)',
+                color: 'var(--text)',
+                fontSize: '0.73rem',
                 fontWeight: '600',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
-                borderBottom: '1px solid rgba(37, 99, 235, 0.15)'
+                gap: '0.45rem',
+                borderBottom: '1px solid rgba(245, 158, 11, 0.2)'
             }}>
-                <MessageCircle size={14} style={{ flexShrink: 0 }} />
-                <span>Connected with seller. Replies will be delivered directly here and via notification.</span>
+                <ShieldAlert size={14} color="#d97706" style={{ flexShrink: 0 }} />
+                <span><strong>Safety Tip:</strong> Meet in a public campus spot, confirm the price &amp; inspect the item before paying.</span>
             </div>
 
             {/* Messages Area */}

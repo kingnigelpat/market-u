@@ -25,7 +25,8 @@ import {
     Maximize2,
     Tag,
     TrendingUp,
-    UserCheck
+    UserCheck,
+    Flag
 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import VerifiedBadge from '../components/VerifiedBadge';
@@ -71,6 +72,11 @@ const ProductDetail = () => {
     const [showChat, setShowChat] = useState(false);
     const [askedInApp, setAskedInApp] = useState(false);
     const [whatsappUnlocked, setWhatsappUnlocked] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportReason, setReportReason] = useState('Suspicious seller / asking for payment before delivery');
+    const [reportDetails, setReportDetails] = useState('');
+    const [reportSubmitting, setReportSubmitting] = useState(false);
+    const [reportSuccess, setReportSuccess] = useState(false);
 
     // Auto-open chat if navigated from notification (?chat=true)
     useEffect(() => {
@@ -102,12 +108,16 @@ const ProductDetail = () => {
                         if (sellerSnap.exists()) {
                             const sData = sellerSnap.data();
                             productData.sellerVerified = Boolean(sData.verified) || Boolean(productData.sellerVerified);
-                            if (!productData.sellerPhone && sData.phone) {
+                            if (sData.phone) {
                                 productData.sellerPhone = sData.phone;
+                            }
+                            if (sData.name) {
+                                productData.sellerName = sData.name;
                             }
                             if (sData.avgReplyMinutes) {
                                 productData.avgReplyMinutes = sData.avgReplyMinutes;
                             }
+                            productData.completedSalesCount = Number(sData.completedSalesCount || 0);
                         }
                     } catch (e) {
                         console.warn("Could not fetch seller public profile", e);
@@ -947,6 +957,21 @@ const ProductDetail = () => {
                                             <span style={{ fontWeight: '800', fontSize: '0.95rem' }}>{product.sellerName}</span>
                                             {product.sellerVerified && <VerifiedBadge size={16} />}
                                             <ReadOnlyRating sellerId={product.sellerId} />
+                                            {product.completedSalesCount > 0 && (
+                                                <span style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.2rem',
+                                                    fontSize: '0.72rem',
+                                                    fontWeight: 800,
+                                                    color: '#059669',
+                                                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                                                    padding: '0.15rem 0.5rem',
+                                                    borderRadius: '99px'
+                                                }}>
+                                                    <CheckCircle2 size={12} /> {product.completedSalesCount} {product.completedSalesCount === 1 ? 'completed sale' : 'completed sales'}
+                                                </span>
+                                            )}
                                         </div>
                                         <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                                             {product.sellerVerified ? 'Verified Campus Seller • View Storefront' : 'Campus Seller • View Storefront'}
@@ -976,23 +1001,53 @@ const ProductDetail = () => {
                             </div>
                         )}
 
-                        {!isOwner && !product.sellerVerified && (
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: '0.625rem',
-                                padding: '0.75rem 1rem',
-                                marginBottom: '1.25rem',
-                                backgroundColor: 'rgba(245, 158, 11, 0.08)',
-                                border: '1px solid rgba(245, 158, 11, 0.25)',
-                                borderRadius: 'var(--radius-lg)',
-                            }}>
+                        {/* Campus Safety & Report Bar */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: '0.625rem',
+                            padding: '0.75rem 1rem',
+                            marginBottom: '1.25rem',
+                            backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                            border: '1px solid rgba(245, 158, 11, 0.25)',
+                            borderRadius: 'var(--radius-lg)',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem', flex: 1, minWidth: '210px' }}>
                                 <AlertCircle size={16} color="#d97706" style={{ flexShrink: 0, marginTop: '2px' }} />
-                                <span style={{ fontSize: '0.8125rem', color: 'var(--text)', lineHeight: '1.5' }}>
-                                    Meet in a public campus location and inspect the item before transferring payment. 🫡
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text)', lineHeight: '1.45' }}>
+                                    <strong>Campus Safety Tip:</strong> Meet in a public campus spot, confirm the price &amp; inspect the item before transferring payment.
                                 </span>
                             </div>
-                        )}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (!isAuthenticated) {
+                                        setShowPrompt(true);
+                                        return;
+                                    }
+                                    setReportSuccess(false);
+                                    setShowReportModal(true);
+                                }}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.35rem',
+                                    padding: '0.35rem 0.7rem',
+                                    borderRadius: '99px',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                                    color: 'var(--danger)',
+                                    fontSize: '0.74rem',
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    flexShrink: 0
+                                }}
+                            >
+                                <Flag size={12} /> Report Seller
+                            </button>
+                        </div>
 
                         {/* Product Description */}
                         <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
@@ -1293,6 +1348,119 @@ const ProductDetail = () => {
                     }
                 }
             `}</style>
+
+            {showReportModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundColor: 'rgba(15, 23, 42, 0.72)',
+                    backdropFilter: 'blur(4px)',
+                    zIndex: 2100,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1rem'
+                }} onClick={() => setShowReportModal(false)}>
+                    <div
+                        className="card"
+                        style={{ maxWidth: '440px', width: '100%', padding: '1.5rem', borderRadius: 'var(--radius-xl)' }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                                <Flag size={18} color="var(--danger)" /> Report Seller or Listing
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setShowReportModal(false)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '1.25rem' }}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        {reportSuccess ? (
+                            <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                                <CheckCircle2 size={36} color="var(--success)" style={{ margin: '0 auto 0.5rem' }} />
+                                <p style={{ fontWeight: 800, marginBottom: '0.25rem' }}>Report Sent to Admin</p>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                                    Our moderation team will review this seller and listing promptly.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowReportModal(false)}
+                                    className="btn btn-primary"
+                                    style={{ width: '100%', justifyContent: 'center' }}
+                                >
+                                    Done
+                                </button>
+                            </div>
+                        ) : (
+                            <form onSubmit={async (e) => {
+                                e.preventDefault();
+                                if (!currentUser || reportSubmitting) return;
+                                setReportSubmitting(true);
+                                try {
+                                    await addDoc(collection(db, 'gist_reports'), {
+                                        targetType: 'product_seller',
+                                        targetId: product.id,
+                                        postId: product.id,
+                                        sellerId: product.sellerId || '',
+                                        sellerName: product.sellerName || '',
+                                        productTitle: product.title || '',
+                                        reporterId: currentUser.uid,
+                                        reporterName: userName || currentUser.displayName || 'Student',
+                                        reason: reportReason,
+                                        details: reportDetails.trim(),
+                                        status: 'open',
+                                        createdAt: serverTimestamp()
+                                    });
+                                    setReportSuccess(true);
+                                    setReportDetails('');
+                                } catch (err) {
+                                    console.error('Error submitting report:', err);
+                                    alert('Could not send report. Please try again.');
+                                } finally {
+                                    setReportSubmitting(false);
+                                }
+                            }}>
+                                <div className="form-group" style={{ marginBottom: '0.85rem' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Reason</label>
+                                    <select
+                                        value={reportReason}
+                                        onChange={e => setReportReason(e.target.value)}
+                                        style={{ width: '100%', padding: '0.65rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
+                                    >
+                                        <option value="Suspicious seller / asking for payment before delivery">Suspicious seller / asking for payment before delivery</option>
+                                        <option value="Fake, counterfeit, or misleading item">Fake, counterfeit, or misleading item</option>
+                                        <option value="Wrong price or unavailable item">Wrong price or unavailable item</option>
+                                        <option value="Harassment or rude behaviour">Harassment or rude behaviour</option>
+                                        <option value="Other issue">Other issue</option>
+                                    </select>
+                                </div>
+                                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Additional Details (Optional)</label>
+                                    <textarea
+                                        rows={3}
+                                        value={reportDetails}
+                                        onChange={e => setReportDetails(e.target.value)}
+                                        placeholder="Describe what happened so admin can investigate..."
+                                        style={{ width: '100%', padding: '0.65rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={reportSubmitting}
+                                    className="btn btn-primary"
+                                    style={{ width: '100%', justifyContent: 'center', background: 'var(--danger)', border: 'none' }}
+                                >
+                                    {reportSubmitting ? 'Sending Report...' : 'Submit Report to Admin'}
+                                </button>
+                            </form>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <AuthPromptModal
                 isOpen={showPrompt}

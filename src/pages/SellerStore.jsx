@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import ProductCard from '../components/ProductCard';
 import VerifiedBadge from '../components/VerifiedBadge';
 import ReadOnlyRating from '../components/ReadOnlyRating';
-import { ArrowLeft, Share2, Check, MapPin, Package, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Share2, Check, MapPin, Package, MessageCircle, CheckCircle2 } from 'lucide-react';
 
 const SellerStore = () => {
     const { id } = useParams();
@@ -270,9 +270,25 @@ const SellerStore = () => {
                                     {seller.verified ? '✓ Verified Student Seller' : '⚠️ Unverified Seller'}
                                 </span>
 
-                                {seller.school && (
+                                {(seller.schoolName || seller.school || products[0]?.schoolName) && (
                                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-secondary)' }}>
-                                        <MapPin size={14} /> {seller.school}
+                                        <MapPin size={14} /> {seller.schoolName || seller.school || products[0]?.schoolName}
+                                    </span>
+                                )}
+
+                                {Number(seller.completedSalesCount || 0) > 0 && (
+                                    <span style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.25rem',
+                                        padding: '0.2rem 0.6rem',
+                                        borderRadius: 'var(--radius-full)',
+                                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                                        color: '#059669',
+                                        fontWeight: '800',
+                                        fontSize: '0.75rem',
+                                    }}>
+                                        <CheckCircle2 size={13} /> {seller.completedSalesCount} {Number(seller.completedSalesCount) === 1 ? 'completed sale' : 'completed sales'}
                                     </span>
                                 )}
                             </div>

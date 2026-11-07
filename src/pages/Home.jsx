@@ -45,7 +45,7 @@ import { subscribeToActiveCampaign, DEFAULT_CAMPAIGN, getActiveDiscoveryCollecti
 import EnableNotificationsBanner from '../components/EnableNotificationsBanner';
 import AdCarousel from '../components/AdCarousel';
 import { subscribeToActiveAds } from '../utils/adService';
-import { SUPPORTED_SCHOOL, DEFAULT_CAMPUS } from '../data/institutions';
+import { INSTITUTIONS, SUPPORTED_SCHOOL, DEFAULT_CAMPUS } from '../data/institutions';
 import CampusSwitcher from '../components/CampusSwitcher';
 
 const CATEGORIES = [
@@ -197,10 +197,20 @@ const Home = () => {
         }
     };
 
-    // Filter products by selected campus first
+    // Filter products by selected campus or regional cluster (Delta / Edo)
     const campusProducts = useMemo(() => {
         if (!selectedCampus || selectedCampus === DEFAULT_CAMPUS) {
             return products;
+        }
+        if (selectedCampus === 'Delta State Campuses' || selectedCampus === 'Edo State Campuses') {
+            const targetState = selectedCampus.startsWith('Delta') ? 'Delta' : 'Edo';
+            const stateSchoolNames = new Set(
+                INSTITUTIONS.filter(i => i.state === targetState).map(i => i.name)
+            );
+            return products.filter(product => {
+                const sch = product.schoolName || SUPPORTED_SCHOOL;
+                return stateSchoolNames.has(sch);
+            });
         }
         return products.filter(product => {
             if (product.schoolName) {
@@ -349,6 +359,63 @@ const Home = () => {
                         selectedCampus={selectedCampus}
                         onSelectCampus={handleSelectCampus}
                     />
+
+                    {/* ── Regional Cluster Quick Pills (Delta / Edo / All Campuses) ── */}
+                    <div className="hide-scrollbar" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        overflowX: 'auto',
+                        marginBottom: '0.85rem',
+                        paddingBottom: '0.15rem'
+                    }}>
+                        {userSchoolName && (
+                            <button
+                                type="button"
+                                onClick={() => handleSelectCampus(userSchoolName)}
+                                style={{
+                                    padding: '0.32rem 0.75rem',
+                                    borderRadius: '99px',
+                                    fontSize: '0.73rem',
+                                    fontWeight: 800,
+                                    whiteSpace: 'nowrap',
+                                    border: selectedCampus === userSchoolName ? 'none' : '1px solid var(--border)',
+                                    background: selectedCampus === userSchoolName ? 'var(--primary)' : 'var(--surface-elevated)',
+                                    color: selectedCampus === userSchoolName ? '#fff' : 'var(--text-secondary)',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                My Campus ({INSTITUTIONS.find(i => i.name === userSchoolName)?.short || userSchoolName.split(' ')[0]})
+                            </button>
+                        )}
+                        {[
+                            { key: 'Delta State Campuses', label: 'Delta State Cluster (8 Schools)' },
+                            { key: 'Edo State Campuses', label: 'Edo State Cluster (Benin)' },
+                            { key: DEFAULT_CAMPUS, label: 'All 10+ Campuses' },
+                        ].map(cluster => {
+                            const active = selectedCampus === cluster.key;
+                            return (
+                                <button
+                                    key={cluster.key}
+                                    type="button"
+                                    onClick={() => handleSelectCampus(cluster.key)}
+                                    style={{
+                                        padding: '0.32rem 0.75rem',
+                                        borderRadius: '99px',
+                                        fontSize: '0.73rem',
+                                        fontWeight: 700,
+                                        whiteSpace: 'nowrap',
+                                        border: active ? 'none' : '1px solid var(--border)',
+                                        background: active ? 'var(--primary)' : 'var(--surface-elevated)',
+                                        color: active ? '#fff' : 'var(--text-secondary)',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    {cluster.label}
+                                </button>
+                            );
+                        })}
+                    </div>
 
                     {/* ── Search bar (visible for all) ── */}
                     <div className="market-search-wrap">
@@ -689,6 +756,44 @@ const Home = () => {
                                     <div className="swimlane hide-scrollbar">
                                         {otherProducts.slice(0, 8).map((product, index) => (
                                             <div className="swimlane-item" key={product.id}>
+                                                <ProductCard product={product} index={index} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Nearby Campuses in Delta & Edo Cluster Swimlane (when viewing a single school) */}
+                        {(() => {
+                            if (!selectedCampus || selectedCampus === DEFAULT_CAMPUS || selectedCampus.endsWith('Campuses')) {
+                                return null;
+                            }
+                            const nearbyItems = products
+                                .filter(p => (p.schoolName || SUPPORTED_SCHOOL) !== selectedCampus)
+                                .slice(0, 8);
+                            if (nearbyItems.length === 0) return null;
+                            return (
+                                <div className="market-section">
+                                    <div className="market-section-header">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <Globe size={20} style={{ color: 'var(--primary)' }} />
+                                            <div>
+                                                <h2 className="market-section-title" style={{ margin: 0 }}>
+                                                    From Nearby Campuses (Delta &amp; Edo)
+                                                </h2>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                                    Active deals from other universities in our regional cluster
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button className="market-section-link" onClick={() => handleSelectCampus(DEFAULT_CAMPUS)}>
+                                            All campuses <ArrowRight size={14} />
+                                        </button>
+                                    </div>
+                                    <div className="swimlane hide-scrollbar">
+                                        {nearbyItems.map((product, index) => (
+                                            <div className="swimlane-item" key={`nearby_${product.id}`}>
                                                 <ProductCard product={product} index={index} />
                                             </div>
                                         ))}

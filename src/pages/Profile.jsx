@@ -10,7 +10,7 @@ import {
     deleteUser,
     signOut,
 } from 'firebase/auth';
-import { doc, updateDoc, deleteDoc, setDoc, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, setDoc, arrayUnion, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import {
     User, Phone, Lock, Trash2, ArrowLeft,
     CheckCircle, AlertCircle, Eye, EyeOff, Save, ShieldAlert,
@@ -368,7 +368,14 @@ const Profile = () => {
             } catch (err) {
                 console.warn('Could not sync name to public profile:', err);
             }
-            setNameStatus({ type: 'success', msg: 'Name updated! Refresh to see it in the navbar.' });
+            setNameStatus({ type: 'success', msg: 'Name updated across your profile and listings!' });
+            getDocs(query(collection(db, 'products'), where('sellerId', '==', currentUser.uid))).then(snap => {
+                if (!snap.empty) {
+                    const batch = writeBatch(db);
+                    snap.docs.forEach(d => batch.update(d.ref, { sellerName: trimmed }));
+                    return batch.commit();
+                }
+            }).catch(() => {});
         } catch {
             setNameStatus({ type: 'error', msg: 'Failed to update name. Try again.' });
         } finally {
@@ -395,7 +402,14 @@ const Profile = () => {
             } catch (err) {
                 console.warn('Could not sync phone to public profile:', err);
             }
-            setPhoneStatus({ type: 'success', msg: 'Phone number updated successfully.' });
+            setPhoneStatus({ type: 'success', msg: 'Phone number updated across your profile and listings!' });
+            getDocs(query(collection(db, 'products'), where('sellerId', '==', currentUser.uid))).then(snap => {
+                if (!snap.empty) {
+                    const batch = writeBatch(db);
+                    snap.docs.forEach(d => batch.update(d.ref, { sellerPhone: cleanedNum }));
+                    return batch.commit();
+                }
+            }).catch(() => {});
         } catch {
             setPhoneStatus({ type: 'error', msg: 'Failed to update phone. Try again.' });
         } finally {
@@ -441,6 +455,7 @@ const Profile = () => {
             const credential = EmailAuthProvider.credential(currentUser.email, deletePw);
             await reauthenticateWithCredential(currentUser, credential);
             // Delete Firestore user doc first, then the auth account
+            await deleteDoc(doc(db, 'publicProfiles', currentUser.uid)).catch(() => {});
             await deleteDoc(doc(db, 'users', currentUser.uid));
             await deleteUser(currentUser);
             navigate('/');

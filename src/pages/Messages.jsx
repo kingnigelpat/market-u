@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, addDoc, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, setDoc, serverTimestamp, addDoc, orderBy, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Send, ShoppingBag, ExternalLink, User, ChevronRight } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Send, ShoppingBag, ExternalLink, User, ChevronRight, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { sendPushNotification } from '../utils/notifications';
 import { logEvent } from '../utils/analyticsService';
 
@@ -27,71 +27,89 @@ const formatTime = (ts) => {
 };
 
 const Messages = () => {
-    const { currentUser, isSeller } = useAuth();
+    const { currentUser } = useAuth();
     const navigate = useNavigate();
-    const [chats, setChats] = useState([]);
+    const [sellerChats, setSellerChats] = useState([]);
+    const [buyerChats, setBuyerChats] = useState([]);
     const [activeChatId, setActiveChatId] = useState(null);
-    const [loading, setLoading] = useState(() => Boolean(currentUser?.uid && isSeller));
+    const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'selling' | 'buying'
+    const [loading, setLoading] = useState(() => Boolean(currentUser?.uid));
 
     useEffect(() => {
-        if (!currentUser?.uid || !isSeller) {
+        if (!currentUser?.uid) {
             return;
         }
 
-        // Query by sellerId. Sort client-side to prevent missing composite index errors.
-        const q = query(
+        let sellerLoaded = false;
+        let buyerLoaded = false;
+
+        const qSeller = query(
             collection(db, 'chats'),
             where('sellerId', '==', currentUser.uid)
         );
+        const qBuyer = query(
+            collection(db, 'chats'),
+            where('buyerId', '==', currentUser.uid)
+        );
 
-        const unsub = onSnapshot(q, (snapshot) => {
-            const chatList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            
-            // Client-side sort by updatedAt / createdAt desc
-            chatList.sort((a, b) => {
-                const getMs = (item) => {
-                    if (item.updatedAt?.toMillis) return item.updatedAt.toMillis();
-                    if (item.updatedAt?.seconds) return item.updatedAt.seconds * 1000;
-                    if (item.createdAt?.toMillis) return item.createdAt.toMillis();
-                    if (item.createdAt?.seconds) return item.createdAt.seconds * 1000;
-                    return 0;
-                };
-                return getMs(b) - getMs(a);
-            });
-
-            setChats(chatList);
-            setLoading(false);
+        const unsubSeller = onSnapshot(qSeller, (snapshot) => {
+            setSellerChats(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            sellerLoaded = true;
+            if (buyerLoaded) setLoading(false);
         }, (err) => {
-            console.error('Error fetching chats:', err);
-            setLoading(false);
+            console.error('Error fetching seller chats:', err);
+            sellerLoaded = true;
+            if (buyerLoaded) setLoading(false);
         });
 
-        return () => unsub();
-    }, [currentUser, isSeller]);
+        const unsubBuyer = onSnapshot(qBuyer, (snapshot) => {
+            setBuyerChats(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            buyerLoaded = true;
+            if (sellerLoaded) setLoading(false);
+        }, (err) => {
+            console.error('Error fetching buyer chats:', err);
+            buyerLoaded = true;
+            if (sellerLoaded) setLoading(false);
+        });
 
-    if (!currentUser || !isSeller) {
-        return (
-            <div className="container" style={{ paddingTop: '4rem', textAlign: 'center' }}>
-                <div className="card" style={{ maxWidth: '480px', margin: '0 auto', padding: '2.5rem' }}>
-                    <MessageCircle size={40} style={{ color: 'var(--primary)', margin: '0 auto 1rem' }} />
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem' }}>Seller Access Required</h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                        You must have an active seller account to view buyer inquiries.
-                    </p>
-                    <Link to="/dashboard" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                        Go to Dashboard
-                    </Link>
-                </div>
-            </div>
-        );
+        return () => {
+            unsubSeller();
+            unsubBuyer();
+        };
+    }, [currentUser]);
+
+    if (!currentUser) {
+        return null;
     }
 
-    const activeChat = chats.find(c => c.id === activeChatId);
+    // Merge and deduplicate chats
+    const mergedMap = new Map();
+    sellerChats.forEach(c => mergedMap.set(c.id, c));
+    buyerChats.forEach(c => mergedMap.set(c.id, c));
+
+    const allChats = Array.from(mergedMap.values()).sort((a, b) => {
+        const getMs = (item) => {
+            if (item.updatedAt?.toMillis) return item.updatedAt.toMillis();
+            if (item.updatedAt?.seconds) return item.updatedAt.seconds * 1000;
+            if (item.createdAt?.toMillis) return item.createdAt.toMillis();
+            if (item.createdAt?.seconds) return item.createdAt.seconds * 1000;
+            return 0;
+        };
+        return getMs(b) - getMs(a);
+    });
+
+    const chats = allChats.filter(c => {
+        if (roleFilter === 'selling') return c.sellerId === currentUser.uid;
+        if (roleFilter === 'buying') return c.buyerId === currentUser.uid;
+        return true;
+    });
+
+    const activeChat = allChats.find(c => c.id === activeChatId);
 
     return (
-        <div className="container messages-page" style={{ paddingTop: '1.25rem', paddingBottom: '3rem', maxWidth: '1080px' }}>
+        <div className="container messages-page" style={{ paddingTop: '1rem', paddingBottom: '1.5rem', maxWidth: '1080px' }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <button
                     onClick={() => navigate(-1)}
                     className="btn"
@@ -101,25 +119,55 @@ const Messages = () => {
                 </button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginBottom: '1.5rem' }}>
-                <div style={{
-                    width: '46px', height: '46px',
-                    backgroundColor: 'rgba(37, 99, 235, 0.12)',
-                    borderRadius: '14px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--primary)',
-                    flexShrink: 0
-                }}>
-                    <MessageCircle size={24} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.875rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                    <div style={{
+                        width: '46px', height: '46px',
+                        backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                        borderRadius: '14px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'var(--primary)',
+                        flexShrink: 0
+                    }}>
+                        <MessageCircle size={24} />
+                    </div>
+                    <div>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: '900', letterSpacing: '-0.02em', margin: 0, color: 'var(--text)' }}>
+                            Messages
+                        </h1>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
+                            Chat with buyers and sellers on campus
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: '900', letterSpacing: '-0.02em', margin: 0, color: 'var(--text)' }}>
-                        Buyer Messages
-                    </h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
-                        Inquiries and questions from potential buyers
-                    </p>
-                </div>
+
+                {allChats.length > 0 && (
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        {[
+                            { key: 'all', label: `All (${allChats.length})` },
+                            { key: 'selling', label: `Selling (${sellerChats.length})` },
+                            { key: 'buying', label: `Buying (${buyerChats.length})` },
+                        ].map(tab => (
+                            <button
+                                key={tab.key}
+                                type="button"
+                                onClick={() => setRoleFilter(tab.key)}
+                                style={{
+                                    padding: '0.4rem 0.85rem',
+                                    borderRadius: '99px',
+                                    fontSize: '0.78rem',
+                                    fontWeight: 700,
+                                    border: '1px solid var(--border)',
+                                    backgroundColor: roleFilter === tab.key ? 'var(--primary)' : 'var(--surface)',
+                                    color: roleFilter === tab.key ? '#fff' : 'var(--text-secondary)',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {loading ? (
@@ -127,9 +175,9 @@ const Messages = () => {
                     <div className="spinner" style={{ margin: '0 auto 1rem' }} />
                     Loading conversations...
                 </div>
-            ) : chats.length === 0 ? (
+            ) : allChats.length === 0 ? (
                 <div className="card" style={{
-                    textAlign: 'center', padding: '4rem 2rem', borderRadius: 'var(--radius-xl)'
+                    textAlign: 'center', padding: '3.5rem 2rem', borderRadius: 'var(--radius-xl)'
                 }}>
                     <div style={{
                         width: '56px', height: '56px', borderRadius: '50%',
@@ -141,10 +189,10 @@ const Messages = () => {
                     </div>
                     <h3 style={{ fontWeight: '800', fontSize: '1.25rem', marginBottom: '0.5rem' }}>No messages yet</h3>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', maxWidth: '380px', margin: '0 auto 1.5rem' }}>
-                        When interested students ask questions about your listings, they will show up right here.
+                        When you message a seller about a product or a buyer messages you, the conversation appears here.
                     </p>
-                    <Link to="/add-product" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                        List More Products
+                    <Link to="/market" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                        Browse Market
                     </Link>
                 </div>
             ) : (
@@ -152,7 +200,7 @@ const Messages = () => {
                     {/* Conversations List Column */}
                     <div className={`messages-sidebar ${activeChatId ? 'messages-sidebar--hidden-mobile' : ''}`}>
                         <div className="messages-sidebar-header">
-                            <span style={{ fontWeight: '800', fontSize: '0.9375rem' }}>Active Chats</span>
+                            <span style={{ fontWeight: '800', fontSize: '0.9375rem' }}>Conversations</span>
                             <span className="badge" style={{ fontSize: '0.75rem', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', padding: '0.2rem 0.5rem', borderRadius: '999px', fontWeight: '700' }}>
                                 {chats.length}
                             </span>
@@ -162,6 +210,8 @@ const Messages = () => {
                             {chats.map(chat => {
                                 const isSelected = activeChatId === chat.id;
                                 const isUnreadByMe = chat.lastSenderId && chat.lastSenderId !== currentUser.uid;
+                                const amISeller = chat.sellerId === currentUser.uid;
+                                const partnerLabel = amISeller ? (chat.buyerName || 'Buyer') : (chat.sellerName || 'Seller');
 
                                 return (
                                     <button
@@ -177,7 +227,7 @@ const Messages = () => {
                                             <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
                                                     <span style={{ fontWeight: '700', fontSize: '0.9375rem', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                        {chat.buyerName || 'Buyer'}
+                                                        {partnerLabel}
                                                     </span>
                                                     <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', flexShrink: 0, marginLeft: '0.5rem' }}>
                                                         {formatTime(chat.updatedAt || chat.createdAt)}
@@ -189,6 +239,11 @@ const Messages = () => {
                                                     <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                         {chat.productName || 'Product'}
                                                     </span>
+                                                    {chat.saleCompleted && (
+                                                        <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#059669', backgroundColor: 'rgba(16, 185, 129, 0.12)', padding: '0.1rem 0.4rem', borderRadius: '99px', flexShrink: 0 }}>
+                                                            ✓ Sold
+                                                        </span>
+                                                    )}
                                                 </div>
 
                                                 <p style={{
@@ -233,7 +288,7 @@ const Messages = () => {
                                 </div>
                                 <h3 style={{ fontWeight: '800', fontSize: '1.125rem', marginBottom: '0.35rem' }}>Select a conversation</h3>
                                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', maxWidth: '300px' }}>
-                                    Choose a buyer from the list on the left to review their inquiry and reply.
+                                    Choose a conversation from the left to read messages and reply.
                                 </p>
                             </div>
                         )}
@@ -349,7 +404,11 @@ const ActiveChatView = ({ chat, onBack }) => {
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState('');
     const [loading, setLoading] = useState(true);
+    const [markingSale, setMarkingSale] = useState(false);
     const messagesEndRef = useRef(null);
+
+    const amISeller = chat?.sellerId === currentUser?.uid;
+    const partnerName = amISeller ? (chat.buyerName || 'Buyer') : (chat.sellerName || 'Seller');
 
     useEffect(() => {
         if (!chat?.id) return;
@@ -377,6 +436,36 @@ const ActiveChatView = ({ chat, onBack }) => {
         return () => unsub();
     }, [chat.id]);
 
+    const handleMarkSaleCompleted = async () => {
+        if (!amISeller || chat.saleCompleted || markingSale) return;
+        setMarkingSale(true);
+        try {
+            await updateDoc(doc(db, 'chats', chat.id), {
+                saleCompleted: true,
+                completedAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+            try {
+                await setDoc(doc(db, 'publicProfiles', currentUser.uid), {
+                    completedSalesCount: increment(1)
+                }, { merge: true });
+            } catch (e) {
+                console.warn('Could not increment public completedSalesCount:', e);
+            }
+            try {
+                await updateDoc(doc(db, 'users', currentUser.uid), {
+                    completedSalesCount: increment(1)
+                });
+            } catch (e) {
+                console.warn('Could not increment user completedSalesCount:', e);
+            }
+        } catch (err) {
+            console.error('Error marking sale completed:', err);
+        } finally {
+            setMarkingSale(false);
+        }
+    };
+
     const handleSend = async (e) => {
         e.preventDefault();
         if (!text.trim() || !chat.id) return;
@@ -387,7 +476,7 @@ const ActiveChatView = ({ chat, onBack }) => {
         try {
             await addDoc(collection(db, 'chats', chat.id, 'messages'), {
                 senderId: currentUser.uid,
-                senderName: userName || currentUser.displayName || 'Seller',
+                senderName: userName || currentUser.displayName || (amISeller ? 'Seller' : 'Buyer'),
                 text: msgText,
                 createdAt: serverTimestamp()
             });
@@ -398,29 +487,30 @@ const ActiveChatView = ({ chat, onBack }) => {
                 lastSenderId: currentUser.uid
             });
 
-            // Log seller_replied analytics event
-            logEvent({
-                eventType: 'seller_replied',
-                userId: currentUser.uid,
-                sellerId: currentUser.uid,
-                productId: chat.productId || null,
-                metadata: { chatId: chat.id, buyerId: chat.buyerId }
-            });
+            if (amISeller) {
+                logEvent({
+                    eventType: 'seller_replied',
+                    userId: currentUser.uid,
+                    sellerId: currentUser.uid,
+                    productId: chat.productId || null,
+                    metadata: { chatId: chat.id, buyerId: chat.buyerId }
+                });
+            }
 
-            // Notify buyer of seller reply securely (server resolves buyer's tokens)
-            if (chat.buyerId) {
+            const recipientId = amISeller ? chat.buyerId : chat.sellerId;
+            if (recipientId) {
                 sendPushNotification({
-                    recipientUserId: chat.buyerId,
+                    recipientUserId: recipientId,
                     type: 'chat_message',
-                    buyerName: userName || currentUser.displayName || 'Seller',
+                    buyerName: userName || currentUser.displayName || (amISeller ? 'Seller' : 'Buyer'),
                     productName: chat.productName || 'Your inquired item',
                     text: msgText,
                     productId: chat.productId || null,
-                    link: chat.productId ? `/product/${chat.productId}?chat=true` : '/notifications',
-                }).catch(e => console.warn('Could not notify buyer of reply:', e));
+                    link: chat.productId ? `/product/${chat.productId}?chat=true` : '/messages',
+                }).catch(e => console.warn('Could not notify recipient of reply:', e));
             }
         } catch (error) {
-            console.error("Error sending seller message:", error);
+            console.error("Error sending message:", error);
         }
     };
 
@@ -447,7 +537,7 @@ const ActiveChatView = ({ chat, onBack }) => {
                     </button>
                     <div>
                         <div style={{ fontWeight: '800', fontSize: '1rem', color: 'var(--text)' }}>
-                            {chat.buyerName || 'Buyer'}
+                            {partnerName}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                             <ShoppingBag size={12} />
@@ -456,17 +546,73 @@ const ActiveChatView = ({ chat, onBack }) => {
                     </div>
                 </div>
 
-                {chat.productId && (
-                    <Link
-                        to={`/product/${chat.productId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-secondary"
-                        style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', borderRadius: 'var(--radius-full)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
-                    >
-                        <ExternalLink size={12} /> View Product
-                    </Link>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                    {amISeller && (
+                        chat.saleCompleted ? (
+                            <span style={{
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                padding: '0.35rem 0.75rem',
+                                borderRadius: 'var(--radius-full)',
+                                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                                color: '#059669',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem'
+                            }}>
+                                <CheckCircle2 size={13} /> Sale Completed
+                            </span>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={handleMarkSaleCompleted}
+                                disabled={markingSale}
+                                style={{
+                                    fontSize: '0.75rem',
+                                    fontWeight: 800,
+                                    padding: '0.35rem 0.75rem',
+                                    borderRadius: 'var(--radius-full)',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                                    color: '#059669',
+                                    border: '1px solid rgba(16, 185, 129, 0.35)',
+                                    cursor: markingSale ? 'not-allowed' : 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.3rem'
+                                }}
+                                title="Confirm that you completed this sale with the buyer"
+                            >
+                                <CheckCircle2 size={13} /> {markingSale ? 'Saving...' : 'Mark Sale Completed'}
+                            </button>
+                        )
+                    )}
+                    {chat.productId && (
+                        <Link
+                            to={`/product/${chat.productId}`}
+                            className="btn btn-secondary"
+                            style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', borderRadius: 'var(--radius-full)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                        >
+                            <ExternalLink size={12} /> View Product
+                        </Link>
+                    )}
+                </div>
+            </div>
+
+            {/* Safety Tip Strip */}
+            <div style={{
+                padding: '0.45rem 1rem',
+                backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                borderBottom: '1px solid rgba(245, 158, 11, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                fontSize: '0.74rem',
+                color: 'var(--text)'
+            }}>
+                <ShieldAlert size={14} color="#d97706" style={{ flexShrink: 0 }} />
+                <span>
+                    <strong>Safety Tip:</strong> Meet in a public campus spot, confirm the item &amp; price before paying, and report suspicious sellers.
+                </span>
             </div>
 
             {/* Messages Body */}
@@ -536,7 +682,7 @@ const ActiveChatView = ({ chat, onBack }) => {
                     type="text"
                     value={text}
                     onChange={(e) => setText(e.target.value)}
-                    placeholder="Reply to buyer..."
+                    placeholder={`Message ${partnerName}...`}
                     style={{
                         flex: 1,
                         padding: '0.6875rem 1.125rem',
