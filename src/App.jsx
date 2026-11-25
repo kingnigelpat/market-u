@@ -50,8 +50,6 @@ const SchoolsDashboard = lazyRetry(() => import('./pages/SchoolsDashboard.jsx'))
 const Gist = lazyRetry(() => import('./pages/Gist.jsx'));
 const GistPostDetail = lazyRetry(() => import('./pages/GistPostDetail.jsx'));
 const AdminGistModeration = lazyRetry(() => import('./pages/AdminGistModeration.jsx'));
-const Orders = lazyRetry(() => import('./pages/Orders.jsx'));
-const AdminEscrow = lazyRetry(() => import('./pages/AdminEscrow.jsx'));
 const OrderFood = lazyRetry(() => import('./pages/OrderFood.jsx'));
 const AdminFood = lazyRetry(() => import('./pages/AdminFood.jsx'));
 
@@ -160,9 +158,6 @@ const AppContent = () => {
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
                             <Route path="/messages" element={<Messages />} />
                         </Route>
-                        <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
-                            <Route path="/orders" element={<Orders />} />
-                        </Route>
                         <Route path="/settings" element={<Navigate to="/profile" replace />} />
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
                             <Route path="/profile" element={<Profile />} />
@@ -172,7 +167,6 @@ const AppContent = () => {
                         </Route>
                         <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                             <Route path="/admin/food" element={<AdminFood />} />
-                            <Route path="/admin/escrow" element={<AdminEscrow />} />
                             <Route path="/admin/gist" element={<AdminGistModeration />} />
                             <Route path="/admin/ads" element={<AdminAds />} />
                             <Route path="/admin/analytics" element={<AdminAnalytics />} />

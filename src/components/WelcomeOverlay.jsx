@@ -10,7 +10,7 @@ import {
     ArrowLeft,
     X,
     Bell,
-    Lock,
+    Bookmark,
     CheckCircle2,
     GraduationCap,
     LayoutDashboard,
@@ -30,8 +30,8 @@ const TOUR_STEPS = [
         icon: ShieldCheck,
         color: '#059669',
         bg: 'rgba(16, 185, 129, 0.14)',
-        title: 'Buy Safely — Escrow or Campus Meetup',
-        desc: 'Chat any seller in-app for free face-to-face campus meetups, or tap "Pay Safely with Escrow" so Market-U holds your money until you inspect and confirm your item.',
+        title: 'Chat Sellers & Inspect Before Paying',
+        desc: 'Message any seller right inside Market-U, confirm availability, and meet in a public spot on campus to inspect your item before you pay.',
         tip: 'Look for the Blue Verified Badge and ✓ Completed Sales count on seller profiles.',
     },
     {
@@ -233,7 +233,7 @@ const WelcomeOverlay = () => {
                             </button>
                             <button
                                 type="button"
-                                onClick={() => go(isSeller ? '/dashboard' : '/orders')}
+                                onClick={() => go(isSeller ? '/dashboard' : '/saved')}
                                 style={{
                                     padding: '0.75rem',
                                     borderRadius: '14px',
@@ -252,7 +252,7 @@ const WelcomeOverlay = () => {
                                 {isSeller ? (
                                     <><LayoutDashboard size={16} color="#D97706" /> Dashboard</>
                                 ) : (
-                                    <><Lock size={16} color="#D97706" /> Safe Pay</>
+                                    <><Bookmark size={16} color="#D97706" /> Saved Items</>
                                 )}
                             </button>
                         </div>
