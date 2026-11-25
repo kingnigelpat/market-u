@@ -455,6 +455,69 @@ const Home = () => {
 
 
             <div className="container market-body" ref={productsRef}>
+                {/* ── WDU Order Food Banner (Outside Food Vendors for Western Delta University) ── */}
+                {(!searchTerm && (selectedCampus === DEFAULT_CAMPUS || selectedCampus === 'Delta State Campuses' || selectedCampus.toLowerCase().includes('western delta'))) && (
+                    <Link
+                        to="/order-food"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '1rem',
+                            flexWrap: 'wrap',
+                            padding: '1rem 1.25rem',
+                            marginBottom: '1.15rem',
+                            borderRadius: 'var(--radius-2xl)',
+                            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.14) 0%, rgba(217, 119, 6, 0.08) 100%)',
+                            border: '1.5px solid rgba(245, 158, 11, 0.4)',
+                            textDecoration: 'none',
+                            color: 'var(--text)',
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', minWidth: 0 }}>
+                            <div style={{
+                                width: '44px',
+                                height: '44px',
+                                borderRadius: '14px',
+                                background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                                color: '#fff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                boxShadow: '0 4px 12px rgba(217, 119, 6, 0.35)',
+                            }}>
+                                <Utensils size={22} />
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                                    <span style={{ fontWeight: 900, fontSize: '0.98rem' }}>Something Big is Coming Soon to WDU</span>
+                                    <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '999px', background: 'rgba(245, 158, 11, 0.2)', color: '#B45309' }}>
+                                        COMING SOON • NEXT YEAR
+                                    </span>
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+                                    Western Delta University students — get ready! Outside campus food delivery &amp; more is launching next year.
+                                </div>
+                            </div>
+                        </div>
+                        <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            padding: '0.55rem 1rem',
+                            borderRadius: 'var(--radius-full)',
+                            background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                            color: '#fff',
+                            fontSize: '0.82rem',
+                            fontWeight: 800,
+                            flexShrink: 0,
+                        }}>
+                            Sneak Peek <ArrowRight size={15} />
+                        </span>
+                    </Link>
+                )}
+
                 {/* ── Promotional Campaign Banner (School Resumption / Admin-managed) ── */}
                 {(!searchTerm && categoryFilter === 'all' && !verifiedOnly && !activeCollectionKey) && (
                     <AdCarousel

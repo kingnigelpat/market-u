@@ -128,7 +128,7 @@ const AdminAnalytics = () => {
                     📊 Traffic & Clicks
                 </Link>
                 <Link
-                    to="/admin/giveaway"
+                    to="/admin/food"
                     style={{
                         padding: '0.5rem 0.9rem',
                         borderRadius: 'var(--radius-md)',
@@ -140,7 +140,7 @@ const AdminAnalytics = () => {
                         border: '1px solid var(--border)'
                     }}
                 >
-                    🎁 Giveaway Payouts
+                    WDU Food Panel
                 </Link>
                 <Link
                     to="/admin/ads"

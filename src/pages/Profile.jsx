@@ -14,7 +14,7 @@ import { doc, updateDoc, deleteDoc, setDoc, arrayUnion, collection, query, where
 import {
     User, Phone, Lock, Trash2, ArrowLeft,
     CheckCircle, AlertCircle, Eye, EyeOff, Save, ShieldAlert,
-    Bell, Send, RefreshCw, LogOut, Palette, Sun, Moon, Gift, BarChart3
+    Bell, Send, RefreshCw, LogOut, Palette, Sun, Moon, Utensils, BarChart3
 } from 'lucide-react';
 import { requestNotificationPermission, sendPushNotification, getOrRefreshFcmToken } from '../utils/notifications';
 import PhoneNumberField from '../components/PhoneNumberField';
@@ -738,11 +738,11 @@ const Profile = () => {
                             <BarChart3 size={16} /> Traffic & Analytics
                         </Link>
                         <Link
-                            to="/admin/giveaway"
+                            to="/admin/food"
                             className="btn btn-secondary"
                             style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: '700', textDecoration: 'none', justifyContent: 'center' }}
                         >
-                            <Gift size={16} /> Giveaway Payouts
+                            <Utensils size={16} /> WDU Food Vendors & Orders
                         </Link>
                         <Link
                             to="/admin/ads"

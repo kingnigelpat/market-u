@@ -10,7 +10,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx';
 import AIAssistant from './components/AIAssistant.jsx';
 import IOSInstallBanner from './components/IOSInstallBanner.jsx';
 import PushGuide from './components/PushGuide.jsx';
-import { GIVEAWAY_ENABLED } from './utils/referralService.js';
+import WelcomeOverlay from './components/WelcomeOverlay.jsx';
 
 // Resilient lazy-loader that auto-reloads if a new build invalidated old bundle hashes
 const lazyRetry = (componentImport) =>
@@ -45,13 +45,15 @@ const SellerStore = lazyRetry(() => import('./pages/SellerStore.jsx'));
 const Advertise = lazyRetry(() => import('./pages/Advertise.jsx'));
 const AdminAds = lazyRetry(() => import('./pages/AdminAds.jsx'));
 const AdminAnalytics = lazyRetry(() => import('./pages/AdminAnalytics.jsx'));
-const AdminGiveaway = lazyRetry(() => import('./pages/AdminGiveaway.jsx'));
-const Giveaway = lazyRetry(() => import('./pages/Giveaway.jsx'));
 const Messages = lazyRetry(() => import('./pages/Messages.jsx'));
 const SchoolsDashboard = lazyRetry(() => import('./pages/SchoolsDashboard.jsx'));
 const Gist = lazyRetry(() => import('./pages/Gist.jsx'));
 const GistPostDetail = lazyRetry(() => import('./pages/GistPostDetail.jsx'));
 const AdminGistModeration = lazyRetry(() => import('./pages/AdminGistModeration.jsx'));
+const Orders = lazyRetry(() => import('./pages/Orders.jsx'));
+const AdminEscrow = lazyRetry(() => import('./pages/AdminEscrow.jsx'));
+const OrderFood = lazyRetry(() => import('./pages/OrderFood.jsx'));
+const AdminFood = lazyRetry(() => import('./pages/AdminFood.jsx'));
 
 import './styles/global.css';
 
@@ -138,6 +140,7 @@ const AppContent = () => {
                         <Route path="/advertise" element={<Advertise />} />
                         <Route path="/schools" element={<SchoolsDashboard />} />
                         <Route path="/campuses" element={<SchoolsDashboard />} />
+                        <Route path="/order-food" element={<OrderFood />} />
                         <Route path="/gist" element={<Gist />} />
                         <Route path="/gist/post/:id" element={<GistPostDetail />} />
 
@@ -157,6 +160,9 @@ const AppContent = () => {
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
                             <Route path="/messages" element={<Messages />} />
                         </Route>
+                        <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
+                            <Route path="/orders" element={<Orders />} />
+                        </Route>
                         <Route path="/settings" element={<Navigate to="/profile" replace />} />
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
                             <Route path="/profile" element={<Profile />} />
@@ -164,14 +170,12 @@ const AppContent = () => {
                         <Route element={<ProtectedRoute allowedRoles={['seller', 'admin', 'buyer']} />}>
                             <Route path="/saved" element={<SavedItems />} />
                         </Route>
-                        <Route path="/giveaway" element={GIVEAWAY_ENABLED ? <Giveaway /> : <Navigate to="/" replace />} />
-                        <Route path="/invite" element={GIVEAWAY_ENABLED ? <Giveaway /> : <Navigate to="/" replace />} />
-
                         <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                            <Route path="/admin/food" element={<AdminFood />} />
+                            <Route path="/admin/escrow" element={<AdminEscrow />} />
                             <Route path="/admin/gist" element={<AdminGistModeration />} />
                             <Route path="/admin/ads" element={<AdminAds />} />
                             <Route path="/admin/analytics" element={<AdminAnalytics />} />
-                            <Route path="/admin/giveaway" element={<AdminGiveaway />} />
                         </Route>
                     </Routes>
                 </Suspense>
@@ -181,6 +185,7 @@ const AppContent = () => {
 
             <IOSInstallBanner />
             <PushGuide />
+            <WelcomeOverlay />
         </div>
     );
 };

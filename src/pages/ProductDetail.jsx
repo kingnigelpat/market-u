@@ -26,7 +26,8 @@ import {
     Tag,
     TrendingUp,
     UserCheck,
-    Flag
+    Flag,
+    Lock
 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import VerifiedBadge from '../components/VerifiedBadge';
@@ -42,6 +43,7 @@ import { formatWhatsAppNumber } from '../utils/phoneUtils';
 import { logEvent } from '../utils/analyticsService';
 import { qualifyReferralAction } from '../utils/referralService';
 import { fetchGistReviewsForProduct, formatGistTime } from '../utils/gistService';
+import { callEscrow, computeSafePayFee } from '../utils/escrowService';
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -77,6 +79,8 @@ const ProductDetail = () => {
     const [reportDetails, setReportDetails] = useState('');
     const [reportSubmitting, setReportSubmitting] = useState(false);
     const [reportSuccess, setReportSuccess] = useState(false);
+    const [escrowLoading, setEscrowLoading] = useState(false);
+    const [escrowError, setEscrowError] = useState('');
 
     // Auto-open chat if navigated from notification (?chat=true)
     useEffect(() => {
@@ -222,6 +226,33 @@ const ProductDetail = () => {
     const stockNum = typeof product.stock === 'number' ? product.stock : (product.stock !== undefined ? parseInt(product.stock, 10) : null);
     const isOutOfStock = stockNum !== null && stockNum <= 0;
     const isLowStock = stockNum !== null && stockNum > 0 && stockNum <= 3;
+    const feeBreakdown = computeSafePayFee(product.price);
+
+    const handleSafePay = async () => {
+        if (!isAuthenticated) {
+            setShowPrompt(true);
+            return;
+        }
+        if (isOwner) {
+            alert('You cannot purchase your own listing.');
+            return;
+        }
+        setEscrowLoading(true);
+        setEscrowError('');
+        try {
+            const res = await callEscrow('init', { productId: product.id });
+            if (res?.authorizationUrl) {
+                window.location.href = res.authorizationUrl;
+            } else {
+                setEscrowError('Could not open Paystack checkout. Please try again.');
+            }
+        } catch (err) {
+            console.error('Safe Pay init error:', err);
+            setEscrowError(err.message || 'Could not start Safe Pay checkout.');
+        } finally {
+            setEscrowLoading(false);
+        }
+    };
 
     const handleWhatsAppChat = () => {
         if (!cleanSellerPhone || !product) return;
@@ -812,6 +843,87 @@ const ProductDetail = () => {
                                         This is your listing — students use the buttons below to buy from you:
                                     </div>
                                 )}
+
+                                {/* Option 1: Pay Safely with MarketU Escrow (Paystack) */}
+                                {feeBreakdown.itemPrice > 0 && (
+                                    <div style={{
+                                        padding: '0.85rem',
+                                        borderRadius: 'var(--radius-xl)',
+                                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(37, 99, 235, 0.08) 100%)',
+                                        border: '1.5px solid rgba(16, 185, 129, 0.35)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '0.5rem'
+                                    }}>
+                                        <button
+                                            type="button"
+                                            onClick={handleSafePay}
+                                            disabled={escrowLoading || isOwner}
+                                            id="safe-pay-escrow-btn"
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.95rem 1.15rem',
+                                                fontSize: '0.98rem',
+                                                fontWeight: '900',
+                                                borderRadius: 'var(--radius-lg)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.55rem',
+                                                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                                                color: '#ffffff',
+                                                border: 'none',
+                                                cursor: isOwner ? 'not-allowed' : 'pointer',
+                                                opacity: isOwner ? 0.65 : 1,
+                                                boxShadow: '0 6px 18px -4px rgba(5, 150, 105, 0.45)',
+                                                transition: 'all 0.2s ease',
+                                            }}
+                                        >
+                                            {escrowLoading ? (
+                                                <Loader size={19} style={{ animation: 'spin 0.8s linear infinite' }} />
+                                            ) : (
+                                                <Lock size={18} />
+                                            )}
+                                            <span>
+                                                {escrowLoading
+                                                    ? 'Opening Paystack Safe Pay...'
+                                                    : `Pay Safely with Escrow (₦${feeBreakdown.totalBuyerPays.toLocaleString('en-NG')})`}
+                                            </span>
+                                        </button>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            flexWrap: 'wrap',
+                                            gap: '0.35rem',
+                                            fontSize: '0.73rem',
+                                            color: 'var(--text-secondary)',
+                                            fontWeight: 600,
+                                            padding: '0 0.2rem'
+                                        }}>
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.28rem', color: '#059669', fontWeight: 800 }}>
+                                                <ShieldCheck size={13} /> Money held safely until you inspect &amp; confirm
+                                            </span>
+                                            <span>
+                                                Includes ₦{feeBreakdown.safePayFee.toLocaleString('en-NG')} (3%) Safe Pay protection
+                                            </span>
+                                        </div>
+                                        {escrowError && (
+                                            <div style={{
+                                                fontSize: '0.78rem',
+                                                fontWeight: 700,
+                                                color: 'var(--danger)',
+                                                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                                                padding: '0.45rem 0.65rem',
+                                                borderRadius: 'var(--radius-md)',
+                                                border: '1px solid rgba(239, 68, 68, 0.2)'
+                                            }}>
+                                                {escrowError}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 <button
                                     onClick={handleAskInApp}
                                     disabled={interestLoading}

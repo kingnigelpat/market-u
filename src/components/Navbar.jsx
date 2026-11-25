@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Search, Heart, Megaphone, MessageCircle, GraduationCap } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, User, ChevronDown, ShieldCheck, PlusCircle, Compass, Bell, Settings, Bookmark, LayoutDashboard, Search, Heart, Megaphone, MessageCircle, GraduationCap, Lock, Utensils } from 'lucide-react';
 
 const Navbar = () => {
     const { isAuthenticated, isSeller, isAdmin, userRole, currentUser } = useAuth();
@@ -83,6 +83,9 @@ const Navbar = () => {
                             <Link to="/add-product" className="nav-post-btn">
                                 <PlusCircle size={14} /> Post
                             </Link>
+                            <Link to="/order-food" className="nav-link">
+                                <Utensils size={16} /> Order Food
+                            </Link>
                             <Link to="/gist" className="nav-link">
                                 <MessageCircle size={16} /> Gist
                             </Link>
@@ -104,6 +107,9 @@ const Navbar = () => {
                             <Link to="/market" className="nav-link">
                                 <Compass size={16} /> Browse
                             </Link>
+                            <Link to="/order-food" className="nav-link">
+                                <Utensils size={16} /> Order Food
+                            </Link>
                             <Link to="/gist" className="nav-link">
                                 <MessageCircle size={16} /> Gist
                             </Link>
@@ -119,6 +125,9 @@ const Navbar = () => {
                     {/* ── Unauthenticated ── */}
                     {!isAuthenticated ? (
                         <div className="app-navbar-auth">
+                            <Link to="/order-food" className="nav-link nav-link--muted" style={{ marginRight: '0.25rem' }}>
+                                <Utensils size={16} /> Order Food
+                            </Link>
                             <Link to="/gist" className="nav-link nav-link--muted" style={{ marginRight: '0.25rem' }}>
                                 <MessageCircle size={16} /> Gist
                             </Link>
@@ -177,6 +186,9 @@ const Navbar = () => {
                                         {!isSeller && (
                                             <>
                                                 <div className="nav-dropdown-divider" />
+                                                <Link to="/order-food" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <Utensils size={16} /> Order Food (WDU)
+                                                </Link>
                                                 <Link to="/gist" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
                                                     <MessageCircle size={16} /> Campus Gist
                                                 </Link>
@@ -191,6 +203,9 @@ const Navbar = () => {
                                                 </Link>
                                                 <Link to="/messages" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
                                                     <MessageCircle size={16} /> Messages
+                                                </Link>
+                                                <Link to="/orders" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <Lock size={16} /> Safe Pay Orders
                                                 </Link>
                                                 <Link to="/saved" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
                                                     <Bookmark size={16} /> Saved Items
@@ -210,6 +225,9 @@ const Navbar = () => {
                                         {/* ── Seller dropdown items ── */}
                                         {isSeller && (
                                             <>
+                                                <Link to="/order-food" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <Utensils size={16} /> Order Food (WDU)
+                                                </Link>
                                                 <Link to="/gist" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
                                                     <MessageCircle size={16} /> Campus Gist
                                                 </Link>
@@ -219,6 +237,9 @@ const Navbar = () => {
                                                 </Link>
                                                 <Link to="/messages" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
                                                     <MessageCircle size={16} /> Messages
+                                                </Link>
+                                                <Link to="/orders" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <Lock size={16} /> Safe Pay Orders
                                                 </Link>
                                                 <Link to="/schools" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
                                                     <GraduationCap size={16} /> Campus Hub & Schools
@@ -240,6 +261,12 @@ const Navbar = () => {
 
                                         {isAdmin && (
                                             <>
+                                                <Link to="/admin/food" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <Utensils size={16} /> WDU Food Panel
+                                                </Link>
+                                                <Link to="/admin/escrow" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
+                                                    <Lock size={16} /> Safe Pay Escrow
+                                                </Link>
                                                 <Link to="/admin/gist" onClick={() => setMenuOpen(false)} className="nav-dropdown-item">
                                                     <ShieldCheck size={16} /> Gist Moderation
                                                 </Link>

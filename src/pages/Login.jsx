@@ -50,6 +50,7 @@ const Login = () => {
 
         try {
             await signInWithEmailAndPassword(auth, email, password);
+            sessionStorage.setItem('marketu_welcome_mode', 'login');
             navigate('/');
         } catch (err) {
             setError('Failed to sign in. Please check your credentials.');

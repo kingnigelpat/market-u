@@ -28,7 +28,7 @@ const Register = () => {
     const [schoolError, setSchoolError] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+    const [showWelcomeModal] = useState(false);
     const [registeredData, setRegisteredData] = useState(null);
 
     const navigate = useNavigate();
@@ -131,7 +131,8 @@ const Register = () => {
                 schoolName: selectedSchool.name,
                 role: formData.role
             });
-            setShowWelcomeModal(true);
+            sessionStorage.setItem('marketu_welcome_mode', 'signup');
+            navigate(`/?school=${encodeURIComponent(selectedSchool.name)}`);
         } catch (err) {
             if (err.code === 'auth/email-already-in-use') {
                 setError('An account with this email already exists. Please log in instead.');
